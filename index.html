@@ -334,13 +334,12 @@
   <section class="view" id="view-listening">
     <div class="card">
       <h2>Listening</h2>
-      <p class="muted">Uso la voz del navegador para leerte el audio en inglés, igual que en el examen: solo puedes reproducirlo <strong>2 veces</strong>. Necesitas el sonido activado.</p>
+      <p class="muted">Uso la voz del navegador para leerte el audio en inglés, igual que en el examen: solo puedes reproducirlo <strong>2 veces</strong>. Necesitas el sonido activado. Cada botón carga una variante al azar de su banco.</p>
       <div style="display:flex; gap:10px; flex-wrap:wrap;">
-        <button class="btn secondary" onclick="loadListening(0)">1 · Mensaje corto</button>
-        <button class="btn secondary" onclick="loadListening(1)">2 · Opiniones</button>
-        <button class="btn secondary" onclick="loadListening(2)">3 · Otro mensaje</button>
-        <button class="btn secondary" onclick="loadListening(3)">4 · Emparejar hablantes</button>
-        <button class="btn secondary" onclick="loadListening(4)">5 · Monólogo largo</button>
+        <button class="btn secondary" onclick="loadListening('short')">Mensaje corto</button>
+        <button class="btn secondary" onclick="loadListening('opinions')">Opiniones</button>
+        <button class="btn secondary" onclick="loadListening('speakers')">Emparejar hablantes</button>
+        <button class="btn secondary" onclick="loadListening('monologue')">Monólogo largo</button>
       </div>
     </div>
     <div class="card" id="listeningCard" style="display:none;"></div>
@@ -621,6 +620,15 @@ C) The city museum has extended its opening hours and scrapped entrance fees for
 D) Farmers in the region are experimenting with older varieties of wheat, which need less water and resist disease better than modern crops.`,
       headingsBank: ["Making culture more accessible", "A return to traditional crops", "The dangers of too little sleep", "Instant help with foreign menus"],
       answerMap: [2,3,0,1]
+    },
+    {
+      title: "Empareja cada titular con su párrafo",
+      passage: `A) Airlines are testing lighter seats and more efficient engines in an attempt to reduce the amount of fuel burned on long-haul flights.
+B) A survey of two thousand teenagers found that most would rather lose their television than their phone, which they see as their main link to friends.
+C) The council has approved plans to turn the disused railway line into a walking and cycling path connecting three villages.
+D) Nutritionists say that skipping breakfast does not necessarily help people lose weight, and may even lead to unhealthy snacking later in the day.`,
+      headingsBank: ["What young people value most", "A morning myth examined", "Greener air travel", "New life for an old route"],
+      answerMap: [2,0,3,1]
     }
   ],
   gapfill: [
@@ -640,6 +648,15 @@ D) Farmers in the region are experimenting with older varieties of wheat, which 
         {opts:["approve","pass","win"], correct:1},
         {opts:["take","put","go"], correct:2},
         {opts:["know","knowing","to know"], correct:0}
+      ]
+    },
+    {
+      title: "Completa los huecos con la opción correcta",
+      passage: `Dear Mrs Collins,\n\nThank you for your email about the delayed delivery. We would like to (1)___ for the inconvenience this has caused. Your order has now been sent and should (2)___ within three working days. As a gesture of goodwill, we have added a discount voucher to your account, which you can (3)___ on your next purchase.\n\nKind regards,\nCustomer Service`,
+      blanks: [
+        {opts:["regret","apologise","excuse"], correct:1},
+        {opts:["reach","arrive","enter"], correct:1},
+        {opts:["pay","spend","use"], correct:2}
       ]
     }
   ],
@@ -663,6 +680,17 @@ D) Farmers in the region are experimenting with older varieties of wheat, which 
         "Could you tell me whether there are still places available for the October start?",
         "I would also like to know the total cost and whether course materials are included.",
         "I look forward to your reply. Kind regards, Emma Watts"
+      ],
+      correctOrder: [0,1,2,3,4]
+    },
+    {
+      title: "Ordena las frases de la historia en el orden correcto",
+      lines: [
+        "Last summer, my brother and I decided to hike to a mountain lake we had seen on a map.",
+        "We set off early, but after two hours we realised we had taken the wrong path.",
+        "Luckily, a local farmer pointed us in the right direction.",
+        "By the time we finally reached the lake, we were exhausted but delighted.",
+        "It was so beautiful that we agreed the mistake had been worth it."
       ],
       correctOrder: [0,1,2,3,4]
     }
@@ -763,63 +791,116 @@ function finishReading(correct, total){
 }
 
 /* ============ LISTENING ============ */
-const LISTENING_TASKS = [
-  {
-    type: 'audio',
-    title: "Mensaje corto: encuentra el dato",
-    script: "Hi, it's Rachel from the dentist's. I'm calling to remind you about your appointment on Thursday at half past three. If you need to change it, please call us back before Wednesday afternoon. Thanks, bye.",
-    questions: [
-      {q:"¿Qué día y hora es la cita?", opts:["Miércoles a las 3:30","Jueves a las 3:30","Jueves a las 2:30","Miércoles a las 2:30"], correct:1}
-    ]
-  },
-  {
-    type: 'audio',
-    title: "Diálogo de opiniones",
-    script: "Man: I really think working from home has made people less connected to their teams. Woman: I disagree, actually. I think it's given people more time to focus without constant interruptions, and teams can still stay close through regular video calls.",
-    questions: [
-      {q:"¿Quién piensa que el trabajo en remoto ha mejorado la concentración?", opts:["El hombre","La mujer","Los dos","Ninguno de los dos"], correct:1}
-    ]
-  },
-  {
-    type: 'audio',
-    title: "Mensaje corto: el gimnasio",
-    script: "Hello, this is a message for Mr Adams from City Gym. Your membership expires on the thirty-first of March. If you renew before the twenty-fifth, you'll get ten percent off the annual fee. You can call us back or renew online. Thank you.",
-    questions: [
-      {q:"¿Qué consigue si renueva antes del día 25?", opts:["Un mes gratis","Un 10% de descuento","Una sesión con entrenador","Un 20% de descuento"], correct:1}
-    ]
-  },
-  {
-    type: 'speakers',
-    title: "Empareja cada hablante con la frase que lo resume",
-    intro: "Cuatro personas hablan de su trabajo. Escucha a cada una (máximo 2 veces por hablante) y elige la frase que mejor la describe. Hay una frase de sobra.",
-    speakers: [
-      {name:"Speaker A", script:"I spend most of my day in front of a screen, solving problems for customers over the phone. It can be repetitive, but I like knowing that I've helped someone by the end of the call."},
-      {name:"Speaker B", script:"No two weeks are the same for me. One week I'm in Berlin, the next in Lisbon. Living out of a suitcase is exhausting, though, and I really miss my family when I'm away."},
-      {name:"Speaker C", script:"I started my own business three years ago. The freedom is wonderful, but to be honest I work far longer hours now than I ever did when I had a boss."},
-      {name:"Speaker D", script:"My job is quite physical and we start very early in the morning, but by mid-afternoon I'm finished, which leaves me plenty of time for my hobbies."}
-    ],
-    statements: [
-      "Viaja constantemente y echa de menos a su familia",
-      "Trabaja más horas desde que es su propio jefe",
-      "Cambió de trabajo hace poco para ganar más dinero",
-      "Le gusta ayudar a la gente en su trabajo",
-      "Termina pronto y disfruta de su tiempo libre"
-    ],
-    answerMap: [3,0,1,4]
-  },
-  {
-    type: 'audio',
-    title: "Monólogo largo: el huerto comunitario",
-    script: "Good morning, everyone. Today I want to tell you about our community garden project. When we started five years ago, we had just twelve volunteers and a small piece of wasteland behind the library. Now, more than eighty people help out regularly, and we grow enough vegetables to supply two local schools. Next month we're launching gardening workshops for beginners. They'll run on Saturday mornings, and although they're free, places are limited, so you'll need to book in advance through our website.",
-    questions: [
-      {q:"¿Cuántos voluntarios participan actualmente?", opts:["Doce","Unos cincuenta","Más de ochenta","Doscientos"], correct:2},
-      {q:"¿Qué van a lanzar el mes que viene?", opts:["Otro huerto","Venta de verduras","Una ampliación de la biblioteca","Talleres para principiantes"], correct:3},
-      {q:"¿Cómo hay que reservar plaza?", opts:["Por la página web","Por teléfono","En la biblioteca","Pagando por adelantado"], correct:0}
-    ]
-  }
-];
+const LISTENING_BANK = {
+  short: [
+    {
+      type: 'audio',
+      title: "Mensaje corto: encuentra el dato",
+      script: "Hi, it's Rachel from the dentist's. I'm calling to remind you about your appointment on Thursday at half past three. If you need to change it, please call us back before Wednesday afternoon. Thanks, bye.",
+      questions: [
+        {q:"¿Qué día y hora es la cita?", opts:["Miércoles a las 3:30","Jueves a las 3:30","Jueves a las 2:30","Miércoles a las 2:30"], correct:1}
+      ]
+    },
+    {
+      type: 'audio',
+      title: "Mensaje corto: el gimnasio",
+      script: "Hello, this is a message for Mr Adams from City Gym. Your membership expires on the thirty-first of March. If you renew before the twenty-fifth, you'll get ten percent off the annual fee. You can call us back or renew online. Thank you.",
+      questions: [
+        {q:"¿Qué consigue si renueva antes del día 25?", opts:["Un mes gratis","Un 10% de descuento","Una sesión con entrenador","Un 20% de descuento"], correct:1}
+      ]
+    },
+    {
+      type: 'audio',
+      title: "Mensaje corto: la estación",
+      script: "Hello, this is a message from Northgate Station. The ten fifteen train to Manchester has been cancelled due to engineering works. Passengers should take the eleven o'clock service from platform four instead. We apologise for the inconvenience.",
+      questions: [
+        {q:"¿Qué debe hacer el pasajero?", opts:["Esperar al tren de las 10:15","Tomar el de las 11:00 en la vía 4","Hacer transbordo en Manchester","Ir a la vía 11"], correct:1}
+      ]
+    }
+  ],
+  opinions: [
+    {
+      type: 'audio',
+      title: "Diálogo de opiniones: teletrabajo",
+      script: "Man: I really think working from home has made people less connected to their teams. Woman: I disagree, actually. I think it's given people more time to focus without constant interruptions, and teams can still stay close through regular video calls.",
+      questions: [
+        {q:"¿Quién piensa que el trabajo en remoto ha mejorado la concentración?", opts:["El hombre","La mujer","Los dos","Ninguno de los dos"], correct:1}
+      ]
+    },
+    {
+      type: 'audio',
+      title: "Diálogo de opiniones: ciudad o campo",
+      script: "Woman: I'd love to live in the countryside one day. It's so much calmer, and houses are cheaper too. Man: Maybe, but I think you'd miss the city. Everything closes early in small villages, and you'd depend on your car for absolutely everything.",
+      questions: [
+        {q:"¿Qué desventaja del campo menciona el hombre?", opts:["Las casas son más caras","Hay demasiado ruido","Dependería del coche para todo","No hay trabajo"], correct:2}
+      ]
+    }
+  ],
+  speakers: [
+    {
+      type: 'speakers',
+      title: "Empareja cada hablante con la frase que lo resume",
+      intro: "Cuatro personas hablan de su trabajo. Escucha a cada una (máximo 2 veces por hablante) y elige la frase que mejor la describe. Hay una frase de sobra.",
+      speakers: [
+        {name:"Speaker A", script:"I spend most of my day in front of a screen, solving problems for customers over the phone. It can be repetitive, but I like knowing that I've helped someone by the end of the call."},
+        {name:"Speaker B", script:"No two weeks are the same for me. One week I'm in Berlin, the next in Lisbon. Living out of a suitcase is exhausting, though, and I really miss my family when I'm away."},
+        {name:"Speaker C", script:"I started my own business three years ago. The freedom is wonderful, but to be honest I work far longer hours now than I ever did when I had a boss."},
+        {name:"Speaker D", script:"My job is quite physical and we start very early in the morning, but by mid-afternoon I'm finished, which leaves me plenty of time for my hobbies."}
+      ],
+      statements: [
+        "Viaja constantemente y echa de menos a su familia",
+        "Trabaja más horas desde que es su propio jefe",
+        "Cambió de trabajo hace poco para ganar más dinero",
+        "Le gusta ayudar a la gente en su trabajo",
+        "Termina pronto y disfruta de su tiempo libre"
+      ],
+      answerMap: [3,0,1,4]
+    },
+    {
+      type: 'speakers',
+      title: "Empareja cada hablante con la frase que lo resume",
+      intro: "Cuatro personas hablan de sus vacaciones. Escucha a cada una (máximo 2 veces por hablante) y elige la frase que mejor la describe. Hay una frase de sobra.",
+      speakers: [
+        {name:"Speaker A", script:"For me, a holiday means lying on the beach with a good book and doing absolutely nothing. I don't even want to think about sightseeing."},
+        {name:"Speaker B", script:"I can't sit still when I travel. I book walking tours, museums, day trips — my friends joke that they need another holiday after travelling with me."},
+        {name:"Speaker C", script:"We always go back to the same little town every August. Some people find that boring, but knowing the place so well is exactly what we love about it."},
+        {name:"Speaker D", script:"Since the children arrived, we choose places with pools and kids' clubs. It's not what I'd pick for myself, but seeing them happy is worth it."}
+      ],
+      statements: [
+        "Le gusta tener el día lleno de actividades",
+        "Elige las vacaciones pensando en sus hijos",
+        "Prefiere viajar siempre al extranjero",
+        "Descansar sin planes es su vacación ideal",
+        "Vuelve al mismo sitio cada año"
+      ],
+      answerMap: [3,0,4,1]
+    }
+  ],
+  monologue: [
+    {
+      type: 'audio',
+      title: "Monólogo largo: el huerto comunitario",
+      script: "Good morning, everyone. Today I want to tell you about our community garden project. When we started five years ago, we had just twelve volunteers and a small piece of wasteland behind the library. Now, more than eighty people help out regularly, and we grow enough vegetables to supply two local schools. Next month we're launching gardening workshops for beginners. They'll run on Saturday mornings, and although they're free, places are limited, so you'll need to book in advance through our website.",
+      questions: [
+        {q:"¿Cuántos voluntarios participan actualmente?", opts:["Doce","Unos cincuenta","Más de ochenta","Doscientos"], correct:2},
+        {q:"¿Qué van a lanzar el mes que viene?", opts:["Otro huerto","Venta de verduras","Una ampliación de la biblioteca","Talleres para principiantes"], correct:3},
+        {q:"¿Cómo hay que reservar plaza?", opts:["Por la página web","Por teléfono","En la biblioteca","Pagando por adelantado"], correct:0}
+      ]
+    },
+    {
+      type: 'audio',
+      title: "Monólogo largo: avisos del museo",
+      script: "Welcome to the Riverside Museum. Before you begin your visit, here are a few announcements. The photography exhibition on the second floor closes at four thirty today, half an hour earlier than usual, because of a private event. Our guided tour begins at two o'clock by the main entrance and lasts about forty-five minutes. Finally, the café is offering visitors a ten percent discount this week — just show your entrance ticket.",
+      questions: [
+        {q:"¿A qué hora cierra hoy la exposición de fotografía?", opts:["A las 5:00","A las 4:30","A las 2:00","A las 4:00"], correct:1},
+        {q:"¿Dónde empieza la visita guiada?", opts:["En la cafetería","En la segunda planta","En la entrada principal","En la tienda"], correct:2},
+        {q:"¿Cómo se consigue el descuento en la cafetería?", opts:["Reservando la visita guiada","Mostrando la entrada","Pagando en efectivo","Siendo socio del museo"], correct:1}
+      ]
+    }
+  ]
+};
 
-let currentListeningIdx = null;
+let currentListeningTask = null;
 let playCounts = {};
 
 function speakText(text){
@@ -836,7 +917,7 @@ function speakText(text){
 }
 
 function playTracked(key){
-  const task = LISTENING_TASKS[currentListeningIdx];
+  const task = currentListeningTask;
   const text = key==='main' ? task.script : task.speakers[key].script;
   if(playCounts[key]===undefined) playCounts[key] = 2;
   if(playCounts[key]<=0) return;
@@ -846,9 +927,10 @@ function playTracked(key){
   if(playCounts[key]<=0) document.getElementById('btn-'+key).disabled = true;
 }
 
-function loadListening(idx){
-  const task = LISTENING_TASKS[idx];
-  currentListeningIdx = idx;
+function loadListening(type){
+  const variants = LISTENING_BANK[type];
+  const task = variants[Math.floor(Math.random()*variants.length)];
+  currentListeningTask = task;
   playCounts = {};
   const card = document.getElementById('listeningCard');
   card.style.display = 'block';
@@ -890,7 +972,7 @@ function loadListening(idx){
 }
 
 function checkListening(){
-  const task = LISTENING_TASKS[currentListeningIdx];
+  const task = currentListeningTask;
   let correct = 0, total = 0;
 
   if(task.type==='speakers'){
