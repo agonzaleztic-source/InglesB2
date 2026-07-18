@@ -219,6 +219,28 @@
     text-transform:uppercase; letter-spacing:.06em; margin-top:14px;
   }
 
+  a{color:var(--teal);}
+
+  .lesson-row{
+    display:flex; align-items:center; gap:12px;
+    border:1.5px solid var(--line); border-radius:8px; padding:12px 14px; margin-bottom:8px;
+    cursor:pointer; transition:border-color .12s ease, background .12s ease;
+  }
+  .lesson-row:hover{border-color:var(--ink);}
+  .lesson-row.completed{border-color:var(--teal); background:rgba(47,111,98,0.05);}
+  .lesson-row .l-num{font-family:'Space Mono',monospace; font-size:12px; color:var(--muted); min-width:22px;}
+  .lesson-row .l-title{font-weight:600; font-size:14.5px; flex:1;}
+  .lesson-row .l-tag{
+    font-family:'Space Mono',monospace; font-size:10.5px; text-transform:uppercase; letter-spacing:.06em;
+    color:var(--gold); border:1px solid var(--gold); padding:2px 8px; border-radius:999px; white-space:nowrap;
+  }
+  .lesson-row .l-done{color:var(--teal); font-weight:700; font-size:16px; min-width:18px; text-align:center;}
+
+  .theory{font-size:14.5px; line-height:1.65;}
+  .theory ul{padding-left:18px; margin:8px 0;}
+  .theory li{margin-bottom:7px;}
+  .theory .ej{font-style:italic; color:var(--ink-2);}
+
   footer.note{
     margin-top:28px; text-align:center; color:var(--muted); font-size:12.5px;
     border-top:1.5px dashed var(--line); padding-top:16px;
@@ -247,6 +269,7 @@
 
   <nav class="tabs" id="tabs">
     <button data-view="inicio" class="active">Inicio</button>
+    <button data-view="lecciones">Lecciones</button>
     <button data-view="guia">Guía del examen</button>
     <button data-view="gramatica">Gramática &amp; Vocab</button>
     <button data-view="reading">Reading</button>
@@ -261,6 +284,7 @@
       <h2>Tu progreso</h2>
       <p class="muted">Estos son tus mejores resultados guardados. Se sincronizan con tu cuenta, así que los verás igual desde el móvil o el ordenador.</p>
       <div class="grid" id="dashboardGrid"></div>
+      <p class="muted" id="lessonsSummary" style="margin-top:14px;"></p>
     </div>
     <div class="card">
       <h2>Cómo funciona este examen, en una frase</h2>
@@ -271,6 +295,16 @@
       <p id="dailyTip" class="muted"></p>
       <button class="btn secondary" onclick="newTip()">Otro consejo</button>
     </div>
+  </section>
+
+  <!-- ================= LECCIONES ================= -->
+  <section class="view" id="view-lecciones">
+    <div class="card" id="lessonsListCard">
+      <h2>Lecciones B2 · Tu ruta de estudio</h2>
+      <p class="muted">Mini-lecciones con la teoría que más pregunta el Aptis y un test rápido al final. Acierta al menos 2 de 3 para marcarla como completada. Están ordenadas como una ruta: empieza por la primera que tengas pendiente.</p>
+      <div id="lessonsList"></div>
+    </div>
+    <div class="card" id="lessonCard" style="display:none;"></div>
   </section>
 
   <!-- ================= GUÍA ================= -->
@@ -1175,8 +1209,269 @@ function skipSpeakingPhase(){
   renderSpeakingPart();
 }
 
+/* ============ LECCIONES ============ */
+const LESSONS = [
+  {
+    title:"Tiempos del pasado", tag:"Gramática",
+    theory:`<ul>
+      <li><strong>Past simple</strong> — acción terminada, a menudo con un momento concreto: <span class="ej">I visited Rome in 2022.</span></li>
+      <li><strong>Present perfect</strong> — experiencia o algo que conecta con el presente (ever, never, yet, already, for, since): <span class="ej">I've lost my keys (y sigo sin ellas).</span> Nunca con fechas cerradas: ❌ <span class="ej">I have seen him yesterday.</span></li>
+      <li><strong>Past perfect</strong> — lo que pasó <em>antes</em> de otra acción pasada: <span class="ej">When we arrived, the film had already started.</span></li>
+      <li>Truco Aptis: si ves <em>by the time / when + pasado</em>, casi siempre piden past perfect.</li>
+    </ul>`,
+    quiz:[
+      {q:"I ___ my keys — I can't get into the house!", opts:["lost","have lost","had lost"], correct:1},
+      {q:"She ___ in Paris from 2010 to 2015.", opts:["lived","has lived","had lived"], correct:0},
+      {q:"When we got to the cinema, the film ___ .", opts:["started","has started","had already started"], correct:2}
+    ]
+  },
+  {
+    title:"Condicionales y wish", tag:"Gramática",
+    theory:`<ul>
+      <li><strong>1ª condicional</strong> (real): if + presente → will. <span class="ej">If it rains, we'll stay in.</span></li>
+      <li><strong>2ª condicional</strong> (hipotética ahora): if + pasado → would. <span class="ej">If I had more time, I would exercise.</span> Fíjate: <span class="ej">If I <strong>were</strong> you...</span></li>
+      <li><strong>3ª condicional</strong> (pasado que no ocurrió): if + past perfect → would have + participio. <span class="ej">If you had told me, I would have helped you.</span></li>
+      <li><strong>Wish + pasado</strong> = deseo presente: <span class="ej">I wish I could speak German.</span> <strong>Wish + past perfect</strong> = arrepentimiento: <span class="ej">I wish I had studied more.</span></li>
+    </ul>`,
+    quiz:[
+      {q:"If I ___ more money, I'd travel more often.", opts:["have","had","would have"], correct:1},
+      {q:"If you had told me earlier, I ___ you.", opts:["would help","will help","would have helped"], correct:2},
+      {q:"I wish I ___ speak German.", opts:["can","could","would"], correct:1}
+    ]
+  },
+  {
+    title:"Pasiva y causativo (have something done)", tag:"Gramática",
+    theory:`<ul>
+      <li><strong>Pasiva</strong>: be (en el tiempo que toque) + participio. Se usa cuando importa la acción, no quién la hace: <span class="ej">The results will be published tomorrow. · This bridge was built in 1900.</span></li>
+      <li>Presente continuo pasivo, muy preguntado: <span class="ej">A new hospital is being built.</span></li>
+      <li><strong>Causativo</strong> have/get + objeto + participio = encargar algo a otro: <span class="ej">I'm having my car repaired</span> (no lo reparo yo).</li>
+    </ul>`,
+    quiz:[
+      {q:"The results ___ tomorrow morning.", opts:["will publish","will be published","are publishing"], correct:1},
+      {q:"I'm having my car ___ this week.", opts:["repair","repaired","to repair"], correct:1},
+      {q:"This castle ___ in the twelfth century.", opts:["built","was built","has built"], correct:1}
+    ]
+  },
+  {
+    title:"Estilo indirecto (reported speech)", tag:"Gramática",
+    theory:`<ul>
+      <li>Al pasar a indirecto, el verbo "retrocede" un tiempo: <span class="ej">'I'm tired' → She said (that) she was tired.</span> · <span class="ej">'I'll call you' → He said he would call me.</span></li>
+      <li>En preguntas indirectas el orden es afirmativo, sin do/did: <span class="ej">He asked me where I lived</span> (❌ where did I live).</li>
+      <li>Órdenes: tell + persona + (not) to + infinitivo: <span class="ej">She told me not to touch it.</span></li>
+      <li><em>Say</em> no lleva persona; <em>tell</em> sí: <span class="ej">she said that... / she told me that...</span></li>
+    </ul>`,
+    quiz:[
+      {q:"'I'm tired' → She said she ___ tired.", opts:["is","was","were"], correct:1},
+      {q:"He asked me where ___ .", opts:["did I live","I lived","do I live"], correct:1},
+      {q:"'Don't touch it!' → She told me ___ it.", opts:["don't touch","not to touch","to not touching"], correct:1}
+    ]
+  },
+  {
+    title:"Gerundio o infinitivo", tag:"Gramática",
+    theory:`<ul>
+      <li><strong>+ -ing</strong>: enjoy, avoid, suggest, mind, deny, finish, keep, be used to, be good at, look forward to. <span class="ej">I enjoy walking. · She suggested moving the meeting.</span></li>
+      <li><strong>+ to</strong>: want, decide, hope, plan, promise, refuse, manage, afford. <span class="ej">She decided to take the job.</span></li>
+      <li>Cambian de significado: <span class="ej">remember to lock</span> (obligación futura) vs <span class="ej">remember locking</span> (recuerdo); <span class="ej">stop smoking</span> (dejar el hábito) vs <span class="ej">stop to smoke</span> (parar para fumar).</li>
+    </ul>`,
+    quiz:[
+      {q:"I really enjoy ___ in the mountains.", opts:["walking","to walk","walk"], correct:0},
+      {q:"She decided ___ the job in Dublin.", opts:["taking","to take","take"], correct:1},
+      {q:"Remember ___ the door when you leave.", opts:["locking","to lock","lock"], correct:1}
+    ]
+  },
+  {
+    title:"Modales de deducción", tag:"Gramática",
+    theory:`<ul>
+      <li><strong>must</strong> = seguro que sí: <span class="ej">He must be at home — his car is outside.</span></li>
+      <li><strong>can't</strong> = seguro que no: <span class="ej">She can't be 40, she looks so young!</span></li>
+      <li><strong>might / may / could</strong> = posible: <span class="ej">They might be on holiday.</span></li>
+      <li>Para el pasado, añade <strong>have + participio</strong>: <span class="ej">They might have missed the bus. · She can't have seen us, it was too dark.</span></li>
+    </ul>`,
+    quiz:[
+      {q:"He ___ be at home — his car is outside.", opts:["must","can't","might not"], correct:0},
+      {q:"She ___ have seen us; it was completely dark.", opts:["must","can't","should"], correct:1},
+      {q:"They're late. They ___ have missed the bus.", opts:["can't","might","mustn't"], correct:1}
+    ]
+  },
+  {
+    title:"Oraciones de relativo", tag:"Gramática",
+    theory:`<ul>
+      <li><strong>who</strong> (personas), <strong>which</strong> (cosas), <strong>whose</strong> (posesión), <strong>where</strong> (lugares). <em>That</em> puede sustituir a who/which solo en las especificativas.</li>
+      <li><strong>Especificativas</strong> (sin comas) — información necesaria: <span class="ej">The man who called didn't leave his name.</span></li>
+      <li><strong>Explicativas</strong> (con comas) — información extra; aquí <em>nunca</em> se usa that: <span class="ej">My sister, who lives in Rome, is visiting us.</span></li>
+    </ul>`,
+    quiz:[
+      {q:"The man ___ car was stolen called the police.", opts:["who","whose","which"], correct:1},
+      {q:"My sister, ___ lives in Rome, is visiting us next week.", opts:["that","who","which"], correct:1},
+      {q:"The hotel ___ we stayed last summer was lovely.", opts:["where","which","who"], correct:0}
+    ]
+  },
+  {
+    title:"Collocations: make, do, take, have", tag:"Vocabulario",
+    theory:`<ul>
+      <li><strong>make</strong>: a decision, a mistake, an effort, progress, money, a suggestion.</li>
+      <li><strong>do</strong>: homework, research, your best, business, someone a favour.</li>
+      <li><strong>take</strong>: a risk, a break, part (in), place, care of, responsibility.</li>
+      <li><strong>have</strong>: fun, a look, a rest, an argument, a good time.</li>
+      <li>Apréndelas como bloques: en el Aptis la pregunta típica es elegir el verbo correcto para el sustantivo dado.</li>
+    </ul>`,
+    quiz:[
+      {q:"to ___ progress", opts:["do","make","take"], correct:1},
+      {q:"to ___ your best", opts:["make","do","have"], correct:1},
+      {q:"to ___ part in a competition", opts:["take","make","do"], correct:0}
+    ]
+  },
+  {
+    title:"Phrasal verbs imprescindibles", tag:"Vocabulario",
+    theory:`<ul>
+      <li><span class="ej">give up</span> (dejar/rendirse) · <span class="ej">carry on</span> (continuar) · <span class="ej">come across</span> (encontrar por casualidad) · <span class="ej">look after</span> (cuidar) · <span class="ej">put off</span> (aplazar).</li>
+      <li><span class="ej">run out of</span> (quedarse sin) · <span class="ej">get over</span> (recuperarse de) · <span class="ej">set off</span> (partir) · <span class="ej">turn down</span> (rechazar) · <span class="ej">look forward to + -ing</span> (tener ganas de).</li>
+      <li>Ojo: <em>look forward to</em> va seguido de <strong>-ing</strong> porque ese "to" es preposición: <span class="ej">I look forward to hearing from you.</span></li>
+    </ul>`,
+    quiz:[
+      {q:"We had to ___ the meeting until Friday.", opts:["put off","take off","get off"], correct:0},
+      {q:"I'm really looking forward ___ you again.", opts:["to see","to seeing","seeing"], correct:1},
+      {q:"She ___ the job offer because of the low salary.", opts:["turned down","turned up","turned on"], correct:0}
+    ]
+  },
+  {
+    title:"Conectores para el writing", tag:"Writing",
+    theory:`<ul>
+      <li><strong>Contraste</strong>: however (tras punto y coma o punto), although + frase, despite / in spite of + sustantivo o -ing. <span class="ej">Despite the rain, we went out. · Although it was late, we stayed.</span></li>
+      <li><strong>Causa</strong>: because of, due to. <strong>Consecuencia</strong>: therefore, as a result.</li>
+      <li><strong>Adición</strong>: in addition, moreover, furthermore. <strong>Ejemplo</strong>: for instance, such as.</li>
+      <li>Usar 3-4 conectores variados (y bien usados) es de las cosas que más sube la nota del writing.</li>
+    </ul>`,
+    quiz:[
+      {q:"___ the rain, we decided to go out.", opts:["Despite","Although","However"], correct:0},
+      {q:"Although it was late, ___ .", opts:["but we stayed","we stayed","however we stayed"], correct:1},
+      {q:"It was expensive; ___ , we decided to buy it.", opts:["despite","because","however"], correct:2}
+    ]
+  },
+  {
+    title:"Emails: informal vs formal", tag:"Writing",
+    theory:`<ul>
+      <li><strong>Informal</strong>: Hi Sam, · Thanks for your email! / Great to hear from you. · contracciones (I'm, can't) · cierre: Take care / See you soon / Best.</li>
+      <li><strong>Formal</strong>: Dear Mr Reed, / Dear Sir or Madam, · <span class="ej">I am writing to enquire about / to complain about...</span> · sin contracciones · <span class="ej">I would appreciate it if you could...</span> · cierre: <span class="ej">I look forward to hearing from you. Yours sincerely</span> (con nombre) / <span class="ej">Yours faithfully</span> (sin nombre).</li>
+      <li>En la parte 4 del Aptis escribes los DOS registros sobre el mismo tema: el error típico es que suenen igual. Cambia saludo, contracciones y expresiones.</li>
+    </ul>`,
+    quiz:[
+      {q:"¿Cuál es un cierre adecuado para un email formal?", opts:["See you!","I look forward to hearing from you.","Cheers!"], correct:1},
+      {q:"Escribes a una empresa sin saber el nombre del destinatario:", opts:["Dear Sir or Madam,","Hi there,","Hello company,"], correct:0},
+      {q:"'I am writing to complain about...' es propio de...", opts:["un mensaje a un amigo","un email formal","un chat de grupo"], correct:1}
+    ]
+  },
+  {
+    title:"Speaking: describir, comparar, opinar", tag:"Speaking",
+    theory:`<ul>
+      <li><strong>Describir una foto</strong>: de lo general al detalle y especula al final: <span class="ej">This picture shows... · In the background I can see... · It looks as if... / They seem to be...</span></li>
+      <li><strong>Comparar</strong>: <span class="ej">Both pictures show... · In the first one... whereas in the second... · While studying alone is quieter, studying in a group...</span></li>
+      <li><strong>Opinar</strong> (parte 4): opinión clara + razón + ejemplo + matiz: <span class="ej">In my opinion... · The main reason is... · For instance... · Having said that,...</span></li>
+      <li>No pares de hablar: rellenar con <span class="ej">Well, let me think...</span> es mejor que el silencio.</li>
+    </ul>`,
+    quiz:[
+      {q:"Para especular sobre una foto dices:", opts:["It must being a party.","It looks as if they are celebrating.","It is looking a celebration."], correct:1},
+      {q:"Para contrastar dos imágenes usas:", opts:["whereas","moreover","in addition"], correct:0},
+      {q:"Estructura recomendada para la parte de opinión:", opts:["opinión + razón + ejemplo + matiz","ejemplo + saludo + despedida","razón + conclusión sin opinión"], correct:0}
+    ]
+  }
+];
+
+function loadLessonsProgress(){
+  try{ const r = localStorage.getItem('aptis_lessons'); return r ? JSON.parse(r) : {}; }catch(e){ return {}; }
+}
+function saveLessonsProgress(l){
+  try{ localStorage.setItem('aptis_lessons', JSON.stringify(l)); }catch(e){}
+}
+
+function gotoView(v){
+  document.querySelector(`nav.tabs button[data-view="${v}"]`).click();
+}
+
+function renderLessons(){
+  const prog = loadLessonsProgress();
+  const list = document.getElementById('lessonsList');
+  list.innerHTML = LESSONS.map((l,i)=>{
+    const done = prog[i] && prog[i].done;
+    return `<div class="lesson-row ${done?'completed':''}" onclick="openLesson(${i})">
+      <span class="l-num">${String(i+1).padStart(2,'0')}</span>
+      <span class="l-title">${l.title}</span>
+      <span class="l-tag">${l.tag}</span>
+      <span class="l-done">${done?'✓':''}</span>
+    </div>`;
+  }).join('');
+  updateLessonsSummary();
+}
+
+function updateLessonsSummary(){
+  const el = document.getElementById('lessonsSummary');
+  if(!el) return;
+  const prog = loadLessonsProgress();
+  const done = LESSONS.filter((_,i)=>prog[i] && prog[i].done).length;
+  el.innerHTML = `Lecciones completadas: <strong>${done}/${LESSONS.length}</strong> · <a href="#" onclick="gotoView('lecciones');return false;">Ir a las lecciones</a>`;
+}
+
+function openLesson(i){
+  const l = LESSONS[i];
+  document.getElementById('lessonsListCard').style.display='none';
+  const card = document.getElementById('lessonCard');
+  card.style.display='block';
+  const quizHtml = l.quiz.map((qu,qi)=>`
+    <div class="q-block">
+      <div class="q-num">Comprobación ${qi+1} de ${l.quiz.length}</div>
+      <div class="q-text">${qu.q}</div>
+      <div class="options" data-lq="${qi}">
+        ${qu.opts.map((o,j)=>`<label class="opt"><input type="radio" name="ls${qi}" value="${j}"> ${o}</label>`).join('')}
+      </div>
+    </div>`).join('');
+  card.innerHTML = `
+    <button class="btn secondary" onclick="closeLesson()" style="margin-bottom:14px;">← Volver a la lista</button>
+    <div class="part-label">Lección ${i+1} · ${l.tag}</div>
+    <h2 style="font-family:'Fraunces',serif; color:var(--ink); margin:6px 0 10px;">${l.title}</h2>
+    <div class="theory">${l.theory}</div>
+    <h3>Comprueba lo aprendido</h3>
+    ${quizHtml}
+    <button class="btn" id="lessonSubmit" onclick="checkLesson(${i})">Corregir</button>
+    <div id="lessonResult"></div>`;
+}
+
+function closeLesson(){
+  document.getElementById('lessonCard').style.display='none';
+  document.getElementById('lessonsListCard').style.display='block';
+  renderLessons();
+}
+
+function checkLesson(i){
+  const l = LESSONS[i];
+  let correct = 0;
+  l.quiz.forEach((qu,qi)=>{
+    const selected = document.querySelector(`input[name="ls${qi}"]:checked`);
+    const opts = document.querySelectorAll(`.options[data-lq="${qi}"] .opt`);
+    opts.forEach((el,j)=>{
+      if(j===qu.correct) el.classList.add('correct');
+      if(selected && parseInt(selected.value)===j && j!==qu.correct) el.classList.add('incorrect');
+    });
+    if(selected && parseInt(selected.value)===qu.correct) correct++;
+  });
+  document.getElementById('lessonSubmit').disabled = true;
+  const passed = correct >= 2;
+  if(passed){
+    const prog = loadLessonsProgress();
+    prog[i] = { done:true, score:correct, date:new Date().toISOString().slice(0,10) };
+    saveLessonsProgress(prog);
+    updateLessonsSummary();
+  }
+  const next = i+1 < LESSONS.length ? `<button class="btn teal" style="margin-top:12px; margin-left:8px;" onclick="openLesson(${i+1})">Siguiente lección →</button>` : '';
+  document.getElementById('lessonResult').innerHTML = `
+    <div class="result-banner"><div class="big">${correct}/${l.quiz.length}</div>
+    <div>${passed ? '¡Lección completada! ✓' : 'Aún no: relee la teoría y vuelve a intentarlo.'}</div></div>
+    <button class="btn secondary" style="margin-top:12px;" onclick="openLesson(${i})">${passed ? 'Repetir' : 'Volver a intentarlo'}</button>
+    ${passed ? next : ''}`;
+}
+
 /* ============ INIT ============ */
 initProgress();
+renderLessons();
 </script>
 </body>
 </html>
