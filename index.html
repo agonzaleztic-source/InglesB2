@@ -1,0 +1,848 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Expediente Aptis B2</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=IBM+Plex+Sans:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#16233F;
+    --ink-2:#223257;
+    --stamp:#B23A2E;
+    --paper:#EFEAE0;
+    --paper-dark:#E3DDCB;
+    --gold:#C9A227;
+    --teal:#2F6F62;
+    --text:#1B2430;
+    --muted:#6B6456;
+    --line: rgba(27,36,48,0.14);
+    --radius: 10px;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background: var(--paper);
+    color: var(--text);
+    font-family: 'IBM Plex Sans', sans-serif;
+    min-height:100vh;
+    background-image:
+      radial-gradient(circle at 100% 0%, rgba(201,162,39,0.08), transparent 40%),
+      radial-gradient(circle at 0% 100%, rgba(178,58,46,0.06), transparent 40%);
+  }
+  .app{max-width:980px; margin:0 auto; padding:20px 16px 60px;}
+
+  /* HEADER */
+  .masthead{
+    display:flex; align-items:flex-end; justify-content:space-between;
+    gap:16px; flex-wrap:wrap;
+    border-bottom: 3px solid var(--ink);
+    padding-bottom:14px; margin-bottom:18px;
+  }
+  .masthead .id{
+    font-family:'Space Mono', monospace; font-size:11px; letter-spacing:.12em;
+    color: var(--muted); text-transform:uppercase;
+  }
+  .masthead h1{
+    font-family:'Fraunces', serif; font-weight:700; font-size: clamp(26px,4vw,38px);
+    margin:2px 0 0; color:var(--ink); letter-spacing:-0.01em;
+  }
+  .badge-level{
+    font-family:'Space Mono', monospace; font-weight:700; font-size:13px;
+    border:2px solid var(--stamp); color:var(--stamp);
+    padding:6px 12px; border-radius:999px; transform:rotate(-3deg);
+    white-space:nowrap;
+  }
+
+  /* NAV TABS */
+  nav.tabs{
+    display:flex; gap:6px; flex-wrap:wrap; margin-bottom:22px;
+  }
+  nav.tabs button{
+    font-family:'IBM Plex Sans', sans-serif; font-weight:600; font-size:13.5px;
+    background:transparent; border:1.5px solid var(--line); color:var(--ink);
+    padding:9px 14px; border-radius:999px; cursor:pointer;
+    transition: all .15s ease;
+  }
+  nav.tabs button:hover{ border-color:var(--ink); }
+  nav.tabs button.active{
+    background:var(--ink); color:var(--paper); border-color:var(--ink);
+  }
+  nav.tabs button:focus-visible{ outline:2px solid var(--stamp); outline-offset:2px; }
+
+  section.view{display:none;}
+  section.view.active{display:block; animation: fadeUp .35s ease;}
+  @keyframes fadeUp{ from{opacity:0; transform:translateY(6px);} to{opacity:1; transform:translateY(0);} }
+
+  .card{
+    background:#fff; border:1px solid var(--line); border-radius: var(--radius);
+    padding:20px 22px; margin-bottom:16px;
+    box-shadow: 0 1px 0 rgba(27,36,48,0.03);
+  }
+  .card h2{
+    font-family:'Fraunces', serif; font-size:22px; margin:0 0 10px; color:var(--ink);
+  }
+  .card h3{
+    font-family:'Fraunces', serif; font-size:17px; margin:18px 0 8px; color:var(--ink-2);
+  }
+  .muted{color:var(--muted); font-size:14px; line-height:1.55;}
+  p{line-height:1.6;}
+
+  /* DASHBOARD GRID */
+  .grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:12px; margin-top:6px;}
+  .stamp-card{
+    border:1.5px dashed var(--line); border-radius:var(--radius); padding:14px;
+    text-align:center; position:relative; overflow:hidden;
+  }
+  .stamp-card .skill{font-size:12px; text-transform:uppercase; letter-spacing:.08em; color:var(--muted); font-weight:600;}
+  .stamp-card .level{
+    font-family:'Fraunces', serif; font-weight:700; font-size:34px; margin-top:6px; color:var(--ink);
+  }
+  .stamp-card .level.empty{color:#c8c2b2; font-size:22px;}
+  .stamp-card .sub{font-family:'Space Mono',monospace; font-size:11px; color:var(--muted); margin-top:4px;}
+
+  .tip-list{padding-left:18px; margin:8px 0;}
+  .tip-list li{margin-bottom:8px; line-height:1.55;}
+
+  table.struct{width:100%; border-collapse:collapse; margin-top:8px; font-size:14px;}
+  table.struct th, table.struct td{border-bottom:1px solid var(--line); text-align:left; padding:8px 6px; vertical-align:top;}
+  table.struct th{font-family:'Space Mono',monospace; font-size:11px; text-transform:uppercase; color:var(--muted);}
+
+  /* BUTTONS */
+  .btn{
+    font-family:'IBM Plex Sans',sans-serif; font-weight:600; font-size:14px;
+    background:var(--ink); color:#fff; border:none; border-radius:8px;
+    padding:10px 18px; cursor:pointer; transition:transform .1s ease, background .15s ease;
+  }
+  .btn:hover{background:var(--ink-2);}
+  .btn:active{transform:scale(.97);}
+  .btn.secondary{background:transparent; color:var(--ink); border:1.5px solid var(--ink);}
+  .btn.teal{background:var(--teal);}
+  .btn.stamp{background:var(--stamp);}
+  .btn:disabled{opacity:.45; cursor:not-allowed;}
+  .btn:focus-visible{outline:2px solid var(--gold); outline-offset:2px;}
+
+  /* QUIZ */
+  .q-block{border-top:1px solid var(--line); padding:16px 0;}
+  .q-block:first-of-type{border-top:none; padding-top:4px;}
+  .q-num{font-family:'Space Mono',monospace; font-size:12px; color:var(--muted);}
+  .q-text{font-weight:600; margin:4px 0 10px; font-size:15px;}
+  .options{display:flex; flex-direction:column; gap:8px;}
+  .opt{
+    display:flex; align-items:center; gap:10px; padding:9px 12px;
+    border:1.5px solid var(--line); border-radius:8px; cursor:pointer; font-size:14px;
+    transition: border-color .12s ease, background .12s ease;
+  }
+  .opt:hover{border-color:var(--ink);}
+  .opt input{accent-color:var(--ink);}
+  .opt.correct{border-color:var(--teal); background:rgba(47,111,98,0.08);}
+  .opt.incorrect{border-color:var(--stamp); background:rgba(178,58,46,0.08);}
+
+  .timer{
+    font-family:'Space Mono',monospace; font-weight:700; font-size:22px; color:var(--ink);
+    border:2px solid var(--ink); border-radius:8px; padding:6px 14px; display:inline-block;
+  }
+  .timer.warn{color:var(--stamp); border-color:var(--stamp);}
+
+  textarea{
+    width:100%; min-height:220px; font-family:'IBM Plex Sans',sans-serif; font-size:14.5px;
+    border:1.5px solid var(--line); border-radius:8px; padding:14px; line-height:1.6; resize:vertical;
+  }
+  textarea:focus{outline:2px solid var(--gold); border-color:var(--ink);}
+
+  .word-count{font-family:'Space Mono',monospace; font-size:12.5px; color:var(--muted); margin-top:6px;}
+  .word-count.ok{color:var(--teal);}
+  .word-count.low{color:var(--stamp);}
+
+  .result-banner{
+    display:flex; align-items:center; gap:14px; padding:14px 18px; border-radius:8px;
+    background:var(--paper-dark); margin-top:14px; font-family:'Space Mono',monospace;
+  }
+  .result-banner .big{font-size:26px; font-weight:700; color:var(--ink);}
+
+  .passage{
+    background:var(--paper-dark); border-radius:8px; padding:16px 18px; font-size:14.5px; line-height:1.7;
+    margin-bottom:14px; white-space:pre-wrap;
+  }
+  .prompt-box{
+    border-left:4px solid var(--gold); padding:10px 16px; background:rgba(201,162,39,0.07);
+    margin-bottom:14px; font-size:14.5px; line-height:1.6;
+  }
+
+  select{
+    font-family:'IBM Plex Sans',sans-serif; font-size:14px; padding:8px 10px; border-radius:6px;
+    border:1.5px solid var(--line);
+  }
+
+  .listen-controls{display:flex; align-items:center; gap:12px; margin-bottom:14px; flex-wrap:wrap;}
+  .plays-left{font-family:'Space Mono',monospace; font-size:12px; color:var(--muted);}
+
+  .headings-bank{display:flex; flex-wrap:wrap; gap:8px; margin-bottom:14px;}
+  .heading-chip{
+    border:1.5px solid var(--line); border-radius:999px; padding:5px 12px; font-size:13px; background:#fff;
+  }
+
+  footer.note{margin-top:28px; text-align:center; color:var(--muted); font-size:12.5px;}
+
+  .speaking-part{border-top:1px solid var(--line); padding:18px 0;}
+  .speaking-part:first-of-type{border-top:none;}
+  .part-label{font-family:'Space Mono',monospace; font-size:11px; text-transform:uppercase; letter-spacing:.08em; color:var(--gold); font-weight:700;}
+
+  @media (max-width:600px){
+    .card{padding:16px;}
+    .masthead{align-items:flex-start;}
+  }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <div class="masthead">
+    <div>
+      <div class="id">EXPEDIENTE DE PREPARACIÓN &middot; APTIS GENERAL</div>
+      <h1>Camino al B2</h1>
+    </div>
+    <div class="badge-level" id="overallBadge">SIN NIVEL AÚN</div>
+  </div>
+
+  <nav class="tabs" id="tabs">
+    <button data-view="inicio" class="active">Inicio</button>
+    <button data-view="guia">Guía del examen</button>
+    <button data-view="gramatica">Gramática &amp; Vocab</button>
+    <button data-view="reading">Reading</button>
+    <button data-view="listening">Listening</button>
+    <button data-view="writing">Writing</button>
+    <button data-view="speaking">Speaking</button>
+  </nav>
+
+  <!-- ================= INICIO ================= -->
+  <section class="view active" id="view-inicio">
+    <div class="card">
+      <h2>Tu progreso</h2>
+      <p class="muted">Estos son tus mejores resultados guardados. Se sincronizan con tu cuenta, así que los verás igual desde el móvil o el ordenador.</p>
+      <div class="grid" id="dashboardGrid"></div>
+    </div>
+    <div class="card">
+      <h2>Cómo funciona este examen, en una frase</h2>
+      <p>El Aptis no es un examen de aprobado/suspenso: por cada destreza que hagas (gramática y vocabulario, listening, reading, writing, speaking) te dan un nivel del <strong>Marco Común Europeo (A1 a C)</strong>. Para "sacarte el B2" necesitas llegar a ese nivel en las destrezas que tu organización te exija, normalmente todas.</p>
+    </div>
+    <div class="card">
+      <h2>Consejo del día</h2>
+      <p id="dailyTip" class="muted"></p>
+      <button class="btn secondary" onclick="newTip()">Otro consejo</button>
+    </div>
+  </section>
+
+  <!-- ================= GUÍA ================= -->
+  <section class="view" id="view-guia">
+    <div class="card">
+      <h2>¿Qué es el Aptis y cómo se estructura?</h2>
+      <p>El Aptis lo creó el British Council y se hace por ordenador. Tiene <strong>5 componentes</strong>: gramática y vocabulario (el "core"), listening, reading, writing y speaking. No hace falta hacerlos todos siempre: depende de lo que te pida tu empresa, universidad u organismo, pero para certificar B2 en general se piden los cuatro más el core.</p>
+      <table class="struct">
+        <tr><th>Parte</th><th>Duración</th><th>Qué incluye</th></tr>
+        <tr><td>Gramática y vocabulario</td><td>25 min</td><td>50 preguntas (25 gramática + 25 vocabulario), opción múltiple, huecos y collocations.</td></tr>
+        <tr><td>Listening</td><td>~40-55 min</td><td>17 tareas sobre 20 audios: mensajes cortos, monólogos para emparejar hablantes, diálogo de opiniones y dos monólogos largos. Cada audio se escucha 2 veces.</td></tr>
+        <tr><td>Reading</td><td>35 min</td><td>4 tareas: ordenar frases de un email informal, ordenar una historia corta, completar huecos en un texto y emparejar titulares con párrafos.</td></tr>
+        <tr><td>Writing</td><td>50 min aprox.</td><td>Respuestas cortas, un texto personal, respuestas a redes sociales y un email más formal.</td></tr>
+        <tr><td>Speaking</td><td>12 min</td><td>4 partes: información personal, describir una imagen, comparar imágenes y opinar sobre un tema abstracto. Se hace ante un ordenador, sin examinador delante; te graban y lo corrigen después.</td></tr>
+      </table>
+    </div>
+    <div class="card">
+      <h2>Cómo se puntúa</h2>
+      <p>El core de gramática y vocabulario se puntúa sobre 50, pero no te da un nivel por sí solo: sirve de referencia cuando estás "entre dos niveles" en otra destreza. Cada una de las otras cuatro partes recibe su propio nivel CEFR (A1 a C), y tu nivel final sale de la combinación de todas. Es decir: no necesitas un B2 perfecto en todo para que tu resultado global sea B2.</p>
+    </div>
+    <div class="card">
+      <h2>Estrategia general para las 6-8 semanas antes del examen</h2>
+      <ul class="tip-list">
+        <li><strong>Reparte por destrezas.</strong> Dedica un día distinto a cada una en vez de mezclarlo todo; así notas antes en cuál flojeas.</li>
+        <li><strong>Vocabulario y gramática primero.</strong> Son la base de las otras cuatro partes, así que refuerza collocations, phrasal verbs y tiempos verbales cuanto antes.</li>
+        <li><strong>Practica con el reloj puesto.</strong> El Aptis se hace bajo presión de tiempo; practicar sin cronómetro te dará una sensación de nivel falsa.</li>
+        <li><strong>Simulacros completos cerca de la fecha.</strong> Las dos últimas semanas, intenta hacer una parte entera de una sentada, como el día real.</li>
+        <li><strong>Habla en voz alta, aunque estés solo.</strong> El speaking se corrige por grabación: acostúmbrate a hablar sin nadie delante.</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ================= GRAMATICA ================= -->
+  <section class="view" id="view-gramatica">
+    <div class="card" id="gramIntro">
+      <h2>Gramática &amp; Vocabulario</h2>
+      <p class="muted">15 preguntas estilo Aptis (gramática, collocations y vocabulario B2). En el examen real son 50 en 25 minutos; aquí tienes una versión reducida para practicar.</p>
+      <div style="margin:14px 0;">
+        <span class="timer" id="gramTimerDisplay">08:00</span>
+      </div>
+      <button class="btn" onclick="startGramQuiz()">Empezar test</button>
+    </div>
+    <div class="card" id="gramQuizCard" style="display:none;"></div>
+  </section>
+
+  <!-- ================= READING ================= -->
+  <section class="view" id="view-reading">
+    <div class="card">
+      <h2>Reading</h2>
+      <p class="muted">Elige una tarea. En el examen real hay 4 tipos distintos; aquí tienes un ejemplo de cada uno.</p>
+      <div style="display:flex; gap:10px; flex-wrap:wrap;">
+        <button class="btn secondary" onclick="loadReading('headings')">Emparejar titulares</button>
+        <button class="btn secondary" onclick="loadReading('gapfill')">Completar huecos</button>
+        <button class="btn secondary" onclick="loadReading('sequencing')">Ordenar un email</button>
+      </div>
+    </div>
+    <div class="card" id="readingCard" style="display:none;"></div>
+  </section>
+
+  <!-- ================= LISTENING ================= -->
+  <section class="view" id="view-listening">
+    <div class="card">
+      <h2>Listening</h2>
+      <p class="muted">Uso la voz del navegador para leerte el audio en inglés, igual que en el examen: solo puedes reproducirlo <strong>2 veces</strong>. Necesitas el sonido activado.</p>
+      <div style="display:flex; gap:10px; flex-wrap:wrap;">
+        <button class="btn secondary" onclick="loadListening(0)">Ejercicio 1 · Mensaje corto</button>
+        <button class="btn secondary" onclick="loadListening(1)">Ejercicio 2 · Opiniones</button>
+      </div>
+    </div>
+    <div class="card" id="listeningCard" style="display:none;"></div>
+  </section>
+
+  <!-- ================= WRITING ================= -->
+  <section class="view" id="view-writing">
+    <div class="card">
+      <h2>Writing</h2>
+      <p class="muted">Elige un tipo de tarea. Escribe tu respuesta y guárdala: no la corrijo automáticamente, pero te doy una checklist de autoevaluación B2 y guardo tu texto para que lo retomes cuando quieras.</p>
+      <select id="writingSelect" onchange="loadWriting(this.value)">
+        <option value="">— Elige una tarea —</option>
+        <option value="0">Respuesta corta a un email informal</option>
+        <option value="1">Texto personal (experiencia)</option>
+        <option value="2">Respuesta en red social</option>
+        <option value="3">Email más formal</option>
+      </select>
+    </div>
+    <div class="card" id="writingCard" style="display:none;"></div>
+  </section>
+
+  <!-- ================= SPEAKING ================= -->
+  <section class="view" id="view-speaking">
+    <div class="card">
+      <h2>Speaking</h2>
+      <p class="muted">El speaking real dura 12 minutos y tiene 4 partes que suben en dificultad. Aquí practicas cada parte con su tiempo de preparación y de respuesta reales. Habla en voz alta como si te grabaran de verdad.</p>
+      <button class="btn" onclick="startSpeaking()">Empezar práctica de speaking</button>
+    </div>
+    <div class="card" id="speakingCard" style="display:none;"></div>
+  </section>
+
+  <footer class="note">Progreso guardado automáticamente en tu cuenta · Practica un poco cada día mejor que mucho de golpe</footer>
+</div>
+
+<script>
+/* ============ STORAGE HELPERS ============ */
+async function loadProgress(){
+  try{
+    const raw = localStorage.getItem('aptis_progress');
+    return raw ? JSON.parse(raw) : {};
+  }catch(e){ return {}; }
+}
+async function saveProgress(p){
+  try{ localStorage.setItem('aptis_progress', JSON.stringify(p)); }catch(e){ console.error(e); }
+}
+let PROGRESS = {};
+
+async function initProgress(){
+  PROGRESS = await loadProgress();
+  renderDashboard();
+}
+
+const LEVEL_ORDER = ['A1','A2','B1','B2','C'];
+function levelFromPercent(pct){
+  if(pct>=90) return 'C';
+  if(pct>=75) return 'B2';
+  if(pct>=55) return 'B1';
+  if(pct>=35) return 'A2';
+  return 'A1';
+}
+
+async function recordResult(skill, pct){
+  if(!PROGRESS[skill] || pct > PROGRESS[skill].best){
+    PROGRESS[skill] = { best: pct, level: levelFromPercent(pct), date: new Date().toISOString().slice(0,10) };
+    await saveProgress(PROGRESS);
+  }
+  renderDashboard();
+}
+
+function renderDashboard(){
+  const skills = [
+    {key:'gramatica', label:'Gramática/Vocab'},
+    {key:'reading', label:'Reading'},
+    {key:'listening', label:'Listening'},
+    {key:'writing', label:'Writing (práctica)'},
+    {key:'speaking', label:'Speaking (práctica)'}
+  ];
+  const grid = document.getElementById('dashboardGrid');
+  grid.innerHTML = '';
+  let best = null;
+  skills.forEach(s=>{
+    const data = PROGRESS[s.key];
+    const div = document.createElement('div');
+    div.className = 'stamp-card';
+    if(data){
+      div.innerHTML = `<div class="skill">${s.label}</div><div class="level">${data.level}</div><div class="sub">${data.best}% · ${data.date}</div>`;
+      const idx = LEVEL_ORDER.indexOf(data.level);
+      if(best===null || idx>best) best = idx;
+    } else {
+      div.innerHTML = `<div class="skill">${s.label}</div><div class="level empty">— sin datos —</div><div class="sub">Practica para ver tu nivel</div>`;
+    }
+    grid.appendChild(div);
+  });
+  const badge = document.getElementById('overallBadge');
+  badge.textContent = best===null ? 'SIN NIVEL AÚN' : ('NIVEL ESTIMADO: ' + LEVEL_ORDER[best]);
+}
+
+/* ============ TABS ============ */
+document.getElementById('tabs').addEventListener('click', (e)=>{
+  if(e.target.tagName !== 'BUTTON') return;
+  document.querySelectorAll('nav.tabs button').forEach(b=>b.classList.remove('active'));
+  e.target.classList.add('active');
+  document.querySelectorAll('section.view').forEach(v=>v.classList.remove('active'));
+  document.getElementById('view-'+e.target.dataset.view).classList.add('active');
+});
+
+/* ============ TIPS ============ */
+const TIPS = [
+  "En gramática y vocabulario no te pares en una pregunta que no sabes: contesta lo más probable y sigue, se puntúa todo por igual.",
+  "En el reading, lee primero las preguntas y luego el texto: te ahorra tiempo al saber qué buscar.",
+  "En listening solo escuchas cada audio 2 veces: la primera vez capta la idea general, la segunda los detalles concretos.",
+  "En writing, cuenta las palabras: quedarte muy corto o muy largo respecto a lo pedido penaliza aunque el inglés esté bien.",
+  "En speaking usa el minuto de preparación para anotar 2-3 palabras clave por pregunta, no frases enteras.",
+  "El speaking suele ser la primera prueba del día: llega mentalizado para hablar nada más sentarte.",
+  "Aprende collocations (make a decision, take a risk) en vez de palabras sueltas: es lo que más se pregunta en vocabulario.",
+  "Para la parte de opinión del speaking, estructura tu respuesta: opinión clara + un ejemplo + un matiz o contraargumento."
+];
+function newTip(){
+  document.getElementById('dailyTip').textContent = TIPS[Math.floor(Math.random()*TIPS.length)];
+}
+newTip();
+
+/* ============ GRAMATICA Y VOCABULARIO ============ */
+const GRAM_QUESTIONS = [
+  {q:"By the time we arrived, the film ___ .", opts:["already started","had already started","already starts","has already started"], correct:1},
+  {q:"I wish I ___ more time to prepare for the interview.", opts:["have","had","would have","having"], correct:1},
+  {q:"She's really good at ___ new people feel welcome.", opts:["make","making","made","to make"], correct:1},
+  {q:"You'd better ___ an umbrella, it looks like rain.", opts:["to bring","bringing","bring","brought"], correct:2},
+  {q:"He apologised ___ being late for the meeting.", opts:["for","of","about","to"], correct:0},
+  {q:"If I ___ you, I'd think twice before accepting.", opts:["am","was","were","be"], correct:2},
+  {q:"The report needs to ___ before Friday.", opts:["finish","be finished","finishing","have finish"], correct:1},
+  {q:"It's high time we ___ a decision.", opts:["make","made","making","will make"], correct:1},
+  {q:"Choose the correct collocation: to ___ a risk", opts:["do","take","make","have"], correct:1},
+  {q:"Choose the correct collocation: to ___ an effort", opts:["make","do","take","have"], correct:0},
+  {q:"She's been feeling under the weather, so she ___ to the doctor's yesterday.", opts:["went","has gone","was going","goes"], correct:0},
+  {q:"Choose the correct word: The meeting was ___ postponed until next week.", opts:["hardly","barely","indefinitely","scarcely"], correct:2},
+  {q:"He's the kind of person who never gives ___ , no matter how hard things get.", opts:["in","up","out","off"], correct:1},
+  {q:"By next year, they ___ here for a decade.", opts:["will work","will have been working","are working","worked"], correct:1},
+  {q:"Choose the correct phrasal verb: I need to ___ this article before the deadline.", opts:["look up","hand in","turn down","get on"], correct:1}
+];
+
+let gramTimerInterval = null;
+function startGramQuiz(){
+  document.getElementById('gramIntro').style.display='none';
+  const card = document.getElementById('gramQuizCard');
+  card.style.display='block';
+  let html = '';
+  GRAM_QUESTIONS.forEach((item,i)=>{
+    html += `<div class="q-block" data-idx="${i}">
+      <div class="q-num">Pregunta ${i+1} de ${GRAM_QUESTIONS.length}</div>
+      <div class="q-text">${item.q}</div>
+      <div class="options">`;
+    item.opts.forEach((opt,j)=>{
+      html += `<label class="opt"><input type="radio" name="g${i}" value="${j}"> ${opt}</label>`;
+    });
+    html += `</div></div>`;
+  });
+  html += `<button class="btn" id="gramSubmit" style="margin-top:14px;">Corregir</button>
+           <div id="gramResult"></div>`;
+  card.innerHTML = html;
+  document.getElementById('gramSubmit').addEventListener('click', submitGramQuiz);
+
+  let seconds = 8*60;
+  const display = document.getElementById('gramTimerDisplay');
+  clearInterval(gramTimerInterval);
+  gramTimerInterval = setInterval(()=>{
+    seconds--;
+    if(seconds<=0){ clearInterval(gramTimerInterval); submitGramQuiz(); return; }
+    const m = String(Math.floor(seconds/60)).padStart(2,'0');
+    const s = String(seconds%60).padStart(2,'0');
+  },1000);
+}
+
+function submitGramQuiz(){
+  clearInterval(gramTimerInterval);
+  let correct = 0;
+  GRAM_QUESTIONS.forEach((item,i)=>{
+    const selected = document.querySelector(`input[name="g${i}"]:checked`);
+    const opts = document.querySelectorAll(`.q-block[data-idx="${i}"] .opt`);
+    opts.forEach((optEl,j)=>{
+      if(j===item.correct) optEl.classList.add('correct');
+      if(selected && parseInt(selected.value)===j && j!==item.correct) optEl.classList.add('incorrect');
+    });
+    if(selected && parseInt(selected.value)===item.correct) correct++;
+  });
+  document.getElementById('gramSubmit').disabled = true;
+  const pct = Math.round((correct/GRAM_QUESTIONS.length)*100);
+  document.getElementById('gramResult').innerHTML = `
+    <div class="result-banner"><div class="big">${correct}/${GRAM_QUESTIONS.length}</div>
+    <div>Acierto: ${pct}% · Nivel estimado de esta prueba: <strong>${levelFromPercent(pct)}</strong></div></div>
+    <button class="btn secondary" style="margin-top:12px;" onclick="location.reload()">Volver a intentarlo</button>`;
+  recordResult('gramatica', pct);
+}
+
+/* ============ READING ============ */
+const READING_TASKS = {
+  headings: {
+    title: "Empareja cada titular con su párrafo",
+    passage: `A) City councils across the country are introducing new cycle lanes, hoping to cut traffic and pollution in busy centres.
+B) A growing number of small businesses now let staff choose which days they come into the office, arguing it boosts morale without hurting output.
+C) Researchers have found that people who spend regular time outdoors report noticeably lower stress levels than those who rarely leave the house.
+D) Several supermarket chains are trialling packaging-free sections, allowing customers to bring their own containers for grains, pasta and cleaning products.`,
+    headingsBank: ["Nature and wellbeing", "Rethinking the working week", "Shopping without waste", "Making room for bicycles"],
+    answerMap: [3,1,0,2] // for A,B,C,D correct heading index
+  },
+  gapfill: {
+    title: "Completa los huecos con la opción correcta",
+    passage: `Hi Laura,\n\nThanks for getting back to me so quickly. I just wanted to check a couple of things before the trip. First, could you (1)___ me know what time the coach leaves on Saturday? Also, I still haven't (2)___ my ticket, so if you could send it over that would be great. Finally, do you know if there's anywhere nearby where we could (3)___ some breakfast before we set off?\n\nThanks again,\nMark`,
+    blanks: [
+      {opts:["let","make","take"], correct:0},
+      {opts:["received","receiving","receive"], correct:0},
+      {opts:["grab","catch","hold"], correct:0}
+    ]
+  },
+  sequencing: {
+    title: "Ordena las frases del email en el orden correcto",
+    lines: [
+      "Hi Sam, thanks so much for the invite to the barbecue this weekend!",
+      "I'd love to come, but I need to check with my sister first as we already had plans.",
+      "I'll let you know by Thursday at the latest so you can plan numbers.",
+      "By the way, is there anything I can bring?",
+      "Looking forward to hearing from you, Alex"
+    ],
+    correctOrder: [0,1,2,3,4]
+  }
+};
+
+function loadReading(type){
+  const card = document.getElementById('readingCard');
+  card.style.display='block';
+  const task = READING_TASKS[type];
+
+  if(type==='headings'){
+    let bankHtml = task.headingsBank.map(h=>`<span class="heading-chip">${h}</span>`).join('');
+    let paras = task.passage.split('\n');
+    let selectsHtml = paras.map((p,i)=>{
+      let opts = task.headingsBank.map((h,j)=>`<option value="${j}">${h}</option>`).join('');
+      return `<div style="margin-bottom:10px;"><div class="passage" style="margin-bottom:6px;">${p}</div>
+        <select data-idx="${i}" class="headingSelect"><option value="">— elige un titular —</option>${opts}</select></div>`;
+    }).join('');
+    card.innerHTML = `<h2>${task.title}</h2>
+      <div class="headings-bank">${bankHtml}</div>
+      ${selectsHtml}
+      <button class="btn" onclick="checkHeadings()">Corregir</button>
+      <div id="readingResult"></div>`;
+  }
+
+  if(type==='gapfill'){
+    let text = task.passage;
+    task.blanks.forEach((b,i)=>{
+      const select = `<select data-idx="${i}" class="gapSelect">` +
+        b.opts.map((o,j)=>`<option value="${j}">${o}</option>`).join('') + `</select>`;
+      text = text.replace(`(${i+1})___`, select);
+    });
+    card.innerHTML = `<h2>${task.title}</h2>
+      <div class="passage">${text.replace(/\n/g,'<br>')}</div>
+      <button class="btn" onclick="checkGapfill()">Corregir</button>
+      <div id="readingResult"></div>`;
+  }
+
+  if(type==='sequencing'){
+    const shuffled = [...task.lines.keys()].sort(()=>Math.random()-0.5);
+    let html = `<h2>${task.title}</h2><p class="muted">Arrastra o usa las flechas para ordenar las frases.</p><div id="seqList">`;
+    shuffled.forEach(origIdx=>{
+      html += `<div class="opt" draggable="true" data-orig="${origIdx}" style="cursor:grab; justify-content:space-between;">
+        <span>${task.lines[origIdx]}</span>
+        <span style="display:flex; gap:4px;">
+          <button type="button" onclick="moveLine(this,-1)" class="btn secondary" style="padding:2px 8px;">↑</button>
+          <button type="button" onclick="moveLine(this,1)" class="btn secondary" style="padding:2px 8px;">↓</button>
+        </span></div>`;
+    });
+    html += `</div><button class="btn" style="margin-top:12px;" onclick="checkSequencing()">Corregir</button><div id="readingResult"></div>`;
+    card.innerHTML = html;
+  }
+}
+
+function moveLine(btn, dir){
+  const row = btn.closest('.opt');
+  const list = document.getElementById('seqList');
+  if(dir===-1 && row.previousElementSibling) list.insertBefore(row, row.previousElementSibling);
+  if(dir===1 && row.nextElementSibling) list.insertBefore(row.nextElementSibling, row);
+}
+
+function checkHeadings(){
+  const task = READING_TASKS.headings;
+  const selects = document.querySelectorAll('.headingSelect');
+  let correct = 0;
+  selects.forEach(sel=>{
+    const i = parseInt(sel.dataset.idx);
+    if(parseInt(sel.value) === task.answerMap[i]) correct++;
+  });
+  finishReading(correct, selects.length);
+}
+function checkGapfill(){
+  const task = READING_TASKS.gapfill;
+  const selects = document.querySelectorAll('.gapSelect');
+  let correct = 0;
+  selects.forEach(sel=>{
+    const i = parseInt(sel.dataset.idx);
+    if(parseInt(sel.value) === task.blanks[i].correct) correct++;
+  });
+  finishReading(correct, selects.length);
+}
+function checkSequencing(){
+  const rows = document.querySelectorAll('#seqList .opt');
+  const order = Array.from(rows).map(r=>parseInt(r.dataset.orig));
+  let correct = 0;
+  order.forEach((val,i)=>{ if(val===READING_TASKS.sequencing.correctOrder[i]) correct++; });
+  finishReading(correct, order.length);
+}
+function finishReading(correct, total){
+  const pct = Math.round((correct/total)*100);
+  document.getElementById('readingResult').innerHTML = `<div class="result-banner"><div class="big">${correct}/${total}</div>
+    <div>Acierto: ${pct}% · Nivel estimado: <strong>${levelFromPercent(pct)}</strong></div></div>`;
+  recordResult('reading', pct);
+}
+
+/* ============ LISTENING ============ */
+const LISTENING_TASKS = [
+  {
+    title: "Mensaje corto: encuentra el dato",
+    script: "Hi, it's Rachel from the dentist's. I'm calling to remind you about your appointment on Thursday at half past three. If you need to change it, please call us back before Wednesday afternoon. Thanks, bye.",
+    question: "¿Qué día y hora es la cita?",
+    opts: ["Miércoles a las 3:30", "Jueves a las 3:30", "Jueves a las 2:30", "Miércoles a las 2:30"],
+    correct: 1
+  },
+  {
+    title: "Diálogo de opiniones",
+    script: "Man: I really think working from home has made people less connected to their teams. Woman: I disagree, actually. I think it's given people more time to focus without constant interruptions, and teams can still stay close through regular video calls.",
+    question: "¿Quién piensa que el trabajo en remoto ha mejorado la concentración?",
+    opts: ["El hombre", "La mujer", "Los dos", "Ninguno de los dos"],
+    correct: 1
+  }
+];
+
+let playsLeft = 2;
+function loadListening(idx){
+  const task = LISTENING_TASKS[idx];
+  playsLeft = 2;
+  const card = document.getElementById('listeningCard');
+  card.style.display = 'block';
+  card.innerHTML = `<h2>${task.title}</h2>
+    <div class="listen-controls">
+      <button class="btn" id="playBtn" onclick="playAudio('${task.script.replace(/'/g,"\\'")}')">▶ Reproducir</button>
+      <span class="plays-left" id="playsLeftLabel">Reproducciones restantes: 2</span>
+    </div>
+    <div class="q-block">
+      <div class="q-text">${task.question}</div>
+      <div class="options" id="listenOptions">
+        ${task.opts.map((o,j)=>`<label class="opt"><input type="radio" name="listen" value="${j}"> ${o}</label>`).join('')}
+      </div>
+    </div>
+    <button class="btn" onclick="checkListening(${task.correct})">Corregir</button>
+    <div id="listeningResult"></div>`;
+}
+
+function playAudio(text){
+  if(playsLeft<=0) return;
+  if(!('speechSynthesis' in window)){
+    alert('Tu navegador no soporta síntesis de voz.');
+    return;
+  }
+  const utter = new SpeechSynthesisUtterance(text);
+  utter.lang = 'en-GB';
+  utter.rate = 0.95;
+  window.speechSynthesis.cancel();
+  window.speechSynthesis.speak(utter);
+  playsLeft--;
+  document.getElementById('playsLeftLabel').textContent = 'Reproducciones restantes: ' + playsLeft;
+  if(playsLeft<=0) document.getElementById('playBtn').disabled = true;
+}
+
+function checkListening(correctIdx){
+  const selected = document.querySelector('input[name="listen"]:checked');
+  const opts = document.querySelectorAll('#listenOptions .opt');
+  opts.forEach((el,j)=>{
+    if(j===correctIdx) el.classList.add('correct');
+    if(selected && parseInt(selected.value)===j && j!==correctIdx) el.classList.add('incorrect');
+  });
+  const isCorrect = selected && parseInt(selected.value)===correctIdx;
+  const pct = isCorrect ? 100 : 0;
+  document.getElementById('listeningResult').innerHTML = `<div class="result-banner"><div class="big">${isCorrect?'✓':'✗'}</div>
+    <div>${isCorrect ? 'Respuesta correcta.' : 'Respuesta incorrecta.'} Sigue practicando para acumular más resultados.</div></div>`;
+  // Average listening score across attempts using best-so-far logic on a rolling basis
+  const prevBest = PROGRESS['listening'] ? PROGRESS['listening'].best : 0;
+  recordResult('listening', Math.max(pct, prevBest));
+}
+
+/* ============ WRITING ============ */
+const WRITING_TASKS = [
+  {
+    title: "Respuesta corta a un email informal",
+    prompt: "Your friend Chris has emailed you: 'I heard you're moving to a new flat next month — how exciting! Where is it and why did you choose that area?' Write a short reply (30-40 words).",
+    target: [30,40]
+  },
+  {
+    title: "Texto personal",
+    prompt: "Write about a time you learned something new that was difficult at first. Describe what it was, how you felt, and what helped you improve (50-70 words).",
+    target: [50,70]
+  },
+  {
+    title: "Respuesta en red social",
+    prompt: "A friend has posted: 'Just finished my first 10k run! Honestly didn't think I'd make it 😅' Write a comment reacting to their post (20-30 words).",
+    target: [20,30]
+  },
+  {
+    title: "Email más formal",
+    prompt: "You recently bought a product online that arrived damaged. Write an email to the company explaining the problem and what you would like them to do about it (120-150 words).",
+    target: [120,150]
+  }
+];
+
+async function loadWriting(idxStr){
+  if(idxStr==='') { document.getElementById('writingCard').style.display='none'; return; }
+  const idx = parseInt(idxStr);
+  const task = WRITING_TASKS[idx];
+  const card = document.getElementById('writingCard');
+  card.style.display='block';
+
+  let saved = '';
+  try{
+    const raw = localStorage.getItem('aptis_writing_'+idx);
+    if(raw) saved = JSON.parse(raw);
+  }catch(e){}
+
+  card.innerHTML = `<h2>${task.title}</h2>
+    <div class="prompt-box">${task.prompt}</div>
+    <textarea id="writingArea" placeholder="Escribe tu respuesta aquí...">${saved}</textarea>
+    <div class="word-count" id="wordCount"></div>
+    <div style="margin-top:12px; display:flex; gap:10px; flex-wrap:wrap;">
+      <button class="btn" onclick="saveWriting(${idx})">Guardar borrador</button>
+      <button class="btn secondary" onclick="toggleChecklist()">Ver checklist de autoevaluación</button>
+    </div>
+    <div id="writingChecklist" style="display:none; margin-top:14px;">
+      <h3>Antes de dar por terminado tu texto, revisa:</h3>
+      <ul class="tip-list">
+        <li>¿Respondes a todo lo que se pide en el enunciado, sin dejarte ninguna parte?</li>
+        <li>¿El número de palabras está dentro del rango pedido (${task.target[0]}-${task.target[1]})?</li>
+        <li>¿El registro es el adecuado (informal para un amigo, formal para una reclamación)?</li>
+        <li>¿Usas conectores variados (however, in addition, as a result) en vez de repetir "and" y "but"?</li>
+        <li>¿Revisaste tiempos verbales y concordancia sujeto-verbo?</li>
+      </ul>
+    </div>
+    <div id="writingSavedMsg" class="muted" style="margin-top:8px;"></div>`;
+
+  const area = document.getElementById('writingArea');
+  const updateCount = ()=>{
+    const words = area.value.trim().split(/\s+/).filter(Boolean).length;
+    const cEl = document.getElementById('wordCount');
+    const inRange = words >= task.target[0] && words <= task.target[1];
+    cEl.textContent = `${words} palabras (objetivo: ${task.target[0]}-${task.target[1]})`;
+    cEl.className = 'word-count ' + (words===0 ? '' : (inRange ? 'ok' : 'low'));
+  };
+  area.addEventListener('input', updateCount);
+  updateCount();
+}
+
+function toggleChecklist(){
+  const el = document.getElementById('writingChecklist');
+  el.style.display = el.style.display==='none' ? 'block' : 'none';
+}
+
+async function saveWriting(idx){
+  const text = document.getElementById('writingArea').value;
+  try{
+    localStorage.setItem('aptis_writing_'+idx, JSON.stringify(text));
+    document.getElementById('writingSavedMsg').textContent = 'Guardado ✓';
+    // mark writing practice as attempted for the dashboard (not scored, just tracked)
+    if(!PROGRESS['writing']) {
+      PROGRESS['writing'] = { best: 0, level: 'Practicado', date: new Date().toISOString().slice(0,10) };
+      await saveProgress(PROGRESS);
+      renderDashboard();
+    }
+  }catch(e){
+    document.getElementById('writingSavedMsg').textContent = 'No se pudo guardar. Inténtalo de nuevo.';
+  }
+}
+
+/* ============ SPEAKING ============ */
+const SPEAKING_PARTS = [
+  {label:"Parte 1 · Información personal", prep:0, speak:30, prompt:"What do you usually do at the weekend?"},
+  {label:"Parte 2 · Describir una imagen", prep:30, speak:45, prompt:"Imagine a photo of a busy street market. Describe what you can see in as much detail as possible."},
+  {label:"Parte 3 · Comparar dos imágenes", prep:30, speak:60, prompt:"Compare two situations: someone studying alone at home vs. someone studying in a group at a library. Talk about the similarities and differences, and say which you would prefer."},
+  {label:"Parte 4 · Tema abstracto", prep:60, speak:90, prompt:"Some people think technology has made us less sociable, while others think it has helped us stay more connected. What's your opinion?"}
+];
+
+let speakingIdx = 0;
+function startSpeaking(){
+  speakingIdx = 0;
+  document.getElementById('speakingCard').style.display='block';
+  renderSpeakingPart();
+}
+
+function renderSpeakingPart(){
+  const card = document.getElementById('speakingCard');
+  if(speakingIdx >= SPEAKING_PARTS.length){
+    card.innerHTML = `<h2>¡Práctica completada!</h2><p>Has pasado por las 4 partes del speaking. Repite las que necesites reforzar.</p>
+      <button class="btn" onclick="startSpeaking()">Empezar de nuevo</button>`;
+    recordResult('speaking', 100);
+    return;
+  }
+  const part = SPEAKING_PARTS[speakingIdx];
+  card.innerHTML = `<div class="part-label">${part.label}</div>
+    <div class="prompt-box" style="margin-top:10px;">${part.prompt}</div>
+    <div id="speakingTimerArea"></div>`;
+  runSpeakingTimer(part);
+}
+
+function runSpeakingTimer(part){
+  const area = document.getElementById('speakingTimerArea');
+  let phase = part.prep>0 ? 'prep' : 'speak';
+  let seconds = part.prep>0 ? part.prep : part.speak;
+
+  function render(){
+    area.innerHTML = `<p class="muted">${phase==='prep' ? 'Tiempo de preparación' : 'Tiempo para hablar (habla en voz alta ahora)'}</p>
+      <div class="timer ${seconds<=5 ? 'warn':''}">${String(Math.floor(seconds/60)).padStart(2,'0')}:${String(seconds%60).padStart(2,'0')}</div>
+      <div style="margin-top:14px;"><button class="btn secondary" onclick="skipSpeakingPhase()">Saltar</button></div>`;
+  }
+  render();
+
+  window._speakingInterval = setInterval(()=>{
+    seconds--;
+    if(seconds<=0){
+      if(phase==='prep'){
+        phase='speak'; seconds=part.speak; render();
+      } else {
+        clearInterval(window._speakingInterval);
+        speakingIdx++;
+        renderSpeakingPart();
+      }
+      return;
+    }
+    render();
+  },1000);
+}
+
+function skipSpeakingPhase(){
+  clearInterval(window._speakingInterval);
+  speakingIdx++;
+  renderSpeakingPart();
+}
+
+/* ============ INIT ============ */
+initProgress();
+</script>
+</body>
+</html>
