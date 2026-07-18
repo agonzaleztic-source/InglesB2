@@ -206,6 +206,19 @@
     border:1.5px solid var(--line); border-radius:999px; padding:5px 12px; font-size:13px; background:#fff;
   }
 
+  .speaker-row{
+    border:1.5px solid var(--line); border-radius:8px; padding:12px 14px; margin-bottom:10px;
+    display:flex; flex-direction:column; gap:8px;
+  }
+  .speaker-row .sp-name{font-family:'Space Mono',monospace; font-size:12px; font-weight:700; color:var(--ink); text-transform:uppercase; letter-spacing:.06em;}
+  .speaker-row.correct{border-color:var(--teal); background:rgba(47,111,98,0.08);}
+  .speaker-row.incorrect{border-color:var(--stamp); background:rgba(178,58,46,0.08);}
+
+  .stamp-card .level.tag{
+    font-family:'Space Mono',monospace; font-size:13px; color:var(--teal);
+    text-transform:uppercase; letter-spacing:.06em; margin-top:14px;
+  }
+
   footer.note{
     margin-top:28px; text-align:center; color:var(--muted); font-size:12.5px;
     border-top:1.5px dashed var(--line); padding-top:16px;
@@ -294,7 +307,7 @@
   <section class="view" id="view-gramatica">
     <div class="card" id="gramIntro">
       <h2>Gramática &amp; Vocabulario</h2>
-      <p class="muted">15 preguntas estilo Aptis (gramática, collocations y vocabulario B2). En el examen real son 50 en 25 minutos; aquí tienes una versión reducida para practicar.</p>
+      <p class="muted">Cada intento genera un test distinto: 15 preguntas elegidas al azar de un banco de 45 (gramática, collocations y vocabulario B2). En el examen real son 50 en 25 minutos.</p>
       <div style="margin:14px 0;">
         <span class="timer" id="gramTimerDisplay">08:00</span>
       </div>
@@ -307,7 +320,7 @@
   <section class="view" id="view-reading">
     <div class="card">
       <h2>Reading</h2>
-      <p class="muted">Elige una tarea. En el examen real hay 4 tipos distintos; aquí tienes un ejemplo de cada uno.</p>
+      <p class="muted">Elige una tarea. Cada botón carga una variante al azar de su banco, así puedes repetir sin memorizar las respuestas.</p>
       <div style="display:flex; gap:10px; flex-wrap:wrap;">
         <button class="btn secondary" onclick="loadReading('headings')">Emparejar titulares</button>
         <button class="btn secondary" onclick="loadReading('gapfill')">Completar huecos</button>
@@ -323,8 +336,11 @@
       <h2>Listening</h2>
       <p class="muted">Uso la voz del navegador para leerte el audio en inglés, igual que en el examen: solo puedes reproducirlo <strong>2 veces</strong>. Necesitas el sonido activado.</p>
       <div style="display:flex; gap:10px; flex-wrap:wrap;">
-        <button class="btn secondary" onclick="loadListening(0)">Ejercicio 1 · Mensaje corto</button>
-        <button class="btn secondary" onclick="loadListening(1)">Ejercicio 2 · Opiniones</button>
+        <button class="btn secondary" onclick="loadListening(0)">1 · Mensaje corto</button>
+        <button class="btn secondary" onclick="loadListening(1)">2 · Opiniones</button>
+        <button class="btn secondary" onclick="loadListening(2)">3 · Otro mensaje</button>
+        <button class="btn secondary" onclick="loadListening(3)">4 · Emparejar hablantes</button>
+        <button class="btn secondary" onclick="loadListening(4)">5 · Monólogo largo</button>
       </div>
     </div>
     <div class="card" id="listeningCard" style="display:none;"></div>
@@ -339,8 +355,8 @@
         <option value="">— Elige una tarea —</option>
         <option value="0">Respuesta corta a un email informal</option>
         <option value="1">Texto personal (experiencia)</option>
-        <option value="2">Respuesta en red social</option>
-        <option value="3">Email más formal</option>
+        <option value="2">Conversación en red social (3 respuestas)</option>
+        <option value="3">Dos emails: informal + formal</option>
       </select>
     </div>
     <div class="card" id="writingCard" style="display:none;"></div>
@@ -374,6 +390,11 @@ let PROGRESS = {};
 
 async function initProgress(){
   PROGRESS = await loadProgress();
+  // Migración: versiones antiguas puntuaban el speaking al 100% solo por completarlo
+  if(PROGRESS.speaking && PROGRESS.speaking.level !== 'Practicado'){
+    PROGRESS.speaking = { best: 0, level: 'Practicado', date: PROGRESS.speaking.date };
+    await saveProgress(PROGRESS);
+  }
   renderDashboard();
 }
 
@@ -394,6 +415,13 @@ async function recordResult(skill, pct){
   renderDashboard();
 }
 
+/* Writing y speaking no se autocorrigen: solo se registra que has practicado */
+async function markPracticed(skill){
+  PROGRESS[skill] = { best: 0, level: 'Practicado', date: new Date().toISOString().slice(0,10) };
+  await saveProgress(PROGRESS);
+  renderDashboard();
+}
+
 function renderDashboard(){
   const skills = [
     {key:'gramatica', label:'Gramática/Vocab'},
@@ -409,7 +437,7 @@ function renderDashboard(){
     const data = PROGRESS[s.key];
     const div = document.createElement('div');
     div.className = 'stamp-card';
-    if(data){
+    if(data && LEVEL_ORDER.indexOf(data.level) >= 0){
       const idx = LEVEL_ORDER.indexOf(data.level);
       const pass = idx >= LEVEL_ORDER.indexOf('B2');
       div.innerHTML = `<div class="skill">${s.label}</div>
@@ -417,6 +445,10 @@ function renderDashboard(){
         <div class="sub">${data.best}% · ${data.date}</div>
         <div class="meter"><span class="${pass?'pass':''}" style="width:${data.best}%"></span></div>`;
       if(best===null || idx>best) best = idx;
+    } else if(data){
+      div.innerHTML = `<div class="skill">${s.label}</div>
+        <div class="level tag">Practicado ✓</div>
+        <div class="sub">Última práctica: ${data.date}</div>`;
     } else {
       div.innerHTML = `<div class="skill">${s.label}</div><div class="level empty">— sin datos —</div><div class="sub">Practica para ver tu nivel</div>
         <div class="meter"><span style="width:0%"></span></div>`;
@@ -469,18 +501,58 @@ const GRAM_QUESTIONS = [
   {q:"Choose the correct word: The meeting was ___ postponed until next week.", opts:["hardly","barely","indefinitely","scarcely"], correct:2},
   {q:"He's the kind of person who never gives ___ , no matter how hard things get.", opts:["in","up","out","off"], correct:1},
   {q:"By next year, they ___ here for a decade.", opts:["will work","will have been working","are working","worked"], correct:1},
-  {q:"Choose the correct phrasal verb: I need to ___ this article before the deadline.", opts:["look up","hand in","turn down","get on"], correct:1}
+  {q:"Choose the correct phrasal verb: I need to ___ this article before the deadline.", opts:["look up","hand in","turn down","get on"], correct:1},
+  {q:"Hardly ___ the house when it started to rain.", opts:["I had left","had I left","I left","did I leave"], correct:1},
+  {q:"The new law will ___ effect next month.", opts:["make","do","take","have"], correct:2},
+  {q:"She suggested ___ the meeting to Friday.", opts:["to move","move","moved","moving"], correct:3},
+  {q:"I'm not used ___ up so early.", opts:["to getting","to get","getting","get"], correct:0},
+  {q:"The film was ___ better than I expected.", opts:["very","far","too","more"], correct:1},
+  {q:"He denied ___ the window.", opts:["to break","breaking","break","broken"], correct:1},
+  {q:"___ the bad weather, the match went ahead.", opts:["Although","However","Despite","Even"], correct:2},
+  {q:"You ___ have seen Tom yesterday — he's been abroad all week.", opts:["mustn't","shouldn't","wouldn't","can't"], correct:3},
+  {q:"This time tomorrow, I ___ on a beach in Greece.", opts:["will be lying","will lie","am lying","lie"], correct:0},
+  {q:"A new bridge ___ across the river at the moment.", opts:["is built","is being built","builds","has built"], correct:1},
+  {q:"Choose the correct collocation: to ___ attention", opts:["give","put","pay","do"], correct:2},
+  {q:"Choose the correct collocation: to ___ a promise", opts:["keep","do","hold","stay"], correct:0},
+  {q:"Choose the correct collocation: ___ rain", opts:["strong","heavy","hard","big"], correct:1},
+  {q:"The plane finally ___ off two hours late.", opts:["got","set","put","took"], correct:3},
+  {q:"I came ___ an old photo while tidying my room.", opts:["across","up","into","over"], correct:0},
+  {q:"She asked me where ___ .", opts:["was I going","I was going","am I going","I am going"], correct:1},
+  {q:"If you ___ harder, you would have passed the exam.", opts:["studied","would study","had studied","study"], correct:2},
+  {q:"I'd rather you ___ smoke in here.", opts:["don't","won't","not","didn't"], correct:3},
+  {q:"The report, ___ was published yesterday, criticises the plan.", opts:["which","that","what","who"], correct:0},
+  {q:"The two products are almost identical; the differences are ___ .", opts:["substantial","negligible","considerable","remarkable"], correct:1},
+  {q:"The company decided to ___ the launch until spring.", opts:["dismiss","anticipate","advance","postpone"], correct:3},
+  {q:"We've run ___ of milk — could you buy some?", opts:["off","away","out","down"], correct:2},
+  {q:"It took me weeks to get ___ the flu.", opts:["over","through","by","up"], correct:0},
+  {q:"Not only ___ late, but he also forgot the documents.", opts:["he arrived","did he arrive","he did arrive","arrived he"], correct:1},
+  {q:"The teacher had the students ___ the essay again.", opts:["to write","writing","write","written"], correct:2},
+  {q:"By the end of this year, she ___ three novels.", opts:["will write","has written","writes","will have written"], correct:3},
+  {q:"Choose the correct collocation: to ___ a conclusion", opts:["draw","take","catch","pull"], correct:0},
+  {q:"His explanation was so ___ that nobody understood it.", opts:["clear","vague","precise","obvious"], correct:1},
+  {q:"You should ___ up smoking if you want to feel better.", opts:["take","get","give","put"], correct:2},
+  {q:"I didn't ___ to offend you — I'm sorry.", opts:["pretend","suppose","expect","mean"], correct:3}
 ];
+
+function pickRandom(pool, n){
+  const copy = [...pool], set = [];
+  while(set.length < n && copy.length){
+    set.push(copy.splice(Math.floor(Math.random()*copy.length), 1)[0]);
+  }
+  return set;
+}
+let currentGramSet = [];
 
 let gramTimerInterval = null;
 function startGramQuiz(){
   document.getElementById('gramIntro').style.display='none';
   const card = document.getElementById('gramQuizCard');
   card.style.display='block';
+  currentGramSet = pickRandom(GRAM_QUESTIONS, 15);
   let html = '';
-  GRAM_QUESTIONS.forEach((item,i)=>{
+  currentGramSet.forEach((item,i)=>{
     html += `<div class="q-block" data-idx="${i}">
-      <div class="q-num">Pregunta ${i+1} de ${GRAM_QUESTIONS.length}</div>
+      <div class="q-num">Pregunta ${i+1} de ${currentGramSet.length}</div>
       <div class="q-text">${item.q}</div>
       <div class="options">`;
     item.opts.forEach((opt,j)=>{
@@ -511,7 +583,7 @@ function startGramQuiz(){
 function submitGramQuiz(){
   clearInterval(gramTimerInterval);
   let correct = 0;
-  GRAM_QUESTIONS.forEach((item,i)=>{
+  currentGramSet.forEach((item,i)=>{
     const selected = document.querySelector(`input[name="g${i}"]:checked`);
     const opts = document.querySelectorAll(`.q-block[data-idx="${i}"] .opt`);
     opts.forEach((optEl,j)=>{
@@ -521,51 +593,89 @@ function submitGramQuiz(){
     if(selected && parseInt(selected.value)===item.correct) correct++;
   });
   document.getElementById('gramSubmit').disabled = true;
-  const pct = Math.round((correct/GRAM_QUESTIONS.length)*100);
+  const pct = Math.round((correct/currentGramSet.length)*100);
   document.getElementById('gramResult').innerHTML = `
-    <div class="result-banner"><div class="big">${correct}/${GRAM_QUESTIONS.length}</div>
+    <div class="result-banner"><div class="big">${correct}/${currentGramSet.length}</div>
     <div>Acierto: ${pct}% · Nivel estimado de esta prueba: <strong>${levelFromPercent(pct)}</strong></div></div>
     <button class="btn secondary" style="margin-top:12px;" onclick="location.reload()">Volver a intentarlo</button>`;
   recordResult('gramatica', pct);
 }
 
 /* ============ READING ============ */
-const READING_TASKS = {
-  headings: {
-    title: "Empareja cada titular con su párrafo",
-    passage: `A) City councils across the country are introducing new cycle lanes, hoping to cut traffic and pollution in busy centres.
+const READING_BANK = {
+  headings: [
+    {
+      title: "Empareja cada titular con su párrafo",
+      passage: `A) City councils across the country are introducing new cycle lanes, hoping to cut traffic and pollution in busy centres.
 B) A growing number of small businesses now let staff choose which days they come into the office, arguing it boosts morale without hurting output.
 C) Researchers have found that people who spend regular time outdoors report noticeably lower stress levels than those who rarely leave the house.
 D) Several supermarket chains are trialling packaging-free sections, allowing customers to bring their own containers for grains, pasta and cleaning products.`,
-    headingsBank: ["Nature and wellbeing", "Rethinking the working week", "Shopping without waste", "Making room for bicycles"],
-    answerMap: [3,1,0,2] // for A,B,C,D correct heading index
-  },
-  gapfill: {
-    title: "Completa los huecos con la opción correcta",
-    passage: `Hi Laura,\n\nThanks for getting back to me so quickly. I just wanted to check a couple of things before the trip. First, could you (1)___ me know what time the coach leaves on Saturday? Also, I still haven't (2)___ my ticket, so if you could send it over that would be great. Finally, do you know if there's anywhere nearby where we could (3)___ some breakfast before we set off?\n\nThanks again,\nMark`,
-    blanks: [
-      {opts:["let","make","take"], correct:0},
-      {opts:["received","receiving","receive"], correct:0},
-      {opts:["grab","catch","hold"], correct:0}
-    ]
-  },
-  sequencing: {
-    title: "Ordena las frases del email en el orden correcto",
-    lines: [
-      "Hi Sam, thanks so much for the invite to the barbecue this weekend!",
-      "I'd love to come, but I need to check with my sister first as we already had plans.",
-      "I'll let you know by Thursday at the latest so you can plan numbers.",
-      "By the way, is there anything I can bring?",
-      "Looking forward to hearing from you, Alex"
-    ],
-    correctOrder: [0,1,2,3,4]
-  }
+      headingsBank: ["Nature and wellbeing", "Rethinking the working week", "Shopping without waste", "Making room for bicycles"],
+      answerMap: [3,1,0,2]
+    },
+    {
+      title: "Empareja cada titular con su párrafo",
+      passage: `A) Doctors are warning that adults who regularly sleep fewer than six hours a night face a higher risk of long-term health problems, from heart disease to memory loss.
+B) A local start-up has designed an app that instantly translates restaurant menus using your phone's camera, and it already works in over forty languages.
+C) The city museum has extended its opening hours and scrapped entrance fees for under-18s in an effort to attract younger visitors.
+D) Farmers in the region are experimenting with older varieties of wheat, which need less water and resist disease better than modern crops.`,
+      headingsBank: ["Making culture more accessible", "A return to traditional crops", "The dangers of too little sleep", "Instant help with foreign menus"],
+      answerMap: [2,3,0,1]
+    }
+  ],
+  gapfill: [
+    {
+      title: "Completa los huecos con la opción correcta",
+      passage: `Hi Laura,\n\nThanks for getting back to me so quickly. I just wanted to check a couple of things before the trip. First, could you (1)___ me know what time the coach leaves on Saturday? Also, I still haven't (2)___ my ticket, so if you could send it over that would be great. Finally, do you know if there's anywhere nearby where we could (3)___ some breakfast before we set off?\n\nThanks again,\nMark`,
+      blanks: [
+        {opts:["let","make","take"], correct:0},
+        {opts:["received","receiving","receive"], correct:0},
+        {opts:["grab","catch","hold"], correct:0}
+      ]
+    },
+    {
+      title: "Completa los huecos con la opción correcta",
+      passage: `Hi Carlos,\n\nGreat news about the new job! I knew you'd (1)___ the interview — you had prepared so well. We should (2)___ out to celebrate soon. Are you free on Friday evening? Let me (3)___ if that works for you and I'll book a table somewhere nice.\n\nBest,\nNina`,
+      blanks: [
+        {opts:["approve","pass","win"], correct:1},
+        {opts:["take","put","go"], correct:2},
+        {opts:["know","knowing","to know"], correct:0}
+      ]
+    }
+  ],
+  sequencing: [
+    {
+      title: "Ordena las frases del email en el orden correcto",
+      lines: [
+        "Hi Sam, thanks so much for the invite to the barbecue this weekend!",
+        "I'd love to come, but I need to check with my sister first as we already had plans.",
+        "I'll let you know by Thursday at the latest so you can plan numbers.",
+        "By the way, is there anything I can bring?",
+        "Looking forward to hearing from you, Alex"
+      ],
+      correctOrder: [0,1,2,3,4]
+    },
+    {
+      title: "Ordena las frases del email en el orden correcto",
+      lines: [
+        "Dear Mr Reed, I am writing to ask about the evening Spanish course advertised on your website.",
+        "I studied Spanish at school, so I would not be a complete beginner.",
+        "Could you tell me whether there are still places available for the October start?",
+        "I would also like to know the total cost and whether course materials are included.",
+        "I look forward to your reply. Kind regards, Emma Watts"
+      ],
+      correctOrder: [0,1,2,3,4]
+    }
+  ]
 };
+let currentReadingTask = null;
 
 function loadReading(type){
   const card = document.getElementById('readingCard');
   card.style.display='block';
-  const task = READING_TASKS[type];
+  const variants = READING_BANK[type];
+  const task = variants[Math.floor(Math.random()*variants.length)];
+  currentReadingTask = task;
 
   if(type==='headings'){
     let bankHtml = task.headingsBank.map(h=>`<span class="heading-chip">${h}</span>`).join('');
@@ -619,7 +729,7 @@ function moveLine(btn, dir){
 }
 
 function checkHeadings(){
-  const task = READING_TASKS.headings;
+  const task = currentReadingTask;
   const selects = document.querySelectorAll('.headingSelect');
   let correct = 0;
   selects.forEach(sel=>{
@@ -629,7 +739,7 @@ function checkHeadings(){
   finishReading(correct, selects.length);
 }
 function checkGapfill(){
-  const task = READING_TASKS.gapfill;
+  const task = currentReadingTask;
   const selects = document.querySelectorAll('.gapSelect');
   let correct = 0;
   selects.forEach(sel=>{
@@ -642,7 +752,7 @@ function checkSequencing(){
   const rows = document.querySelectorAll('#seqList .opt');
   const order = Array.from(rows).map(r=>parseInt(r.dataset.orig));
   let correct = 0;
-  order.forEach((val,i)=>{ if(val===READING_TASKS.sequencing.correctOrder[i]) correct++; });
+  order.forEach((val,i)=>{ if(val===currentReadingTask.correctOrder[i]) correct++; });
   finishReading(correct, order.length);
 }
 function finishReading(correct, total){
@@ -655,97 +765,196 @@ function finishReading(correct, total){
 /* ============ LISTENING ============ */
 const LISTENING_TASKS = [
   {
+    type: 'audio',
     title: "Mensaje corto: encuentra el dato",
     script: "Hi, it's Rachel from the dentist's. I'm calling to remind you about your appointment on Thursday at half past three. If you need to change it, please call us back before Wednesday afternoon. Thanks, bye.",
-    question: "¿Qué día y hora es la cita?",
-    opts: ["Miércoles a las 3:30", "Jueves a las 3:30", "Jueves a las 2:30", "Miércoles a las 2:30"],
-    correct: 1
+    questions: [
+      {q:"¿Qué día y hora es la cita?", opts:["Miércoles a las 3:30","Jueves a las 3:30","Jueves a las 2:30","Miércoles a las 2:30"], correct:1}
+    ]
   },
   {
+    type: 'audio',
     title: "Diálogo de opiniones",
     script: "Man: I really think working from home has made people less connected to their teams. Woman: I disagree, actually. I think it's given people more time to focus without constant interruptions, and teams can still stay close through regular video calls.",
-    question: "¿Quién piensa que el trabajo en remoto ha mejorado la concentración?",
-    opts: ["El hombre", "La mujer", "Los dos", "Ninguno de los dos"],
-    correct: 1
+    questions: [
+      {q:"¿Quién piensa que el trabajo en remoto ha mejorado la concentración?", opts:["El hombre","La mujer","Los dos","Ninguno de los dos"], correct:1}
+    ]
+  },
+  {
+    type: 'audio',
+    title: "Mensaje corto: el gimnasio",
+    script: "Hello, this is a message for Mr Adams from City Gym. Your membership expires on the thirty-first of March. If you renew before the twenty-fifth, you'll get ten percent off the annual fee. You can call us back or renew online. Thank you.",
+    questions: [
+      {q:"¿Qué consigue si renueva antes del día 25?", opts:["Un mes gratis","Un 10% de descuento","Una sesión con entrenador","Un 20% de descuento"], correct:1}
+    ]
+  },
+  {
+    type: 'speakers',
+    title: "Empareja cada hablante con la frase que lo resume",
+    intro: "Cuatro personas hablan de su trabajo. Escucha a cada una (máximo 2 veces por hablante) y elige la frase que mejor la describe. Hay una frase de sobra.",
+    speakers: [
+      {name:"Speaker A", script:"I spend most of my day in front of a screen, solving problems for customers over the phone. It can be repetitive, but I like knowing that I've helped someone by the end of the call."},
+      {name:"Speaker B", script:"No two weeks are the same for me. One week I'm in Berlin, the next in Lisbon. Living out of a suitcase is exhausting, though, and I really miss my family when I'm away."},
+      {name:"Speaker C", script:"I started my own business three years ago. The freedom is wonderful, but to be honest I work far longer hours now than I ever did when I had a boss."},
+      {name:"Speaker D", script:"My job is quite physical and we start very early in the morning, but by mid-afternoon I'm finished, which leaves me plenty of time for my hobbies."}
+    ],
+    statements: [
+      "Viaja constantemente y echa de menos a su familia",
+      "Trabaja más horas desde que es su propio jefe",
+      "Cambió de trabajo hace poco para ganar más dinero",
+      "Le gusta ayudar a la gente en su trabajo",
+      "Termina pronto y disfruta de su tiempo libre"
+    ],
+    answerMap: [3,0,1,4]
+  },
+  {
+    type: 'audio',
+    title: "Monólogo largo: el huerto comunitario",
+    script: "Good morning, everyone. Today I want to tell you about our community garden project. When we started five years ago, we had just twelve volunteers and a small piece of wasteland behind the library. Now, more than eighty people help out regularly, and we grow enough vegetables to supply two local schools. Next month we're launching gardening workshops for beginners. They'll run on Saturday mornings, and although they're free, places are limited, so you'll need to book in advance through our website.",
+    questions: [
+      {q:"¿Cuántos voluntarios participan actualmente?", opts:["Doce","Unos cincuenta","Más de ochenta","Doscientos"], correct:2},
+      {q:"¿Qué van a lanzar el mes que viene?", opts:["Otro huerto","Venta de verduras","Una ampliación de la biblioteca","Talleres para principiantes"], correct:3},
+      {q:"¿Cómo hay que reservar plaza?", opts:["Por la página web","Por teléfono","En la biblioteca","Pagando por adelantado"], correct:0}
+    ]
   }
 ];
 
-let playsLeft = 2;
-function loadListening(idx){
-  const task = LISTENING_TASKS[idx];
-  playsLeft = 2;
-  const card = document.getElementById('listeningCard');
-  card.style.display = 'block';
-  card.innerHTML = `<h2>${task.title}</h2>
-    <div class="listen-controls">
-      <button class="btn" id="playBtn" onclick="playAudio('${task.script.replace(/'/g,"\\'")}')">▶ Reproducir</button>
-      <span class="plays-left" id="playsLeftLabel">Reproducciones restantes: 2</span>
-    </div>
-    <div class="q-block">
-      <div class="q-text">${task.question}</div>
-      <div class="options" id="listenOptions">
-        ${task.opts.map((o,j)=>`<label class="opt"><input type="radio" name="listen" value="${j}"> ${o}</label>`).join('')}
-      </div>
-    </div>
-    <button class="btn" onclick="checkListening(${task.correct})">Corregir</button>
-    <div id="listeningResult"></div>`;
-}
+let currentListeningIdx = null;
+let playCounts = {};
 
-function playAudio(text){
-  if(playsLeft<=0) return;
+function speakText(text){
   if(!('speechSynthesis' in window)){
     alert('Tu navegador no soporta síntesis de voz.');
-    return;
+    return false;
   }
   const utter = new SpeechSynthesisUtterance(text);
   utter.lang = 'en-GB';
   utter.rate = 0.95;
   window.speechSynthesis.cancel();
   window.speechSynthesis.speak(utter);
-  playsLeft--;
-  document.getElementById('playsLeftLabel').textContent = 'Reproducciones restantes: ' + playsLeft;
-  if(playsLeft<=0) document.getElementById('playBtn').disabled = true;
+  return true;
 }
 
-function checkListening(correctIdx){
-  const selected = document.querySelector('input[name="listen"]:checked');
-  const opts = document.querySelectorAll('#listenOptions .opt');
-  opts.forEach((el,j)=>{
-    if(j===correctIdx) el.classList.add('correct');
-    if(selected && parseInt(selected.value)===j && j!==correctIdx) el.classList.add('incorrect');
-  });
-  const isCorrect = selected && parseInt(selected.value)===correctIdx;
-  const pct = isCorrect ? 100 : 0;
-  document.getElementById('listeningResult').innerHTML = `<div class="result-banner"><div class="big">${isCorrect?'✓':'✗'}</div>
-    <div>${isCorrect ? 'Respuesta correcta.' : 'Respuesta incorrecta.'} Sigue practicando para acumular más resultados.</div></div>`;
-  // Average listening score across attempts using best-so-far logic on a rolling basis
-  const prevBest = PROGRESS['listening'] ? PROGRESS['listening'].best : 0;
-  recordResult('listening', Math.max(pct, prevBest));
+function playTracked(key){
+  const task = LISTENING_TASKS[currentListeningIdx];
+  const text = key==='main' ? task.script : task.speakers[key].script;
+  if(playCounts[key]===undefined) playCounts[key] = 2;
+  if(playCounts[key]<=0) return;
+  if(!speakText(text)) return;
+  playCounts[key]--;
+  document.getElementById('plays-'+key).textContent = 'Reproducciones restantes: ' + playCounts[key];
+  if(playCounts[key]<=0) document.getElementById('btn-'+key).disabled = true;
+}
+
+function loadListening(idx){
+  const task = LISTENING_TASKS[idx];
+  currentListeningIdx = idx;
+  playCounts = {};
+  const card = document.getElementById('listeningCard');
+  card.style.display = 'block';
+
+  if(task.type==='speakers'){
+    const stmtOpts = task.statements.map((st,j)=>`<option value="${j}">${st}</option>`).join('');
+    const rows = task.speakers.map((sp,i)=>`
+      <div class="speaker-row" data-idx="${i}">
+        <span class="sp-name">${sp.name}</span>
+        <div class="listen-controls" style="margin-bottom:0;">
+          <button class="btn secondary" id="btn-${i}" onclick="playTracked(${i})">▶ Escuchar</button>
+          <span class="plays-left" id="plays-${i}">Reproducciones restantes: 2</span>
+        </div>
+        <select class="spSelect" data-idx="${i}"><option value="">— elige una frase —</option>${stmtOpts}</select>
+      </div>`).join('');
+    card.innerHTML = `<h2>${task.title}</h2>
+      <p class="muted">${task.intro}</p>
+      ${rows}
+      <button class="btn" onclick="checkListening()">Corregir</button>
+      <div id="listeningResult"></div>`;
+    return;
+  }
+
+  const questionsHtml = task.questions.map((qu,i)=>`
+    <div class="q-block" data-q="${i}">
+      <div class="q-text">${qu.q}</div>
+      <div class="options">
+        ${qu.opts.map((o,j)=>`<label class="opt"><input type="radio" name="lq${i}" value="${j}"> ${o}</label>`).join('')}
+      </div>
+    </div>`).join('');
+  card.innerHTML = `<h2>${task.title}</h2>
+    <div class="listen-controls">
+      <button class="btn" id="btn-main" onclick="playTracked('main')">▶ Reproducir</button>
+      <span class="plays-left" id="plays-main">Reproducciones restantes: 2</span>
+    </div>
+    ${questionsHtml}
+    <button class="btn" onclick="checkListening()">Corregir</button>
+    <div id="listeningResult"></div>`;
+}
+
+function checkListening(){
+  const task = LISTENING_TASKS[currentListeningIdx];
+  let correct = 0, total = 0;
+
+  if(task.type==='speakers'){
+    const selects = document.querySelectorAll('.spSelect');
+    total = selects.length;
+    selects.forEach(sel=>{
+      const i = parseInt(sel.dataset.idx);
+      const ok = parseInt(sel.value) === task.answerMap[i];
+      if(ok) correct++;
+      sel.closest('.speaker-row').classList.add(ok ? 'correct' : 'incorrect');
+    });
+  } else {
+    task.questions.forEach((qu,i)=>{
+      total++;
+      const selected = document.querySelector(`input[name="lq${i}"]:checked`);
+      const opts = document.querySelectorAll(`.q-block[data-q="${i}"] .opt`);
+      opts.forEach((el,j)=>{
+        if(j===qu.correct) el.classList.add('correct');
+        if(selected && parseInt(selected.value)===j && j!==qu.correct) el.classList.add('incorrect');
+      });
+      if(selected && parseInt(selected.value)===qu.correct) correct++;
+    });
+  }
+
+  const pct = Math.round((correct/total)*100);
+  document.getElementById('listeningResult').innerHTML = `<div class="result-banner"><div class="big">${correct}/${total}</div>
+    <div>Acierto: ${pct}% · Nivel estimado: <strong>${levelFromPercent(pct)}</strong></div></div>`;
+  recordResult('listening', pct);
 }
 
 /* ============ WRITING ============ */
 const WRITING_TASKS = [
   {
     title: "Respuesta corta a un email informal",
-    prompt: "Your friend Chris has emailed you: 'I heard you're moving to a new flat next month — how exciting! Where is it and why did you choose that area?' Write a short reply (30-40 words).",
-    target: [30,40]
+    parts: [
+      {label:"Tu respuesta", prompt:"Your friend Chris has emailed you: 'I heard you're moving to a new flat next month — how exciting! Where is it and why did you choose that area?' Write a short reply.", target:[30,40]}
+    ]
   },
   {
     title: "Texto personal",
-    prompt: "Write about a time you learned something new that was difficult at first. Describe what it was, how you felt, and what helped you improve (50-70 words).",
-    target: [50,70]
+    parts: [
+      {label:"Tu texto", prompt:"Write about a time you learned something new that was difficult at first. Describe what it was, how you felt, and what helped you improve.", target:[50,70]}
+    ]
   },
   {
-    title: "Respuesta en red social",
-    prompt: "A friend has posted: 'Just finished my first 10k run! Honestly didn't think I'd make it 😅' Write a comment reacting to their post (20-30 words).",
-    target: [20,30]
+    title: "Conversación en red social",
+    intro: "Te has unido al grupo 'City Photography Club'. Como en el examen real, responde a los tres mensajes del grupo, uno detrás de otro.",
+    parts: [
+      {label:"Mensaje 1", prompt:"'Welcome to the club! Tell us a bit about yourself and why you're interested in photography.'", target:[30,40]},
+      {label:"Mensaje 2", prompt:"'We're planning a photo walk next month. Where in the city do you think we should go, and why?'", target:[30,40]},
+      {label:"Mensaje 3", prompt:"'Some members prefer meeting on weekday evenings instead of weekends. What would suit you better?'", target:[30,40]}
+    ]
   },
   {
-    title: "Email más formal",
-    prompt: "You recently bought a product online that arrived damaged. Write an email to the company explaining the problem and what you would like them to do about it (120-150 words).",
-    target: [120,150]
+    title: "Dos emails: informal y formal",
+    intro: "Escenario (como la parte 4 real): perteneces a un club de cine y recibes este aviso: 'We are sorry to announce that next month's film night has been cancelled due to a problem with the venue. Members will receive a refund. — The Film Club Team'",
+    parts: [
+      {label:"Email 1 · A un amigo del club", prompt:"Write an email to your friend from the club. Tell them the news and how you feel about it.", target:[40,50]},
+      {label:"Email 2 · Al responsable del club", prompt:"Write an email to the club manager. Express your opinion about the cancellation and suggest what the club could do for its members.", target:[120,150]}
+    ]
   }
 ];
+
+const escHtml = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;');
 
 async function loadWriting(idxStr){
   if(idxStr==='') { document.getElementById('writingCard').style.display='none'; return; }
@@ -754,16 +963,23 @@ async function loadWriting(idxStr){
   const card = document.getElementById('writingCard');
   card.style.display='block';
 
-  let saved = '';
+  let saved = [];
   try{
     const raw = localStorage.getItem('aptis_writing_'+idx);
-    if(raw) saved = JSON.parse(raw);
+    if(raw){
+      const parsed = JSON.parse(raw);
+      saved = Array.isArray(parsed) ? parsed : [parsed];
+    }
   }catch(e){}
 
+  const partsHtml = task.parts.map((part,p)=>`
+    <div class="prompt-box"><strong>${part.label} (${part.target[0]}-${part.target[1]} palabras):</strong><br>${part.prompt}</div>
+    <textarea id="writingArea${p}" style="min-height:${part.target[1]>=100 ? 220 : 110}px;" placeholder="Escribe tu respuesta aquí...">${escHtml(saved[p]||'')}</textarea>
+    <div class="word-count" id="wordCount${p}" style="margin-bottom:14px;"></div>`).join('');
+
   card.innerHTML = `<h2>${task.title}</h2>
-    <div class="prompt-box">${task.prompt}</div>
-    <textarea id="writingArea" placeholder="Escribe tu respuesta aquí...">${saved}</textarea>
-    <div class="word-count" id="wordCount"></div>
+    ${task.intro ? `<p class="muted">${task.intro}</p>` : ''}
+    ${partsHtml}
     <div style="margin-top:12px; display:flex; gap:10px; flex-wrap:wrap;">
       <button class="btn" onclick="saveWriting(${idx})">Guardar borrador</button>
       <button class="btn secondary" onclick="toggleChecklist()">Ver checklist de autoevaluación</button>
@@ -772,7 +988,7 @@ async function loadWriting(idxStr){
       <h3>Antes de dar por terminado tu texto, revisa:</h3>
       <ul class="tip-list">
         <li>¿Respondes a todo lo que se pide en el enunciado, sin dejarte ninguna parte?</li>
-        <li>¿El número de palabras está dentro del rango pedido (${task.target[0]}-${task.target[1]})?</li>
+        <li>¿Cada parte está dentro de su rango de palabras? Quedarse corto o pasarse penaliza.</li>
         <li>¿El registro es el adecuado (informal para un amigo, formal para una reclamación)?</li>
         <li>¿Usas conectores variados (however, in addition, as a result) en vez de repetir "and" y "but"?</li>
         <li>¿Revisaste tiempos verbales y concordancia sujeto-verbo?</li>
@@ -780,16 +996,19 @@ async function loadWriting(idxStr){
     </div>
     <div id="writingSavedMsg" class="muted" style="margin-top:8px;"></div>`;
 
-  const area = document.getElementById('writingArea');
-  const updateCount = ()=>{
-    const words = area.value.trim().split(/\s+/).filter(Boolean).length;
-    const cEl = document.getElementById('wordCount');
-    const inRange = words >= task.target[0] && words <= task.target[1];
-    cEl.textContent = `${words} palabras (objetivo: ${task.target[0]}-${task.target[1]})`;
-    cEl.className = 'word-count ' + (words===0 ? '' : (inRange ? 'ok' : 'low'));
-  };
-  area.addEventListener('input', updateCount);
-  updateCount();
+  task.parts.forEach((part,p)=>{
+    const area = document.getElementById('writingArea'+p);
+    const updateCount = ()=>{
+      const words = area.value.trim().split(/\s+/).filter(Boolean).length;
+      const cEl = document.getElementById('wordCount'+p);
+      const inRange = words >= part.target[0] && words <= part.target[1];
+      cEl.textContent = `${words} palabras (objetivo: ${part.target[0]}-${part.target[1]})`;
+      cEl.className = 'word-count ' + (words===0 ? '' : (inRange ? 'ok' : 'low'));
+      cEl.style.marginBottom = '14px';
+    };
+    area.addEventListener('input', updateCount);
+    updateCount();
+  });
 }
 
 function toggleChecklist(){
@@ -798,16 +1017,12 @@ function toggleChecklist(){
 }
 
 async function saveWriting(idx){
-  const text = document.getElementById('writingArea').value;
+  const task = WRITING_TASKS[idx];
+  const texts = task.parts.map((_,p)=>document.getElementById('writingArea'+p).value);
   try{
-    localStorage.setItem('aptis_writing_'+idx, JSON.stringify(text));
+    localStorage.setItem('aptis_writing_'+idx, JSON.stringify(texts));
     document.getElementById('writingSavedMsg').textContent = 'Guardado ✓';
-    // mark writing practice as attempted for the dashboard (not scored, just tracked)
-    if(!PROGRESS['writing']) {
-      PROGRESS['writing'] = { best: 0, level: 'Practicado', date: new Date().toISOString().slice(0,10) };
-      await saveProgress(PROGRESS);
-      renderDashboard();
-    }
+    await markPracticed('writing');
   }catch(e){
     document.getElementById('writingSavedMsg').textContent = 'No se pudo guardar. Inténtalo de nuevo.';
   }
@@ -831,9 +1046,10 @@ function startSpeaking(){
 function renderSpeakingPart(){
   const card = document.getElementById('speakingCard');
   if(speakingIdx >= SPEAKING_PARTS.length){
-    card.innerHTML = `<h2>¡Práctica completada!</h2><p>Has pasado por las 4 partes del speaking. Repite las que necesites reforzar.</p>
+    card.innerHTML = `<h2>¡Práctica completada!</h2>
+      <p>Has pasado por las 4 partes del speaking. Recuerda que esta práctica no evalúa tu nivel: para saber cómo lo haces, grábate con el móvil y compara tu respuesta con los descriptores B2, o pídele a alguien (o a una IA) que te corrija.</p>
       <button class="btn" onclick="startSpeaking()">Empezar de nuevo</button>`;
-    recordResult('speaking', 100);
+    markPracticed('speaking');
     return;
   }
   const part = SPEAKING_PARTS[speakingIdx];
