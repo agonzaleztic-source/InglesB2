@@ -1,0 +1,64 @@
+# Generado por C:/Users/Proyectos/.agente/instalar.mjs — no editar a mano.
+# Agente autónomo: responde a "@claude" o a la etiqueta "claude" en issues/PRs.
+# Corre en un runner efímero de GitHub (aislado del PC), trabaja en ramas claude/*
+# y abre un PR contra master. Nunca hace merge.
+name: Agente Claude
+
+on:
+  issue_comment:
+    types: [created]
+  pull_request_review_comment:
+    types: [created]
+  pull_request_review:
+    types: [submitted]
+  issues:
+    types: [opened, labeled, assigned]
+
+# Una ejecución por issue/PR a la vez: evita bucles de trabajo duplicado.
+concurrency:
+  group: agente-claude-${{ github.event.issue.number || github.event.pull_request.number || github.run_id }}
+  cancel-in-progress: false
+
+jobs:
+  claude:
+    if: |
+      (github.event_name == 'issue_comment' && contains(github.event.comment.body, '@claude')) ||
+      (github.event_name == 'pull_request_review_comment' && contains(github.event.comment.body, '@claude')) ||
+      (github.event_name == 'pull_request_review' && contains(github.event.review.body, '@claude')) ||
+      (github.event_name == 'issues' && (
+        contains(github.event.issue.body, '@claude') ||
+        contains(github.event.issue.title, '@claude') ||
+        github.event.label.name == 'claude' ||
+        contains(github.event.issue.labels.*.name, 'claude')))
+    runs-on: ubuntu-latest
+    # Tope duro de tiempo: si el agente entra en bucle, GitHub mata el job.
+    timeout-minutes: 45
+    permissions:
+      contents: write
+      pull-requests: write
+      issues: write
+      id-token: write
+      actions: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Ejecutar agente
+        uses: anthropics/claude-code-action@v1
+        env:
+          GH_TOKEN: ${{ github.token }}
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          label_trigger: claude
+          base_branch: master
+          branch_prefix: claude/
+          use_sticky_comment: true
+          # Límites de iteraciones y de gasto por ejecución.
+          claude_args: |
+            --max-turns 40
+            --max-budget-usd 10
+            --append-system-prompt-file .github/claude/AGENTE.md
+            --allowedTools "Read,Edit,MultiEdit,Write,Glob,Grep,Bash(git status:*),Bash(git diff:*),Bash(git log:*),Bash(git add:*),Bash(git commit:*),Bash(git push:*),Bash(git checkout:*),Bash(git branch:*),Bash(gh issue view:*),Bash(gh pr create:*),Bash(gh pr view:*),Bash(gh pr list:*),Bash(ls:*),Bash(cat:*)"
