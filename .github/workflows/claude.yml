@@ -56,8 +56,10 @@ jobs:
           base_branch: master
           branch_prefix: claude/
           use_sticky_comment: true
+          # Modelo fijado: el default (opus[1m]) exige un nivel de cuenta API alto.
           # Límites de iteraciones y de gasto por ejecución.
           claude_args: |
+            --model claude-sonnet-5
             --max-turns 40
             --max-budget-usd 10
             --append-system-prompt-file .github/claude/AGENTE.md
