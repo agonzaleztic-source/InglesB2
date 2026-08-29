@@ -25,11 +25,10 @@ jobs:
       (github.event_name == 'issue_comment' && contains(github.event.comment.body, '@claude')) ||
       (github.event_name == 'pull_request_review_comment' && contains(github.event.comment.body, '@claude')) ||
       (github.event_name == 'pull_request_review' && contains(github.event.review.body, '@claude')) ||
-      (github.event_name == 'issues' && (
+      (github.event_name == 'issues' && github.event.action == 'labeled' && github.event.label.name == 'claude') ||
+      (github.event_name == 'issues' && github.event.action != 'labeled' && (
         contains(github.event.issue.body, '@claude') ||
-        contains(github.event.issue.title, '@claude') ||
-        github.event.label.name == 'claude' ||
-        contains(github.event.issue.labels.*.name, 'claude')))
+        contains(github.event.issue.title, '@claude')))
     runs-on: ubuntu-latest
     # Tope duro de tiempo: si el agente entra en bucle, GitHub mata el job.
     timeout-minutes: 45
@@ -60,7 +59,7 @@ jobs:
           # Límites de iteraciones y de gasto por ejecución.
           claude_args: |
             --model claude-sonnet-5
-            --max-turns 40
+            --max-turns 100
             --max-budget-usd 10
             --append-system-prompt-file .github/claude/AGENTE.md
             --allowedTools "Read,Edit,MultiEdit,Write,Glob,Grep,Bash(git status:*),Bash(git diff:*),Bash(git log:*),Bash(git add:*),Bash(git commit:*),Bash(git push:*),Bash(git checkout:*),Bash(git branch:*),Bash(gh issue view:*),Bash(gh pr create:*),Bash(gh pr view:*),Bash(gh pr list:*),Bash(ls:*),Bash(cat:*)"
