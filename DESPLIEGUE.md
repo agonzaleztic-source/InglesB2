@@ -1,26 +1,34 @@
-# Poner la app en marcha en agonzaleztic-source.github.io/InglesB2
+# Poner la app en marcha
 
-La app genera cada ejercicio en el momento, así que necesita hablar con la API de
-Anthropic. La clave de la API **no puede ir dentro de `index.html`**: GitHub Pages
-sirve el código en abierto y cualquiera podría leerla y gastar tu saldo.
+La app está publicada en <https://agonzaleztic-source.github.io/InglesB2/>.
 
-La solución son dos piezas:
-
-- **`index.html`** — se sube a tu repositorio, como ahora.
-- **`worker.js`** — un intermediario de 60 líneas alojado en Cloudflare, gratis,
-  que es el único sitio donde vive la clave.
+Genera cada ejercicio en el momento, así que necesita acceso al modelo. Hay dos
+formas de dárselo. La primera es la normal.
 
 ---
 
-## 1. Consigue una clave de la API
+## Opción A · Tu clave, en tu navegador (2 minutos)
 
-En <https://console.anthropic.com> → *API Keys* → crear clave. Cópiala, solo se
-ve una vez.
+1. Entra en <https://console.anthropic.com> → *API Keys* → crear clave.
+   Cópiala: solo se ve una vez.
+2. Antes de seguir, ve a *Billing* → *Limits* y ponte un **límite de gasto
+   mensual**. Con 5 € vas sobrado y es la red de seguridad si algo se descontrola.
+3. Abre la app y pega la clave. Ya está.
 
-Antes de seguir, entra en *Billing* → *Limits* y ponte un **límite de gasto
-mensual** (5 € basta de sobra). Es la red de seguridad por si algo se descontrola.
+La clave se guarda en el `localStorage` de ese navegador. **No** se sube al
+repositorio ni sale hacia ningún sitio que no sea la API de Anthropic.
 
-## 2. Publica el Worker
+**Cuándo NO usar esta opción:** en un ordenador compartido o público. Quien tenga
+acceso al navegador puede leer la clave. Para tu portátil o tu móvil, es lo
+razonable. Si algún día crees que se ha filtrado, bórrala en la consola de
+Anthropic y crea otra: es gratis e inmediato.
+
+---
+
+## Opción B · Un Worker de Cloudflare (10 minutos)
+
+Solo si prefieres que la clave no viva en el navegador — por ejemplo, si vas a
+pasarle la URL a otra persona.
 
 1. Entra en <https://dash.cloudflare.com> y crea una cuenta si no la tienes.
 2. *Workers & Pages* → *Create* → *Start with Hello World* → *Deploy*.
@@ -30,47 +38,43 @@ mensual** (5 € basta de sobra). Es la red de seguridad por si algo se descontr
 
    | Nombre              | Valor                                   |
    | ------------------- | --------------------------------------- |
-   | `ANTHROPIC_API_KEY` | la clave del paso 1                     |
+   | `ANTHROPIC_API_KEY` | la clave del paso 1 de la opción A      |
    | `APP_PASS`          | una contraseña que te inventes          |
 
-   `APP_PASS` es opcional pero conviene: tu Worker es una dirección pública y,
-   sin ella, quien la descubra puede usar tu saldo. Con contraseña, no.
+5. Cloudflare te da una dirección tipo `https://aptis.tu-usuario.workers.dev`.
+   Pégala en la app, en el mismo campo donde iría la clave: la app distingue
+   sola una cosa de la otra.
 
-5. Apunta la dirección que te da Cloudflare. Será algo como
-   `https://aptis.tu-usuario.workers.dev`.
-
-## 3. Sube la app
-
-Sustituye el `index.html` del repositorio por el nuevo y haz push. GitHub Pages
-lo publica solo en un minuto.
-
-## 4. Conecta las dos piezas
-
-Abre <https://agonzaleztic-source.github.io/InglesB2/>. La primera vez te pedirá
-la dirección del Worker y la contraseña. Se guardan en tu navegador, no en el
-repositorio. Si te equivocas, el botón *cambiar conexión* de abajo a la derecha
-lo reinicia.
+Si usas contraseña, revisa que `ALLOWED_ORIGIN` coincida exactamente con
+`https://agonzaleztic-source.github.io`, sin barra final.
 
 ---
 
 ## Lo que cuesta
 
-Claude Sonnet 5 son 2 $ por millón de tokens de entrada y 10 $ por millón de
-salida. Una sesión diaria completa consume unos 6.000 tokens de entrada y 7.000
-de salida: alrededor de **8 céntimos al día**, unos 2-3 € al mes si practicas a
-diario. Cloudflare no cobra nada en este volumen.
+El modelo es Claude Sonnet 5: 2 $ por millón de tokens de entrada y 10 $ por
+millón de salida. Una sesión diaria completa consume unos 6.000 tokens de
+entrada y 7.000 de salida: alrededor de **8 céntimos al día**, unos 2-3 € al mes
+practicando a diario. Cloudflare, si usas la opción B, no cobra nada en este
+volumen.
 
 Precios actualizados en <https://platform.claude.com/docs/en/about-claude/pricing>.
 
+---
+
 ## Si algo falla
 
-**«No he podido preparar el ejercicio»** en todos los ejercicios: el Worker no
-responde. Ábrelo en el navegador; si dice *Solo se admite POST*, está vivo y el
-problema es la contraseña o el origen. Revisa que `ALLOWED_ORIGIN` coincida
-exactamente con `https://agonzaleztic-source.github.io`, sin barra final.
+La app te dice el motivo concreto en pantalla. Los mensajes más habituales:
+
+**«La clave no es válida»** — está mal pegada, o la borraste en la consola de
+Anthropic. Pulsa *cambiar conexión*, abajo a la derecha, y vuelve a pegarla.
+
+**«Tu cuenta de Anthropic no tiene saldo»** — recarga en *Billing*.
+
+**«Has llegado al límite de peticiones»** — espera un minuto.
 
 **Falla solo a veces**: el modelo devolvió algo que no era JSON válido. La app ya
-reintenta una vez por su cuenta; con el botón *Volver a intentarlo* se resuelve.
+reintenta por su cuenta; con *Volver a intentarlo* se resuelve.
 
 **El listening no suena**: la voz la pone el navegador. Chrome y Edge de
 escritorio van bien; en algunos móviles hay que tocar la pantalla antes de que

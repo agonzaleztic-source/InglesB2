@@ -17,6 +17,8 @@
   #setup button{margin-top:22px;padding:12px 22px;font-size:14.5px;font-weight:600;
     background:#15302A;color:#E7ECE4;border:none;border-radius:8px;cursor:pointer;}
   #setup small{display:block;margin-top:18px;font-size:12.5px;color:#63756D;line-height:1.6;}
+  #setup small a{color:#15302A;}
+  #setup .err{font-size:13px;color:#A33; margin:10px 0 0; min-height:0;}
   #reset{position:fixed;right:14px;bottom:14px;z-index:99;border:1px solid rgba(21,48,42,.2);
     background:#FBFCFA;color:#63756D;border-radius:8px;padding:7px 12px;font-size:12px;
     font-family:system-ui,sans-serif;cursor:pointer;display:none;}
@@ -26,15 +28,22 @@
 
 <div id="setup" style="display:none">
   <h1>Conecta la app</h1>
-  <p>Esta app genera cada ejercicio en el momento, así que necesita un punto de acceso al modelo.
-     Pega la dirección de tu Worker. Se guarda solo en este navegador.</p>
-  <label for="ep">Dirección del Worker</label>
-  <input id="ep" type="url" placeholder="https://aptis.tu-usuario.workers.dev" autocomplete="off">
-  <label for="pw">Contraseña (si le has puesto una)</label>
-  <input id="pw" type="password" placeholder="opcional" autocomplete="off">
+  <p>Cada ejercicio se genera en el momento, así que la app necesita una clave de la API de
+     Anthropic. Se guarda <strong>solo en este navegador</strong>: no viaja al repositorio ni a
+     ningún otro sitio.</p>
+  <label for="ep">Clave de la API</label>
+  <input id="ep" type="password" placeholder="sk-ant-..." autocomplete="off" spellcheck="false">
+  <p id="epErr" class="err"></p>
   <button id="go">Guardar y empezar</button>
-  <small>Sin esto la app no puede crear ejercicios. Las instrucciones para montar el Worker
-  están en <code>DESPLIEGUE.md</code>, dentro del repositorio.</small>
+  <small>
+    La sacas en <a href="https://console.anthropic.com/settings/keys" target="_blank"
+    rel="noopener">console.anthropic.com</a> → <em>API Keys</em>. Ponte antes un límite de gasto
+    mensual en <em>Billing → Limits</em>: 5 € sobran. Practicando a diario esto cuesta unos
+    2-3 € al mes.<br><br>
+    No uses esto en un ordenador compartido: quien lo use podría leer la clave.
+    Si prefieres que la clave no esté en el navegador, aquí también puedes pegar la dirección de
+    un Worker de Cloudflare — la guía está en <code>DESPLIEGUE.md</code>.
+  </small>
 </div>
 
 <div id="app"></div>
@@ -63,9 +72,22 @@
   }
 
   document.getElementById("go").addEventListener("click", () => {
-    const endpoint = document.getElementById("ep").value.trim();
-    if (!endpoint) { document.getElementById("ep").focus(); return; }
-    const cfg = { endpoint, pass: document.getElementById("pw").value.trim() };
+    const input = document.getElementById("ep");
+    const errBox = document.getElementById("epErr");
+    const v = input.value.trim();
+    errBox.textContent = "";
+    if (!v) { input.focus(); return; }
+
+    // Dos formas de conectar: la clave directa (lo normal) o un Worker que la
+    // guarde por ti. Se distinguen solas por cómo empiezan.
+    let cfg;
+    if (/^https?:\/\//i.test(v)) cfg = { mode: "worker", endpoint: v };
+    else if (/^sk-ant-/.test(v)) cfg = { mode: "key", key: v };
+    else {
+      errBox.textContent = "Eso no parece una clave (empiezan por sk-ant-) ni la dirección de un Worker.";
+      input.focus();
+      return;
+    }
     localStorage.setItem(CFG_KEY, JSON.stringify(cfg));
     start(cfg);
   });
@@ -92,7 +114,7 @@ const { useState, useEffect, useRef, useCallback } = React;
    · Cada fallo se convierte en explicación y en lección
    ================================================================ */
 
-const MODEL = "claude-sonnet-4-6";
+const MODEL = "claude-sonnet-5";
 const STORE = "aptis-general-b2";
 
 /* ---------------- utilidades ---------------- */
@@ -123,14 +145,51 @@ const TOPICS = [
 /* ---------------- llamadas al modelo ---------------- */
 async function callClaude(prompt) {
   const cfg = window.APTIS_CONFIG || {};
-  const headers = { "Content-Type": "application/json" };
-  if (cfg.pass) headers["x-app-pass"] = cfg.pass;
-  const res = await fetch(cfg.endpoint, {
-    method: "POST",
-    headers,
-    body: JSON.stringify({ max_tokens: 1000, messages: [{ role: "user", content: prompt }] }),
-  });
-  if (!res.ok) throw new Error("HTTP " + res.status);
+  const body = { max_tokens: 1000, messages: [{ role: "user", content: prompt }] };
+
+  let url, headers;
+  if (cfg.mode === "worker") {
+    // El Worker pone la clave y elige el modelo por su cuenta.
+    url = cfg.endpoint;
+    headers = { "content-type": "application/json" };
+    if (cfg.pass) headers["x-app-pass"] = cfg.pass;
+  } else {
+    // Llamada directa desde el navegador. Sin la cabecera "dangerous-direct"
+    // el navegador bloquea la petición por CORS.
+    url = "https://api.anthropic.com/v1/messages";
+    headers = {
+      "content-type": "application/json",
+      "x-api-key": cfg.key,
+      "anthropic-version": "2023-06-01",
+      "anthropic-dangerous-direct-browser-access": "true",
+    };
+    body.model = MODEL;
+  }
+
+  let res;
+  try {
+    res = await fetch(url, { method: "POST", headers, body: JSON.stringify(body) });
+  } catch {
+    throw new Error("No hay conexión con el modelo. Revisa tu conexión a internet.");
+  }
+  if (!res.ok) {
+    if (res.status === 401 || res.status === 403) {
+      throw new Error("La clave no es válida. Pulsa «cambiar conexión» abajo a la derecha y vuelve a pegarla.");
+    }
+    if (res.status === 400) {
+      throw new Error("La API ha rechazado la petición. Si acabas de cambiar la clave, revísala.");
+    }
+    if (res.status === 429) {
+      throw new Error("Has llegado al límite de peticiones. Espera un minuto y vuelve a intentarlo.");
+    }
+    if (res.status === 402) {
+      throw new Error("Tu cuenta de Anthropic no tiene saldo. Recárgalo en console.anthropic.com → Billing.");
+    }
+    if (res.status >= 500) {
+      throw new Error("El modelo no responde ahora mismo. Vuelve a intentarlo en un momento.");
+    }
+    throw new Error("Error " + res.status + " al llamar al modelo.");
+  }
   const data = await res.json();
   return (data.content || []).map((b) => (b.type === "text" ? b.text : "")).join("");
 }
@@ -649,10 +708,10 @@ function Theory({ id, open }) {
 function Loading({ text }) {
   return <div className="loading"><span className="pulse" />{text}</div>;
 }
-function Failed({ onRetry }) {
+function Failed({ onRetry, msg }) {
   return (
     <div className="failed">
-      <p>No he podido preparar el ejercicio. Suele ser un corte momentáneo.</p>
+      <p>{msg || "No he podido preparar el ejercicio. Suele ser un corte momentáneo."}</p>
       <button className="btn" onClick={onRetry}>Volver a intentarlo</button>
     </div>
   );
@@ -745,12 +804,12 @@ function TaskRunner({ def, ctx, onDone, onErrors, onSeen }) {
         ...(d.rounds || []).map((r) => fp(r.prompt)),
       ].filter(Boolean);
       onSeen(marks, ctx.topic);
-    } catch { setErr(true); }
+    } catch (e) { setErr(e.message || true); }
   }, [def.id]);
 
   useEffect(() => { build(); }, [def.id]);
 
-  if (err) return <Failed onRetry={build} />;
+  if (err) return <Failed onRetry={build} msg={typeof err === "string" ? err : null} />;
   if (!data) return <Loading text="Preparando un ejercicio que no has hecho nunca…" />;
 
   /* ---------- opción múltiple ---------- */
@@ -931,7 +990,7 @@ ${body}
 Sé exigente y concreto. Máximo 5 correcciones: las que más le bajan el nivel.
 Devuelve SOLO: {"level":"A2|B1|B2|C","summary":"dos frases en español: qué funciona y qué le impide subir","corrections":[{"original":"","better":"","why":"en español"}],"upgrade":"una frase suya reescrita con lenguaje de B2 alto","next":"un consejo concreto en español"}`
       ));
-    } catch { setFb({ level: "?", summary: "No he podido corregirlo. Prueba otra vez.", corrections: [] }); }
+    } catch (e) { setFb({ level: "?", summary: e.message || "No he podido corregirlo. Prueba otra vez.", corrections: [] }); }
     setBusy(false);
   };
 
@@ -1027,7 +1086,7 @@ ${body}
 Devuelve SOLO: {"level":"A2|B1|B2|C","summary":"dos frases en español","corrections":[{"original":"lo que dijo","better":"cómo se dice","why":"en español"}],"upgrade":"respuesta modelo EN INGLÉS de nivel B2, 60-80 palabras","next":"consejo concreto en español"}
 Máximo 4 correcciones.`
       ));
-    } catch { setFb({ level: "?", summary: "No he podido evaluarlo. Prueba otra vez.", corrections: [] }); }
+    } catch (e) { setFb({ level: "?", summary: e.message || "No he podido evaluarlo. Prueba otra vez.", corrections: [] }); }
     setBusy(false);
   };
 
@@ -1127,12 +1186,12 @@ ${seen.length ? `No uses estos ejemplos ya vistos: ${seen.join(" | ")}` : ""}
 Después 3 preguntas de comprobación tipo Aptis, EN INGLÉS, 4 opciones.
 Devuelve SOLO: {"idea":"la regla en español, 3-4 frases","trap":"el error típico del hispanohablante, 2 frases","examples":[{"en":"","es":"","note":"matiz en español"},{"en":"","es":"","note":""},{"en":"","es":"","note":""}],"exam":"en qué parte del Aptis te lo van a preguntar y cómo, 2 frases","check":[{"q":"","opts":["","","",""],"correct":0,"why":"en español"}]}`
       ));
-    } catch { setErr(true); }
+    } catch (e) { setErr(e.message || true); }
   }, [item.id]);
 
   useEffect(() => { build(); }, [item.id]);
 
-  if (err) return <Failed onRetry={build} />;
+  if (err) return <Failed onRetry={build} msg={typeof err === "string" ? err : null} />;
   if (!data) return <Loading text="Preparando la lección con ejemplos nuevos…" />;
 
   const check = data.check || [];
