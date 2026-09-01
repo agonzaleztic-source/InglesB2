@@ -1,86 +1,4 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="theme-color" content="#E7ECE4">
-<title>Aptis General · B2</title>
-<style>
-  html,body{margin:0;padding:0;background:#E7ECE4;}
-  #setup{max-width:520px;margin:0 auto;padding:46px 20px;
-    font-family:system-ui,sans-serif;color:#15302A;}
-  #setup h1{font-size:26px;letter-spacing:-.02em;margin:0 0 10px;}
-  #setup p{font-size:14.5px;line-height:1.65;color:#63756D;margin:0 0 20px;}
-  #setup label{display:block;font-size:13px;font-weight:600;margin:16px 0 6px;}
-  #setup input{width:100%;padding:11px 13px;font-size:15px;border:1px solid rgba(21,48,42,.2);
-    border-radius:8px;background:#FBFCFA;color:#15302A;box-sizing:border-box;}
-  #setup button{margin-top:22px;padding:12px 22px;font-size:14.5px;font-weight:600;
-    background:#15302A;color:#E7ECE4;border:none;border-radius:8px;cursor:pointer;}
-  #setup small{display:block;margin-top:18px;font-size:12.5px;color:#63756D;line-height:1.6;}
-  #reset{position:fixed;right:14px;bottom:14px;z-index:99;border:1px solid rgba(21,48,42,.2);
-    background:#FBFCFA;color:#63756D;border-radius:8px;padding:7px 12px;font-size:12px;
-    font-family:system-ui,sans-serif;cursor:pointer;display:none;}
-</style>
-</head>
-<body>
-
-<div id="setup" style="display:none">
-  <h1>Conecta la app</h1>
-  <p>Esta app genera cada ejercicio en el momento, así que necesita un punto de acceso al modelo.
-     Pega la dirección de tu Worker. Se guarda solo en este navegador.</p>
-  <label for="ep">Dirección del Worker</label>
-  <input id="ep" type="url" placeholder="https://aptis.tu-usuario.workers.dev" autocomplete="off">
-  <label for="pw">Contraseña (si le has puesto una)</label>
-  <input id="pw" type="password" placeholder="opcional" autocomplete="off">
-  <button id="go">Guardar y empezar</button>
-  <small>Sin esto la app no puede crear ejercicios. Las instrucciones para montar el Worker
-  están en <code>DESPLIEGUE.md</code>, dentro del repositorio.</small>
-</div>
-
-<div id="app"></div>
-<button id="reset">cambiar conexión</button>
-
-<script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-<script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-<script src="https://unpkg.com/@babel/standalone@7.24.7/babel.min.js"></script>
-
-<script>
-  const CFG_KEY = "aptis-conexion";
-  const setup = document.getElementById("setup");
-  const resetBtn = document.getElementById("reset");
-
-  function start(cfg) {
-    window.APTIS_CONFIG = cfg;
-    setup.style.display = "none";
-    resetBtn.style.display = "block";
-    const s = document.createElement("script");
-    s.type = "text/babel";
-    s.dataset.presets = "react";
-    s.textContent = document.getElementById("app-source").textContent;
-    document.body.appendChild(s);
-    Babel.transformScriptTags();
-  }
-
-  document.getElementById("go").addEventListener("click", () => {
-    const endpoint = document.getElementById("ep").value.trim();
-    if (!endpoint) { document.getElementById("ep").focus(); return; }
-    const cfg = { endpoint, pass: document.getElementById("pw").value.trim() };
-    localStorage.setItem(CFG_KEY, JSON.stringify(cfg));
-    start(cfg);
-  });
-
-  resetBtn.addEventListener("click", () => {
-    localStorage.removeItem(CFG_KEY);
-    location.reload();
-  });
-
-  const saved = localStorage.getItem(CFG_KEY);
-  if (saved) start(JSON.parse(saved));
-  else setup.style.display = "block";
-</script>
-
-<script type="text/plain" id="app-source">
-const { useState, useEffect, useRef, useCallback } = React;
+import { useState, useEffect, useRef, useCallback } from "react";
 
 /* ================================================================
    APTIS GENERAL · B2 — Entrenamiento diario
@@ -119,13 +37,10 @@ const TOPICS = [
 
 /* ---------------- llamadas al modelo ---------------- */
 async function callClaude(prompt) {
-  const cfg = window.APTIS_CONFIG || {};
-  const headers = { "Content-Type": "application/json" };
-  if (cfg.pass) headers["x-app-pass"] = cfg.pass;
-  const res = await fetch(cfg.endpoint, {
+  const res = await fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
-    headers,
-    body: JSON.stringify({ max_tokens: 1000, messages: [{ role: "user", content: prompt }] }),
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ model: MODEL, max_tokens: 1000, messages: [{ role: "user", content: prompt }] }),
   });
   if (!res.ok) throw new Error("HTTP " + res.status);
   const data = await res.json();
@@ -153,10 +68,19 @@ async function generate(prompt) {
 const blank = () => ({ days: {}, skills: {}, errors: [], seen: [], usedTopics: [], lessons: {} });
 
 async function load() {
-  try { const r = localStorage.getItem(STORE); return r ? { ...blank(), ...JSON.parse(r) } : blank(); }
+  try { const r = await window.storage.get(STORE); return r ? { ...blank(), ...JSON.parse(r.value) } : blank(); }
   catch { return blank(); }
 }
-async function save(s) { try { localStorage.setItem(STORE, JSON.stringify(s)); } catch (e) { console.warn(e); } }
+async function save(s) { try { await window.storage.set(STORE, JSON.stringify(s)); } catch { /* solo memoria */ } }
+
+function streakOf(days) {
+  let n = 0;
+  if (!days[back(0)]?.done && !days[back(1)]?.done) return 0;
+  for (let i = days[back(0)]?.done ? 0 : 1; i < 400; i++) {
+    if (days[back(i)]?.done) n++; else break;
+  }
+  return n;
+}
 
 /* ================================================================
    Catálogo: las tareas reales del Aptis General
@@ -1172,7 +1096,7 @@ Devuelve SOLO: {"idea":"la regla en español, 3-4 frases","trap":"el error típi
 /* ================================================================
    App
    ================================================================ */
-function App() {
+export default function App() {
   const [st, setSt] = useState(null);
   const [view, setView] = useState("hoy");
   const [running, setRunning] = useState(null);
@@ -1691,12 +1615,3 @@ const css = `
   .barLabel{width:105px; font-size:12.5px;}
 }
 `;
-
-
-const root = ReactDOM.createRoot(document.getElementById("app"));
-root.render(React.createElement(App));
-
-</script>
-
-</body>
-</html>
