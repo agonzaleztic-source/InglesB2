@@ -24,6 +24,10 @@
   #reset{position:fixed;right:14px;bottom:14px;z-index:99;border:1px solid rgba(21,48,42,.2);
     background:#FBFCFA;color:#63756D;border-radius:8px;padding:7px 12px;font-size:12px;
     font-family:system-ui,sans-serif;cursor:pointer;display:none;}
+  /* Flotando sobre una pantalla estrecha tapaba el texto del final. */
+  @media (max-width:520px){
+    #reset[style*="block"]{position:static;display:block !important;margin:0 auto 34px;}
+  }
 </style>
 </head>
 <body>
@@ -428,6 +432,8 @@ Devuelve SOLO: {"intro":"instrucción en español","scene":"Picture: ...","prep"
 ];
 
 const BY_ID = Object.fromEntries(TASKS.map((t) => [t.id, t]));
+/* El color de cada destreza viaja como variable CSS en el propio elemento. */
+const skStyle = (skill) => ({ "--sk": `var(--sk-${skill})` });
 const SKILLS = { core: "Gramática y vocabulario", reading: "Reading", listening: "Listening", writing: "Writing", speaking: "Speaking" };
 
 /* Temario B2 que el Aptis pregunta de verdad */
@@ -1423,14 +1429,20 @@ function App() {
       <header className="head">
         <div>
           <h1>Aptis General · B2</h1>
-          <p className="sub">Cada ejercicio se genera de cero. No repite nada de lo que ya has hecho.</p>
+          <p className="sub">{sinClave()
+            ? "Modo gratuito: ejercicios que vienen dentro de la app, con la explicación de cada fallo."
+            : "Cada ejercicio se genera de cero. No repite nada de lo que ya has hecho."}</p>
         </div>
         <div className="streak">
-          <span className="streakN">{streak}</span>
-          <span className="streakL">{streak === 1 ? "día seguido" : "días seguidos"}</span>
+          {/* Recibir a alguien con un cero enorme el primer día desanima. */}
+          {streak === 0
+            ? <span className="streakStart">Hoy empieza tu racha</span>
+            : <><span className="streakN">{streak}</span>
+                <span className="streakL">{streak === 1 ? "día seguido" : "días seguidos"}</span></>}
           <div className="dots">
             {Array.from({ length: 14 }, (_, i) => 13 - i).map((n) => (
-              <span key={n} className={"dotDay " + (st.days[back(n)]?.done ? "on" : "")} />
+              <span key={n} className={"dotDay " + (st.days[back(n)]?.done ? "on" : "")}
+                title={st.days[back(n)]?.done ? "sesión completa" : "sin completar"} />
             ))}
           </div>
         </div>
@@ -1447,19 +1459,34 @@ function App() {
       {view === "hoy" && (running ? runTask(running) : (
         <section>
           <div className="progressStrip">
-            {plan.map((t) => <span key={t.id} className={"seg " + (doneToday[t.id] ? "on" : "")} />)}
-            <span className="stripLabel">{doneN} de {plan.length}</span>
+            {plan.map((t) => (
+              <span key={t.id} style={skStyle(t.skill)}
+                className={"seg " + (doneToday[t.id] ? "on" : "")} title={t.name} />
+            ))}
+            <span className="stripLabel"><strong>{doneN}</strong> de {plan.length} · {plan.reduce((a, t) => a + (doneToday[t.id] ? 0 : t.mins), 0)} min restantes</span>
           </div>
           {doneN === plan.length && <p className="doneMsg">Sesión completa. Mañana te tocan las siguientes partes del examen.</p>}
           <div className="blocks">
-            {plan.map((t) => (
-              <button key={t.id} className={"blockRow " + (doneToday[t.id] ? "isDone" : "")} onClick={() => setRunning(t)}>
-                <span className="mark" />
-                <span className="blockName">{t.name}<em>{t.real}</em></span>
-                <span className="blockMins">{t.mins} min</span>
-              </button>
-            ))}
+            {plan.map((t) => {
+              const esSiguiente = !doneToday[t.id] && plan.find((x) => !doneToday[x.id])?.id === t.id;
+              return (
+                <button key={t.id} style={skStyle(t.skill)}
+                  className={"blockRow " + (doneToday[t.id] ? "isDone " : "") + (esSiguiente ? "isNext" : "")}
+                  onClick={() => setRunning(t)}>
+                  <span className="mark" />
+                  <span className="blockName">
+                    {esSiguiente && <span className="nextTag">Empieza por aquí</span>}
+                    <strong>{t.name}</strong><em>{t.real}</em>
+                  </span>
+                  <span className="blockMins">{t.mins} min</span>
+                </button>
+              );
+            })}
           </div>
+          <p className="rotaNote">
+            El plan rota: en cuatro días habrás tocado las cuatro partes de cada destreza.
+            Si hoy no tienes tiempo para todo, haz la gramática y una destreza más.
+          </p>
         </section>
       ))}
 
@@ -1587,27 +1614,36 @@ function App() {
       {/* ---------------- PROGRESO ---------------- */}
       {view === "progreso" && (
         <section>
-          <p className="hint">Media de tus 5 últimos intentos. La marca roja es el 75%, la frontera aproximada del B2.</p>
+          <p className="hint">Media de tus 5 últimos intentos en cada destreza.</p>
           <div className="bars">
             {Object.entries(SKILLS).map(([k, label]) => {
               const last = (st.skills[k] || []).slice(-5);
               const avg = last.length ? Math.round(last.reduce((a, b) => a + b.pct, 0) / last.length) : null;
               return (
-                <div key={k} className="barRow">
-                  <span className="barLabel">{label}</span>
+                <div key={k} className="barRow" style={skStyle(k)}>
+                  <span className="barLabel"><span className="barDot" />{label}</span>
                   <div className="bar">
-                    <span className={"fill " + (avg >= 75 ? "pass" : "")} style={{ width: `${avg || 0}%` }} />
+                    <span className="fill" style={{ width: `${avg || 0}%` }} />
                     <span className="threshold" />
                   </div>
-                  <span className="barVal">{avg == null ? "—" : `${avg}% · ${level(avg)}`}</span>
+                  <span className="barVal">{avg == null ? "sin datos" : <><strong>{avg}%</strong> · {level(avg)}</>}</span>
                 </div>
               );
             })}
+            <div className="barScale">
+              <span className="barScaleSpacer" />
+              <span className="barScaleBar"><span className="barScaleMark">75% · frontera del B2</span></span>
+              <span className="barScaleEnd" />
+            </div>
           </div>
+          {!Object.keys(st.skills).length &&
+            <p className="barEmpty">Aún no hay nada que medir. Termina un ejercicio y esta pantalla se llena.</p>}
           <div className="statRow">
-            <div><strong>{st.seen.length}</strong><span>fragmentos vistos que no volverán a salir</span></div>
-            <div><strong>{Object.values(st.lessons).filter((l) => l.done).length}/{SYLLABUS.length}</strong><span>lecciones aprendidas</span></div>
             <div><strong>{Object.keys(st.days).length}</strong><span>días de práctica</span></div>
+            <div><strong>{st.errors.length}</strong><span>fallos registrados para repasar</span></div>
+            {sinClave()
+              ? <div><strong>{st.seen.length}</strong><span>ejercicios ya vistos del banco</span></div>
+              : <div><strong>{Object.values(st.lessons).filter((l) => l.done).length}/{SYLLABUS.length}</strong><span>lecciones aprendidas</span></div>}
           </div>
           <p className="hint" style={{ marginTop: 26 }}>
             Son orientativos, no una nota oficial. En el examen real la gramática no puntúa por sí sola: sirve para
@@ -1633,6 +1669,11 @@ const css = `
   --paper:#E7ECE4; --card:#FBFCFA; --ink:#15302A; --ink2:#2E4840; --muted:#63756D;
   --line:rgba(21,48,42,.14); --accent:#2C3B8E; --accentSoft:rgba(44,59,142,.08);
   --ochre:#A97911; --good:#2C6B4F; --bad:#9E3327;
+  /* Un color por destreza. Paleta comprobada para daltonismo sobre la tarjeta:
+     separación mínima ΔE 9,5 en deuteranopía. El color nunca va solo: cada
+     bloque lleva siempre su nombre escrito. */
+  --sk-core:#3550C6; --sk-reading:#C98209; --sk-listening:#12928C;
+  --sk-writing:#A63A55; --sk-speaking:#6C8C10;
   --sans:'Bricolage Grotesque',system-ui,sans-serif; --serif:'Source Serif 4',Georgia,serif;
   background:var(--paper); color:var(--ink); font-family:var(--sans); min-height:100vh; padding:26px 18px 80px;
 }
@@ -1656,23 +1697,54 @@ const css = `
 .nav button.on{color:var(--ink); border-bottom-color:var(--ink);}
 .nav button:hover{color:var(--ink);}
 
-.progressStrip{display:flex; gap:5px; align-items:center; margin-bottom:20px;}
-.seg{height:5px; flex:1; border-radius:3px; background:rgba(21,48,42,.13);}
-.seg.on{background:var(--accent);}
-.stripLabel{font-size:12.5px; color:var(--muted); margin-left:8px; flex:none;}
-.doneMsg{font-size:14px; color:var(--good); margin:0 0 18px;}
+.progressStrip{display:flex; gap:4px; align-items:center; margin-bottom:22px;}
+.seg{height:7px; flex:1; border-radius:4px; background:rgba(21,48,42,.11);
+  transition:background .25s;}
+.seg.on{background:var(--sk, var(--accent));}
+.stripLabel{font-size:12.5px; color:var(--muted); margin-left:10px; flex:none;}
+.stripLabel strong{color:var(--ink); font-weight:700;}
+.doneMsg{font-size:14px; color:var(--good); font-weight:600; margin:0 0 18px;
+  background:rgba(44,107,79,.09); border-radius:9px; padding:11px 14px;}
+.streakStart{font-size:13.5px; font-weight:600; color:var(--ink2);}
+.rotaNote{font-size:12.5px; color:var(--muted); line-height:1.6; margin:20px 0 0;
+  padding-top:16px; border-top:1px solid var(--line);}
 
 .areaTitle{font-size:13px; font-weight:600; color:var(--muted); margin:26px 0 10px;}
-.blocks{display:flex; flex-direction:column; gap:7px;}
-.blockRow{display:flex; align-items:center; gap:13px; width:100%; text-align:left; cursor:pointer;
-  background:var(--card); border:1px solid var(--line); border-radius:9px; padding:14px 16px;
-  font-family:var(--sans); font-size:15px; color:var(--ink);}
-.blockRow:hover{border-color:var(--ink2);}
-.mark{width:11px; height:11px; border-radius:3px; border:1.5px solid var(--muted); flex:none;}
+.blocks{display:flex; flex-direction:column; gap:9px;}
+
+/* Cada bloque lleva el color de su destreza en un filo a la izquierda, para
+   que el plan del día se lea de un vistazo y no como cinco filas iguales. */
+.blockRow{display:flex; align-items:center; gap:14px; width:100%; text-align:left; cursor:pointer;
+  position:relative; overflow:hidden;
+  background:var(--card); border:1px solid var(--line); border-radius:11px; padding:15px 17px 15px 20px;
+  font-family:var(--sans); font-size:15px; color:var(--ink);
+  transition:border-color .15s, transform .15s, box-shadow .15s;}
+.blockRow::before{content:""; position:absolute; left:0; top:0; bottom:0; width:4px;
+  background:var(--sk, var(--muted));}
+.blockRow:hover{border-color:var(--sk, var(--ink2)); transform:translateY(-1px);
+  box-shadow:0 3px 10px rgba(21,48,42,.07);}
+.blockRow:active{transform:translateY(0);}
+
+.mark{width:17px; height:17px; border-radius:5px; border:1.5px solid rgba(21,48,42,.28); flex:none;
+  display:flex; align-items:center; justify-content:center;}
+.blockRow.isDone{background:rgba(21,48,42,.035);}
 .blockRow.isDone .mark{background:var(--good); border-color:var(--good);}
-.blockName{flex:1; font-weight:600; line-height:1.35;}
-.blockName em{display:block; font-style:normal; font-weight:400; font-size:12.5px; color:var(--muted); margin-top:3px;}
-.blockMins{font-size:12.5px; color:var(--muted); flex:none;}
+.blockRow.isDone .mark::after{content:"✓"; color:#fff; font-size:11px; font-weight:800; line-height:1;}
+.blockRow.isDone .blockName{color:var(--muted);}
+.blockRow.isDone .blockName strong{text-decoration:line-through; text-decoration-color:rgba(21,48,42,.3);}
+
+/* El siguiente sin hacer se marca, para no tener que decidir por dónde seguir. */
+.blockRow.isNext{border-color:var(--sk, var(--ink2));
+  box-shadow:0 0 0 3px color-mix(in srgb, var(--sk, var(--ink2)) 13%, transparent);}
+.nextTag{font-size:10.5px; font-weight:700; letter-spacing:.06em; text-transform:uppercase;
+  color:var(--sk, var(--muted)); display:block; margin-bottom:4px;}
+
+.blockName{flex:1; font-weight:600; line-height:1.35; min-width:0;}
+.blockName strong{font-weight:600;}
+.blockName em{display:block; font-style:normal; font-weight:400; font-size:12.5px; color:var(--muted); margin-top:4px;}
+.skTag{display:inline-block; font-size:10.5px; font-weight:700; letter-spacing:.07em; text-transform:uppercase;
+  color:var(--sk, var(--muted)); margin-bottom:4px;}
+.blockMins{font-size:12.5px; color:var(--muted); flex:none; white-space:nowrap;}
 
 .stage h2{font-size:21px; font-weight:800; letter-spacing:-.02em; margin:14px 0 4px;}
 .realNote{font-size:13px; color:var(--muted); margin:0 0 20px;}
@@ -1810,18 +1882,31 @@ const css = `
 .errQ{margin:0; font-size:15px; line-height:1.55;}
 .errA{margin:4px 0 0; font-size:13px; color:var(--muted);}
 
-.bars{display:flex; flex-direction:column; gap:15px;}
-.barRow{display:flex; align-items:center; gap:13px;}
-.barLabel{font-size:13.5px; width:150px; flex:none;}
-.bar{position:relative; flex:1; height:7px; border-radius:4px; background:rgba(21,48,42,.11);}
-.fill{position:absolute; left:0; top:0; bottom:0; border-radius:4px; background:var(--ochre);}
-.fill.pass{background:var(--good);}
-.threshold{position:absolute; left:75%; top:-3px; bottom:-3px; width:1.5px; background:var(--bad); opacity:.5;}
-.barVal{font-size:12.5px; color:var(--muted); width:78px; text-align:right; flex:none;}
-.statRow{display:flex; gap:26px; flex-wrap:wrap; margin-top:30px; padding-top:22px; border-top:1px solid var(--line);}
-.statRow div{max-width:155px;}
-.statRow strong{display:block; font-size:22px; font-weight:800; letter-spacing:-.02em;}
-.statRow span{font-size:12.5px; color:var(--muted); line-height:1.45; display:block; margin-top:3px;}
+.bars{display:flex; flex-direction:column; gap:4px; background:var(--card);
+  border:1px solid var(--line); border-radius:11px; padding:18px 18px 12px;}
+.barRow{display:flex; align-items:center; gap:13px; padding:7px 0;}
+.barLabel{font-size:13.5px; width:150px; flex:none; display:flex; align-items:center; gap:8px;}
+.barDot{width:9px; height:9px; border-radius:3px; background:var(--sk, var(--muted)); flex:none;}
+.bar{position:relative; flex:1; height:9px; border-radius:5px; background:rgba(21,48,42,.10);}
+.fill{position:absolute; left:0; top:0; bottom:0; border-radius:5px; background:var(--sk, var(--ochre));
+  transition:width .4s;}
+/* La marca del 75% es la frontera del B2: va rotulada, no suelta. */
+.threshold{position:absolute; left:75%; top:-5px; bottom:-5px; width:2px;
+  background:var(--ink); opacity:.28;}
+.barVal{font-size:12.5px; color:var(--muted); width:86px; text-align:right; flex:none; font-variant-numeric:tabular-nums;}
+.barVal strong{color:var(--ink); font-weight:700;}
+.barScale{display:flex; align-items:center; gap:13px; margin-top:6px; padding-top:9px;
+  border-top:1px solid var(--line);}
+.barScaleSpacer{width:150px; flex:none;}
+.barScaleBar{flex:1; position:relative; height:14px;}
+.barScaleMark{position:absolute; left:75%; transform:translateX(-50%); font-size:11px; color:var(--muted); white-space:nowrap;}
+.barScaleEnd{width:86px; flex:none;}
+.barEmpty{font-size:13px; color:var(--muted); margin:2px 0 0;}
+
+.statRow{display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:12px; margin-top:16px;}
+.statRow div{background:var(--card); border:1px solid var(--line); border-radius:11px; padding:15px 16px;}
+.statRow strong{display:block; font-size:24px; font-weight:800; letter-spacing:-.02em; line-height:1.1;}
+.statRow span{font-size:12.5px; color:var(--muted); line-height:1.45; display:block; margin-top:5px;}
 
 .theory{border:1px solid var(--line); border-radius:9px; background:var(--card); margin:0 0 22px; overflow:hidden;}
 .theory summary{cursor:pointer; padding:12px 16px; font-size:13.5px; font-weight:600; color:var(--ink2); list-style:none;}
@@ -1858,9 +1943,21 @@ const css = `
 @media (prefers-reduced-motion:reduce){.wrap *{animation:none !important; transition:none !important;}}
 @media (max-width:520px){
   .head h1{font-size:25px;}
-  .nav{gap:15px;}
-  .nav button{font-size:13.5px;}
-  .barLabel{width:105px; font-size:12.5px;}
+  /* El menú se salía de la pantalla y cortaba la última pestaña. */
+  .nav{gap:0; margin-left:-18px; margin-right:-18px; padding:0 18px;
+    scrollbar-width:none; -webkit-overflow-scrolling:touch;}
+  .nav::-webkit-scrollbar{display:none;}
+  .nav button{font-size:13.5px; padding:0 11px 11px;}
+  .nav button:first-child{padding-left:0;}
+  .head{margin-bottom:18px;}
+  .streak{text-align:left;}
+  .dots{justify-content:flex-start;}
+  .barRow{flex-wrap:wrap; gap:8px;}
+  .barLabel{width:auto; flex:1; font-size:13px;}
+  .barVal{width:auto;}
+  .bar{flex-basis:100%; order:3;}
+  .barScale{display:none;}
+  .blockRow{padding:14px 14px 14px 18px;}
 }
 `;
 
