@@ -111,10 +111,25 @@
     location.reload();
   });
 
-  const saved = localStorage.getItem(CFG_KEY);
+  // Una conexión guardada con un formato anterior arrancaba la app en un estado
+  // roto y sin manera de volver a la pantalla de inicio. Ahora se valida y, si
+  // no sirve, se descarta y se empieza de cero.
+  function valida(cfg) {
+    if (!cfg || typeof cfg !== "object") return null;
+    if (cfg.mode === "banco") return cfg;
+    if (cfg.mode === "key" && cfg.key) return cfg;
+    if (cfg.mode === "worker" && cfg.endpoint) return cfg;
+    if (cfg.endpoint) return { mode: "worker", endpoint: cfg.endpoint, pass: cfg.pass };
+    return null;
+  }
+
+  let guardada = null;
+  try { guardada = valida(JSON.parse(localStorage.getItem(CFG_KEY))); } catch { guardada = null; }
+  if (!guardada) localStorage.removeItem(CFG_KEY);
+
   // El código de la app vive en un <script> más abajo, que todavía no está
   // parseado cuando corre esto. Por eso el arranque espera al DOM.
-  if (saved) document.addEventListener("DOMContentLoaded", () => start(JSON.parse(saved)));
+  if (guardada) document.addEventListener("DOMContentLoaded", () => start(guardada));
   else setup.style.display = "block";
 </script>
 
@@ -753,10 +768,19 @@ function Loading({ text }) {
   return <div className="loading"><span className="pulse" />{text}</div>;
 }
 function Failed({ onRetry, msg }) {
+  const aBanco = () => {
+    localStorage.setItem("aptis-conexion", JSON.stringify({ mode: "banco" }));
+    location.reload();
+  };
   return (
     <div className="failed">
       <p>{msg || "No he podido preparar el ejercicio. Suele ser un corte momentáneo."}</p>
-      <button className="btn" onClick={onRetry}>Volver a intentarlo</button>
+      <div className="row">
+        <button className="btn" onClick={onRetry}>Volver a intentarlo</button>
+        {/* Salida de emergencia: si la conexión guardada no responde, que no te
+            deje encerrado sin poder estudiar. */}
+        {!sinClave() && <button className="btn ghost" onClick={aBanco}>Seguir gratis, sin clave</button>}
+      </div>
     </div>
   );
 }
