@@ -53,12 +53,13 @@
     window.APTIS_CONFIG = cfg;
     setup.style.display = "none";
     resetBtn.style.display = "block";
+    // Compilamos a mano en vez de usar type="text/babel": Babel transforma
+    // esas etiquetas también por su cuenta al cargar el DOM, y el código
+    // acababa ejecutándose dos veces.
+    const src = document.getElementById("app-source").textContent;
     const s = document.createElement("script");
-    s.type = "text/babel";
-    s.dataset.presets = "react";
-    s.textContent = document.getElementById("app-source").textContent;
+    s.textContent = Babel.transform(src, { presets: ["react"] }).code;
     document.body.appendChild(s);
-    Babel.transformScriptTags();
   }
 
   document.getElementById("go").addEventListener("click", () => {
@@ -75,7 +76,9 @@
   });
 
   const saved = localStorage.getItem(CFG_KEY);
-  if (saved) start(JSON.parse(saved));
+  // El código de la app vive en un <script> más abajo, que todavía no está
+  // parseado cuando corre esto. Por eso el arranque espera al DOM.
+  if (saved) document.addEventListener("DOMContentLoaded", () => start(JSON.parse(saved)));
   else setup.style.display = "block";
 </script>
 
@@ -157,6 +160,15 @@ async function load() {
   catch { return blank(); }
 }
 async function save(s) { try { localStorage.setItem(STORE, JSON.stringify(s)); } catch (e) { console.warn(e); } }
+
+function streakOf(days) {
+  let n = 0;
+  if (!days[back(0)]?.done && !days[back(1)]?.done) return 0;
+  for (let i = days[back(0)]?.done ? 0 : 1; i < 400; i++) {
+    if (days[back(i)]?.done) n++; else break;
+  }
+  return n;
+}
 
 /* ================================================================
    Catálogo: las tareas reales del Aptis General
