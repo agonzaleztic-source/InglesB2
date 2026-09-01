@@ -2,12 +2,30 @@
 
 La app está publicada en <https://agonzaleztic-source.github.io/InglesB2/>.
 
-Genera cada ejercicio en el momento, así que necesita acceso al modelo. Hay dos
-formas de dárselo. La primera es la normal.
+Hay tres formas de usarla. La primera no cuesta nada y no requiere montar nada.
 
 ---
 
-## Opción A · Tu clave, en tu navegador (2 minutos)
+## Opción A · Gratis, sin clave
+
+Pulsa **«Empezar gratis, sin clave»** y ya está.
+
+La app trae dentro (`banco.js`) los ejercicios de las 17 tareas del examen, cada
+uno con su explicación al fallar y con la teoría a fondo detrás del botón
+*Explícamelo mejor*. Funciona sin conexión al modelo y sin gastar un céntimo.
+
+Lo que **no** puede hacer sin modelo:
+
+- Generar ejercicios nuevos sin límite: el banco es finito y acaba repitiéndose.
+- Corregirte el Writing y el Speaking. En su lugar te da la respuesta modelo de
+  nivel B2 y una lista de comprobación con lo que miraría un examinador.
+- Las micro-lecciones del *Temario*, que se escriben en el momento.
+
+Puedes añadir una clave más adelante sin perder tu progreso.
+
+---
+
+## Opción B · Tu clave, en tu navegador (2 minutos)
 
 1. Entra en <https://console.anthropic.com> → *API Keys* → crear clave.
    Cópiala: solo se ve una vez.
@@ -25,7 +43,7 @@ Anthropic y crea otra: es gratis e inmediato.
 
 ---
 
-## Opción B · Un Worker de Cloudflare (10 minutos)
+## Opción C · Un Worker de Cloudflare (10 minutos)
 
 Solo si prefieres que la clave no viva en el navegador — por ejemplo, si vas a
 pasarle la URL a otra persona.
@@ -38,7 +56,7 @@ pasarle la URL a otra persona.
 
    | Nombre              | Valor                                   |
    | ------------------- | --------------------------------------- |
-   | `ANTHROPIC_API_KEY` | la clave del paso 1 de la opción A      |
+   | `ANTHROPIC_API_KEY` | la clave del paso 1 de la opción B      |
    | `APP_PASS`          | una contraseña que te inventes          |
 
 5. Cloudflare te da una dirección tipo `https://aptis.tu-usuario.workers.dev`.
@@ -52,10 +70,10 @@ Si usas contraseña, revisa que `ALLOWED_ORIGIN` coincida exactamente con
 
 ## Lo que cuesta
 
-El modelo es Claude Sonnet 5: 2 $ por millón de tokens de entrada y 10 $ por
+Esto solo aplica a las opciones B y C. El modelo es Claude Sonnet 5: 2 $ por millón de tokens de entrada y 10 $ por
 millón de salida. Una sesión diaria completa consume unos 6.000 tokens de
 entrada y 7.000 de salida: alrededor de **8 céntimos al día**, unos 2-3 € al mes
-practicando a diario. Cloudflare, si usas la opción B, no cobra nada en este
+practicando a diario. Cloudflare, si usas la opción C, no cobra nada en este
 volumen.
 
 Precios actualizados en <https://platform.claude.com/docs/en/about-claude/pricing>.

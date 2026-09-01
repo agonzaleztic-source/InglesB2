@@ -19,6 +19,8 @@
   #setup small{display:block;margin-top:18px;font-size:12.5px;color:#63756D;line-height:1.6;}
   #setup small a{color:#15302A;}
   #setup .err{font-size:13px;color:#A33; margin:10px 0 0; min-height:0;}
+  #setup button.ghost{background:none;color:#15302A;border:1px solid rgba(21,48,42,.25);margin-left:8px;}
+  #setup .freeNote{font-size:12.5px;line-height:1.6;margin:14px 0 0;}
   #reset{position:fixed;right:14px;bottom:14px;z-index:99;border:1px solid rgba(21,48,42,.2);
     background:#FBFCFA;color:#63756D;border-radius:8px;padding:7px 12px;font-size:12px;
     font-family:system-ui,sans-serif;cursor:pointer;display:none;}
@@ -35,6 +37,11 @@
   <input id="ep" type="password" placeholder="sk-ant-..." autocomplete="off" spellcheck="false">
   <p id="epErr" class="err"></p>
   <button id="go">Guardar y empezar</button>
+  <button id="free" class="ghost">Empezar gratis, sin clave</button>
+  <p class="freeNote">Sin clave funcionan los ejercicios que ya vienen dentro de la app, con su
+  explicación en cada fallo. Lo que no puede hacer sin modelo es generar ejercicios nuevos sin
+  límite ni corregirte el writing y el speaking: ahí verás la respuesta modelo y una lista de
+  comprobación. Puedes añadir la clave más adelante sin perder tu progreso.</p>
   <small>
     La sacas en <a href="https://console.anthropic.com/settings/keys" target="_blank"
     rel="noopener">console.anthropic.com</a> → <em>API Keys</em>. Ponte antes un límite de gasto
@@ -49,6 +56,7 @@
 <div id="app"></div>
 <button id="reset">cambiar conexión</button>
 
+<script src="banco.js"></script>
 <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
 <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
 <script src="https://unpkg.com/@babel/standalone@7.24.7/babel.min.js"></script>
@@ -88,6 +96,12 @@
       input.focus();
       return;
     }
+    localStorage.setItem(CFG_KEY, JSON.stringify(cfg));
+    start(cfg);
+  });
+
+  document.getElementById("free").addEventListener("click", () => {
+    const cfg = { mode: "banco" };
     localStorage.setItem(CFG_KEY, JSON.stringify(cfg));
     start(cfg);
   });
@@ -209,6 +223,36 @@ async function generate(prompt) {
     try { return parseJSON(await callClaude(prompt)); } catch (err) { last = err; }
   }
   throw last;
+}
+
+/* ---------------- banco integrado (modo sin clave) ---------------- */
+const sinClave = () => (window.APTIS_CONFIG || {}).mode === "banco";
+
+/* Coge lo que aún no hayas visto; si ya lo has visto todo, vuelve a empezar. */
+const noVistos = (lista, huella, vistos) => {
+  const nuevos = lista.filter((x) => !vistos.includes(huella(x)));
+  return nuevos.length ? nuevos : lista;
+};
+
+function delBanco(def, vistos) {
+  const B = window.BANK || {};
+
+  if (def.id === "core") {
+    const pool = B.core || [];
+    if (pool.length < 6) throw new Error("El banco de gramática está incompleto.");
+    const eleg = shuffle(noVistos(pool, (q) => fp(q.q), vistos));
+    // Si quedan menos de 6 sin ver, se completan con otras ya vistas.
+    const use = eleg.length >= 6 ? eleg.slice(0, 6)
+      : [...eleg, ...shuffle(pool.filter((q) => !eleg.includes(q))).slice(0, 6 - eleg.length)];
+    return { intro: "Elige la opción correcta en cada frase.", questions: use };
+  }
+
+  const sets = B[def.id] || [];
+  if (!sets.length) {
+    throw new Error("Esta parte todavía no tiene ejercicios sin conexión. Prueba otra, o añade una clave con «cambiar conexión».");
+  }
+  const huella = (s) => fp(s.text || s.script || s.context || (s.lines || [])[1] || (s.items || [])[0]?.script || (s.rounds || [])[0]?.prompt);
+  return pick(noVistos(sets, huella, vistos));
 }
 
 /* ---------------- almacenamiento ---------------- */
@@ -752,10 +796,12 @@ function Player({ script, label }) {
 }
 
 /* Explicación bajo demanda cuando fallas */
-function WhyMore({ q, right, chosen }) {
+function WhyMore({ q, right, chosen, deep }) {
   const [data, setData] = useState(null);
   const [busy, setBusy] = useState(false);
   const ask = async () => {
+    // En modo sin clave la explicación a fondo ya viene escrita en el banco.
+    if (deep) { setData({ rule: deep.rule, mistake: deep.mistake, examples: deep.examples }); return; }
     setBusy(true);
     try {
       setData(await generate(
@@ -794,7 +840,7 @@ function TaskRunner({ def, ctx, onDone, onErrors, onSeen }) {
   const build = useCallback(async () => {
     setErr(false); setData(null); setAns({}); setShown(false);
     try {
-      const d = await generate(def.build(ctx));
+      const d = sinClave() ? delBanco(def, ctx.seen || []) : await generate(def.build(ctx));
       setData(d);
       if (def.format === "order") setOrder(shuffle(d.lines.map((_, i) => i).slice(1)));
       const marks = [
@@ -842,7 +888,7 @@ function TaskRunner({ def, ctx, onDone, onErrors, onSeen }) {
                 <p className={"why " + (ans[i] === q.correct ? "ok" : "no")}>
                   {q.tag && <span className="tag">{q.tag}</span>}{q.why}
                 </p>
-                {ans[i] !== q.correct && <WhyMore q={q.q} right={q.opts[q.correct]} chosen={q.opts[ans[i]]} />}
+                {ans[i] !== q.correct && <WhyMore q={q.q} right={q.opts[q.correct]} chosen={q.opts[ans[i]]} deep={q.deep} />}
               </div>
             )}
           </div>
@@ -981,6 +1027,12 @@ function WriteTask({ data, def, onDone }) {
   const fields = data.fields || [];
 
   const grade = async () => {
+    if (sinClave()) {
+      setFb({ level: "—",
+        summary: "Sin clave no puedo corregir tu texto. Compáralo con la respuesta modelo y repasa la lista: es lo que miraría un examinador.",
+        checklist: data.check, models: data.model, corrections: [] });
+      return;
+    }
     setBusy(true);
     const body = fields.map((f, i) => `CONSIGNA: ${f.prompt} (${f.words})\nRESPUESTA: ${vals[i] || ""}`).join("\n\n");
     try {
@@ -1076,6 +1128,12 @@ function SpeakTask({ data, def, onDone }) {
   };
 
   const grade = async () => {
+    if (sinClave()) {
+      setFb({ level: "—",
+        summary: "Sin clave no puedo evaluar lo que has dicho. Lee la respuesta modelo en voz alta y compárala con la tuya: fíjate en la estructura, no en las palabras exactas.",
+        checklist: data.check, models: data.model, corrections: [] });
+      return;
+    }
     setBusy(true);
     const body = rounds.map((r, i) => `PREGUNTA: ${r.prompt}\nDIJO: ${texts[i] || ""}`).join("\n\n");
     try {
@@ -1150,8 +1208,20 @@ Máximo 4 correcciones.`
 function Feedback({ fb, onDone, modelLabel }) {
   return (
     <div>
-      <div className="fbLevel"><strong>{fb.level}</strong><span>nivel de esta respuesta</span></div>
+      {fb.level !== "—" && <div className="fbLevel"><strong>{fb.level}</strong><span>nivel de esta respuesta</span></div>}
       <p className="fbSummary">{fb.summary}</p>
+      {fb.checklist && (
+        <div className="checklist">
+          <span className="tag">Compara tu texto con esto</span>
+          {fb.checklist.map((c, i) => <p key={i}>{c}</p>)}
+        </div>
+      )}
+      {fb.models?.map((m, i) => (
+        <div key={i} className="upgrade">
+          <span className="tag">Respuesta modelo {fb.models.length > 1 ? i + 1 : ""}</span>
+          <p style={{ whiteSpace: "pre-wrap" }}>{m}</p>
+        </div>
+      ))}
       {fb.corrections?.map((c, i) => (
         <div key={i} className="corr">
           <p className="corrBad">{c.original}</p>
@@ -1177,6 +1247,12 @@ function Lesson({ item, seen, onLearn, onBack }) {
 
   const build = useCallback(async () => {
     setErr(false); setData(null); setAns({}); setShown(false);
+    if (sinClave()) {
+      setErr("Las lecciones del temario se escriben en el momento, así que necesitan una clave. "
+        + "Mientras tanto la teoría la tienes en «Teoría», y cada fallo de los tests te da su explicación "
+        + "y el botón «Explícamelo mejor».");
+      return;
+    }
     try {
       setData(await generate(
         `Eres profesor de inglés preparando a un hispanohablante para el Aptis General (nivel B2). Da una micro-lección sobre: "${item.t}".
@@ -1276,6 +1352,7 @@ function App() {
     return {
       topic: pick(fresh.length > 6 ? fresh : TOPICS),
       avoid: st.seen.slice(0, 18).join(" | "),
+      seen: st.seen,
       focus: def.id === "core" ? errorTags.slice(0, 2).map((t) => t[0]).join(", ") : "",
     };
   };
