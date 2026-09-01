@@ -3,1475 +3,1342 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Expediente Aptis B2</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=IBM+Plex+Sans:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<meta name="theme-color" content="#E7ECE4">
+<title>Aptis General · B2</title>
 <style>
-  :root{
-    --ink:#16233F;
-    --ink-2:#223257;
-    --stamp:#B23A2E;
-    --paper:#EFEAE0;
-    --paper-dark:#E3DDCB;
-    --gold:#C9A227;
-    --teal:#2F6F62;
-    --text:#1B2430;
-    --muted:#6B6456;
-    --line: rgba(27,36,48,0.14);
-    --radius: 10px;
-  }
-  *{box-sizing:border-box;}
-  html,body{margin:0;padding:0;}
-  body{
-    background: var(--paper);
-    color: var(--text);
-    font-family: 'IBM Plex Sans', sans-serif;
-    min-height:100vh;
-    background-image:
-      radial-gradient(circle at 100% 0%, rgba(201,162,39,0.08), transparent 40%),
-      radial-gradient(circle at 0% 100%, rgba(178,58,46,0.06), transparent 40%);
-  }
-  .app{max-width:980px; margin:0 auto; padding:20px 16px 60px;}
-
-  /* HEADER */
-  .masthead{
-    display:flex; align-items:flex-end; justify-content:space-between;
-    gap:16px; flex-wrap:wrap;
-    border-bottom: 3px solid var(--ink);
-    box-shadow: 0 7px 0 -6px var(--ink);
-    padding-bottom:14px; margin-bottom:18px;
-  }
-  .masthead .id{
-    font-family:'Space Mono', monospace; font-size:11px; letter-spacing:.12em;
-    color: var(--muted); text-transform:uppercase;
-  }
-  .masthead h1{
-    font-family:'Fraunces', serif; font-weight:700; font-size: clamp(26px,4vw,38px);
-    margin:2px 0 0; color:var(--ink); letter-spacing:-0.01em;
-  }
-  .badge-level{
-    font-family:'Space Mono', monospace; font-weight:700; font-size:13px;
-    border:2px solid var(--stamp); color:var(--stamp);
-    padding:6px 12px; border-radius:999px; transform:rotate(-3deg);
-    white-space:nowrap;
-  }
-  .badge-level.has-level{ background:rgba(178,58,46,0.08); }
-
-  /* NAV TABS */
-  nav.tabs{
-    display:flex; gap:6px; flex-wrap:wrap; margin-bottom:22px;
-    position:sticky; top:0; z-index:40;
-    background:linear-gradient(var(--paper) 78%, rgba(239,234,224,0));
-    padding:10px 0 14px;
-  }
-  nav.tabs button{
-    font-family:'IBM Plex Sans', sans-serif; font-weight:600; font-size:13.5px;
-    background:transparent; border:1.5px solid var(--line); color:var(--ink);
-    padding:9px 14px; border-radius:999px; cursor:pointer;
-    transition: all .15s ease;
-  }
-  nav.tabs button:hover{ border-color:var(--ink); }
-  nav.tabs button.active{
-    background:var(--ink); color:var(--paper); border-color:var(--ink);
-  }
-  nav.tabs button:focus-visible{ outline:2px solid var(--stamp); outline-offset:2px; }
-
-  section.view{display:none;}
-  section.view.active{display:block; animation: fadeUp .35s ease;}
-  @keyframes fadeUp{ from{opacity:0; transform:translateY(6px);} to{opacity:1; transform:translateY(0);} }
-
-  .card{
-    background:#fff; border:1px solid var(--line); border-radius: var(--radius);
-    padding:20px 22px; margin-bottom:16px;
-    box-shadow: 0 1px 0 rgba(27,36,48,0.03);
-  }
-  .card h2{
-    font-family:'Fraunces', serif; font-size:22px; margin:0 0 10px; color:var(--ink);
-  }
-  .card h3{
-    font-family:'Fraunces', serif; font-size:17px; margin:18px 0 8px; color:var(--ink-2);
-  }
-  .muted{color:var(--muted); font-size:14px; line-height:1.55;}
-  p{line-height:1.6;}
-
-  /* DASHBOARD GRID */
-  .grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:12px; margin-top:6px;}
-  .stamp-card{
-    border:1.5px dashed var(--line); border-radius:var(--radius); padding:14px;
-    text-align:center; position:relative; overflow:hidden;
-  }
-  .stamp-card .skill{font-size:12px; text-transform:uppercase; letter-spacing:.08em; color:var(--muted); font-weight:600;}
-  .stamp-card .level{
-    font-family:'Fraunces', serif; font-weight:700; font-size:34px; margin-top:6px; color:var(--ink);
-  }
-  .stamp-card .level.empty{color:#c8c2b2; font-size:22px;}
-  .stamp-card .level.pass{color:var(--teal);}
-  .stamp-card .sub{font-family:'Space Mono',monospace; font-size:11px; color:var(--muted); margin-top:4px;}
-
-  /* Barra de progreso hacia el B2 (marca roja = umbral 75%) */
-  .meter{
-    position:relative; height:6px; margin-top:10px; border-radius:999px;
-    background:rgba(27,36,48,0.10); overflow:visible;
-  }
-  .meter > span{
-    display:block; height:100%; border-radius:999px; max-width:100%;
-    background:var(--gold); transition:width .5s ease;
-  }
-  .meter > span.pass{background:var(--teal);}
-  .meter::after{
-    content:''; position:absolute; left:75%; top:-3px; bottom:-3px; width:2px;
-    background:var(--stamp); opacity:.55; border-radius:1px;
-  }
-
-  .tip-list{padding-left:18px; margin:8px 0;}
-  .tip-list li{margin-bottom:8px; line-height:1.55;}
-
-  table.struct{width:100%; border-collapse:collapse; margin-top:8px; font-size:14px;}
-  table.struct th, table.struct td{border-bottom:1px solid var(--line); text-align:left; padding:8px 6px; vertical-align:top;}
-  table.struct th{font-family:'Space Mono',monospace; font-size:11px; text-transform:uppercase; color:var(--muted);}
-
-  /* BUTTONS */
-  .btn{
-    font-family:'IBM Plex Sans',sans-serif; font-weight:600; font-size:14px;
-    background:var(--ink); color:#fff; border:none; border-radius:8px;
-    padding:10px 18px; cursor:pointer; transition:transform .1s ease, background .15s ease;
-    box-shadow:0 2px 0 rgba(27,36,48,0.28);
-  }
-  .btn:hover{background:var(--ink-2);}
-  .btn:active{transform:translateY(1px); box-shadow:0 1px 0 rgba(27,36,48,0.28);}
-  .btn.secondary{background:transparent; color:var(--ink); border:1.5px solid var(--ink); box-shadow:none;}
-  .btn.teal{background:var(--teal);}
-  .btn.stamp{background:var(--stamp);}
-  .btn:disabled{opacity:.45; cursor:not-allowed;}
-  .btn:focus-visible{outline:2px solid var(--gold); outline-offset:2px;}
-
-  /* QUIZ */
-  .q-block{border-top:1px solid var(--line); padding:16px 0;}
-  .q-block:first-of-type{border-top:none; padding-top:4px;}
-  .q-num{font-family:'Space Mono',monospace; font-size:12px; color:var(--muted);}
-  .q-text{font-weight:600; margin:4px 0 10px; font-size:15px;}
-  .options{display:flex; flex-direction:column; gap:8px;}
-  .opt{
-    display:flex; align-items:center; gap:10px; padding:9px 12px;
-    border:1.5px solid var(--line); border-radius:8px; cursor:pointer; font-size:14px;
-    transition: border-color .12s ease, background .12s ease;
-  }
-  .opt:hover{border-color:var(--ink);}
-  .opt input{accent-color:var(--ink);}
-  .opt.correct{border-color:var(--teal); background:rgba(47,111,98,0.08);}
-  .opt.incorrect{border-color:var(--stamp); background:rgba(178,58,46,0.08);}
-
-  .timer{
-    font-family:'Space Mono',monospace; font-weight:700; font-size:22px; color:var(--ink);
-    border:2px solid var(--ink); border-radius:8px; padding:6px 14px; display:inline-block;
-  }
-  .timer.warn{color:var(--stamp); border-color:var(--stamp); animation:tick-pulse 1s ease-in-out infinite;}
-  @keyframes tick-pulse{ 50%{opacity:.5;} }
-
-  textarea{
-    width:100%; min-height:220px; font-family:'IBM Plex Sans',sans-serif; font-size:14.5px;
-    border:1.5px solid var(--line); border-radius:8px; padding:14px; line-height:1.6; resize:vertical;
-  }
-  textarea:focus{outline:2px solid var(--gold); border-color:var(--ink);}
-
-  .word-count{font-family:'Space Mono',monospace; font-size:12.5px; color:var(--muted); margin-top:6px;}
-  .word-count.ok{color:var(--teal);}
-  .word-count.low{color:var(--stamp);}
-
-  .result-banner{
-    display:flex; align-items:center; gap:14px; padding:14px 18px; border-radius:8px;
-    background:var(--paper-dark); margin-top:14px; font-family:'Space Mono',monospace;
-  }
-  .result-banner .big{font-size:26px; font-weight:700; color:var(--ink);}
-
-  .passage{
-    background:var(--paper-dark); border-radius:8px; padding:16px 18px; font-size:14.5px; line-height:1.7;
-    margin-bottom:14px; white-space:pre-wrap;
-  }
-  .prompt-box{
-    border-left:4px solid var(--gold); padding:10px 16px; background:rgba(201,162,39,0.07);
-    margin-bottom:14px; font-size:14.5px; line-height:1.6;
-  }
-
-  select{
-    font-family:'IBM Plex Sans',sans-serif; font-size:14px; padding:8px 10px; border-radius:6px;
-    border:1.5px solid var(--line);
-  }
-
-  .listen-controls{display:flex; align-items:center; gap:12px; margin-bottom:14px; flex-wrap:wrap;}
-  .plays-left{font-family:'Space Mono',monospace; font-size:12px; color:var(--muted);}
-
-  .headings-bank{display:flex; flex-wrap:wrap; gap:8px; margin-bottom:14px;}
-  .heading-chip{
-    border:1.5px solid var(--line); border-radius:999px; padding:5px 12px; font-size:13px; background:#fff;
-  }
-
-  .speaker-row{
-    border:1.5px solid var(--line); border-radius:8px; padding:12px 14px; margin-bottom:10px;
-    display:flex; flex-direction:column; gap:8px;
-  }
-  .speaker-row .sp-name{font-family:'Space Mono',monospace; font-size:12px; font-weight:700; color:var(--ink); text-transform:uppercase; letter-spacing:.06em;}
-  .speaker-row.correct{border-color:var(--teal); background:rgba(47,111,98,0.08);}
-  .speaker-row.incorrect{border-color:var(--stamp); background:rgba(178,58,46,0.08);}
-
-  .stamp-card .level.tag{
-    font-family:'Space Mono',monospace; font-size:13px; color:var(--teal);
-    text-transform:uppercase; letter-spacing:.06em; margin-top:14px;
-  }
-
-  a{color:var(--teal);}
-
-  .lesson-row{
-    display:flex; align-items:center; gap:12px;
-    border:1.5px solid var(--line); border-radius:8px; padding:12px 14px; margin-bottom:8px;
-    cursor:pointer; transition:border-color .12s ease, background .12s ease;
-  }
-  .lesson-row:hover{border-color:var(--ink);}
-  .lesson-row.completed{border-color:var(--teal); background:rgba(47,111,98,0.05);}
-  .lesson-row .l-num{font-family:'Space Mono',monospace; font-size:12px; color:var(--muted); min-width:22px;}
-  .lesson-row .l-title{font-weight:600; font-size:14.5px; flex:1;}
-  .lesson-row .l-tag{
-    font-family:'Space Mono',monospace; font-size:10.5px; text-transform:uppercase; letter-spacing:.06em;
-    color:var(--gold); border:1px solid var(--gold); padding:2px 8px; border-radius:999px; white-space:nowrap;
-  }
-  .lesson-row .l-done{color:var(--teal); font-weight:700; font-size:16px; min-width:18px; text-align:center;}
-
-  .theory{font-size:14.5px; line-height:1.65;}
-  .theory ul{padding-left:18px; margin:8px 0;}
-  .theory li{margin-bottom:7px;}
-  .theory .ej{font-style:italic; color:var(--ink-2);}
-
-  footer.note{
-    margin-top:28px; text-align:center; color:var(--muted); font-size:12.5px;
-    border-top:1.5px dashed var(--line); padding-top:16px;
-  }
-
-  .speaking-part{border-top:1px solid var(--line); padding:18px 0;}
-  .speaking-part:first-of-type{border-top:none;}
-  .part-label{font-family:'Space Mono',monospace; font-size:11px; text-transform:uppercase; letter-spacing:.08em; color:var(--gold); font-weight:700;}
-
-  @media (max-width:600px){
-    .card{padding:16px;}
-    .masthead{align-items:flex-start;}
-  }
+  html,body{margin:0;padding:0;background:#E7ECE4;}
+  #setup{max-width:520px;margin:0 auto;padding:46px 20px;
+    font-family:system-ui,sans-serif;color:#15302A;}
+  #setup h1{font-size:26px;letter-spacing:-.02em;margin:0 0 10px;}
+  #setup p{font-size:14.5px;line-height:1.65;color:#63756D;margin:0 0 20px;}
+  #setup label{display:block;font-size:13px;font-weight:600;margin:16px 0 6px;}
+  #setup input{width:100%;padding:11px 13px;font-size:15px;border:1px solid rgba(21,48,42,.2);
+    border-radius:8px;background:#FBFCFA;color:#15302A;box-sizing:border-box;}
+  #setup button{margin-top:22px;padding:12px 22px;font-size:14.5px;font-weight:600;
+    background:#15302A;color:#E7ECE4;border:none;border-radius:8px;cursor:pointer;}
+  #setup small{display:block;margin-top:18px;font-size:12.5px;color:#63756D;line-height:1.6;}
+  #reset{position:fixed;right:14px;bottom:14px;z-index:99;border:1px solid rgba(21,48,42,.2);
+    background:#FBFCFA;color:#63756D;border-radius:8px;padding:7px 12px;font-size:12px;
+    font-family:system-ui,sans-serif;cursor:pointer;display:none;}
 </style>
 </head>
 <body>
-<div class="app">
 
-  <div class="masthead">
-    <div>
-      <div class="id">EXPEDIENTE DE PREPARACIÓN &middot; APTIS GENERAL</div>
-      <h1>Camino al B2</h1>
-    </div>
-    <div class="badge-level" id="overallBadge">SIN NIVEL AÚN</div>
-  </div>
-
-  <nav class="tabs" id="tabs">
-    <button data-view="inicio" class="active">Inicio</button>
-    <button data-view="lecciones">Lecciones</button>
-    <button data-view="guia">Guía del examen</button>
-    <button data-view="gramatica">Gramática &amp; Vocab</button>
-    <button data-view="reading">Reading</button>
-    <button data-view="listening">Listening</button>
-    <button data-view="writing">Writing</button>
-    <button data-view="speaking">Speaking</button>
-  </nav>
-
-  <!-- ================= INICIO ================= -->
-  <section class="view active" id="view-inicio">
-    <div class="card">
-      <h2>Tu progreso</h2>
-      <p class="muted">Estos son tus mejores resultados guardados. Se sincronizan con tu cuenta, así que los verás igual desde el móvil o el ordenador.</p>
-      <div class="grid" id="dashboardGrid"></div>
-      <p class="muted" id="lessonsSummary" style="margin-top:14px;"></p>
-    </div>
-    <div class="card">
-      <h2>Cómo funciona este examen, en una frase</h2>
-      <p>El Aptis no es un examen de aprobado/suspenso: por cada destreza que hagas (gramática y vocabulario, listening, reading, writing, speaking) te dan un nivel del <strong>Marco Común Europeo (A1 a C)</strong>. Para "sacarte el B2" necesitas llegar a ese nivel en las destrezas que tu organización te exija, normalmente todas.</p>
-    </div>
-    <div class="card">
-      <h2>Consejo del día</h2>
-      <p id="dailyTip" class="muted"></p>
-      <button class="btn secondary" onclick="newTip()">Otro consejo</button>
-    </div>
-  </section>
-
-  <!-- ================= LECCIONES ================= -->
-  <section class="view" id="view-lecciones">
-    <div class="card" id="lessonsListCard">
-      <h2>Lecciones B2 · Tu ruta de estudio</h2>
-      <p class="muted">Mini-lecciones con la teoría que más pregunta el Aptis y un test rápido al final. Acierta al menos 2 de 3 para marcarla como completada. Están ordenadas como una ruta: empieza por la primera que tengas pendiente.</p>
-      <div id="lessonsList"></div>
-    </div>
-    <div class="card" id="lessonCard" style="display:none;"></div>
-  </section>
-
-  <!-- ================= GUÍA ================= -->
-  <section class="view" id="view-guia">
-    <div class="card">
-      <h2>¿Qué es el Aptis y cómo se estructura?</h2>
-      <p>El Aptis lo creó el British Council y se hace por ordenador. Tiene <strong>5 componentes</strong>: gramática y vocabulario (el "core"), listening, reading, writing y speaking. No hace falta hacerlos todos siempre: depende de lo que te pida tu empresa, universidad u organismo, pero para certificar B2 en general se piden los cuatro más el core.</p>
-      <table class="struct">
-        <tr><th>Parte</th><th>Duración</th><th>Qué incluye</th></tr>
-        <tr><td>Gramática y vocabulario</td><td>25 min</td><td>50 preguntas (25 gramática + 25 vocabulario), opción múltiple, huecos y collocations.</td></tr>
-        <tr><td>Listening</td><td>~40-55 min</td><td>17 tareas sobre 20 audios: mensajes cortos, monólogos para emparejar hablantes, diálogo de opiniones y dos monólogos largos. Cada audio se escucha 2 veces.</td></tr>
-        <tr><td>Reading</td><td>35 min</td><td>4 tareas: ordenar frases de un email informal, ordenar una historia corta, completar huecos en un texto y emparejar titulares con párrafos.</td></tr>
-        <tr><td>Writing</td><td>50 min aprox.</td><td>Respuestas cortas, un texto personal, respuestas a redes sociales y un email más formal.</td></tr>
-        <tr><td>Speaking</td><td>12 min</td><td>4 partes: información personal, describir una imagen, comparar imágenes y opinar sobre un tema abstracto. Se hace ante un ordenador, sin examinador delante; te graban y lo corrigen después.</td></tr>
-      </table>
-    </div>
-    <div class="card">
-      <h2>Cómo se puntúa</h2>
-      <p>El core de gramática y vocabulario se puntúa sobre 50, pero no te da un nivel por sí solo: sirve de referencia cuando estás "entre dos niveles" en otra destreza. Cada una de las otras cuatro partes recibe su propio nivel CEFR (A1 a C), y tu nivel final sale de la combinación de todas. Es decir: no necesitas un B2 perfecto en todo para que tu resultado global sea B2.</p>
-    </div>
-    <div class="card">
-      <h2>Estrategia general para las 6-8 semanas antes del examen</h2>
-      <ul class="tip-list">
-        <li><strong>Reparte por destrezas.</strong> Dedica un día distinto a cada una en vez de mezclarlo todo; así notas antes en cuál flojeas.</li>
-        <li><strong>Vocabulario y gramática primero.</strong> Son la base de las otras cuatro partes, así que refuerza collocations, phrasal verbs y tiempos verbales cuanto antes.</li>
-        <li><strong>Practica con el reloj puesto.</strong> El Aptis se hace bajo presión de tiempo; practicar sin cronómetro te dará una sensación de nivel falsa.</li>
-        <li><strong>Simulacros completos cerca de la fecha.</strong> Las dos últimas semanas, intenta hacer una parte entera de una sentada, como el día real.</li>
-        <li><strong>Habla en voz alta, aunque estés solo.</strong> El speaking se corrige por grabación: acostúmbrate a hablar sin nadie delante.</li>
-      </ul>
-    </div>
-  </section>
-
-  <!-- ================= GRAMATICA ================= -->
-  <section class="view" id="view-gramatica">
-    <div class="card" id="gramIntro">
-      <h2>Gramática &amp; Vocabulario</h2>
-      <p class="muted">Cada intento genera un test distinto: 15 preguntas elegidas al azar de un banco de 45 (gramática, collocations y vocabulario B2). En el examen real son 50 en 25 minutos.</p>
-      <div style="margin:14px 0;">
-        <span class="timer" id="gramTimerDisplay">08:00</span>
-      </div>
-      <button class="btn" onclick="startGramQuiz()">Empezar test</button>
-    </div>
-    <div class="card" id="gramQuizCard" style="display:none;"></div>
-  </section>
-
-  <!-- ================= READING ================= -->
-  <section class="view" id="view-reading">
-    <div class="card">
-      <h2>Reading</h2>
-      <p class="muted">Elige una tarea. Cada botón carga una variante al azar de su banco, así puedes repetir sin memorizar las respuestas.</p>
-      <div style="display:flex; gap:10px; flex-wrap:wrap;">
-        <button class="btn secondary" onclick="loadReading('headings')">Emparejar titulares</button>
-        <button class="btn secondary" onclick="loadReading('gapfill')">Completar huecos</button>
-        <button class="btn secondary" onclick="loadReading('sequencing')">Ordenar un email</button>
-      </div>
-    </div>
-    <div class="card" id="readingCard" style="display:none;"></div>
-  </section>
-
-  <!-- ================= LISTENING ================= -->
-  <section class="view" id="view-listening">
-    <div class="card">
-      <h2>Listening</h2>
-      <p class="muted">Uso la voz del navegador para leerte el audio en inglés, igual que en el examen: solo puedes reproducirlo <strong>2 veces</strong>. Necesitas el sonido activado. Cada botón carga una variante al azar de su banco.</p>
-      <div style="display:flex; gap:10px; flex-wrap:wrap;">
-        <button class="btn secondary" onclick="loadListening('short')">Mensaje corto</button>
-        <button class="btn secondary" onclick="loadListening('opinions')">Opiniones</button>
-        <button class="btn secondary" onclick="loadListening('speakers')">Emparejar hablantes</button>
-        <button class="btn secondary" onclick="loadListening('monologue')">Monólogo largo</button>
-      </div>
-    </div>
-    <div class="card" id="listeningCard" style="display:none;"></div>
-  </section>
-
-  <!-- ================= WRITING ================= -->
-  <section class="view" id="view-writing">
-    <div class="card">
-      <h2>Writing</h2>
-      <p class="muted">Elige un tipo de tarea. Escribe tu respuesta y guárdala: no la corrijo automáticamente, pero te doy una checklist de autoevaluación B2 y guardo tu texto para que lo retomes cuando quieras.</p>
-      <select id="writingSelect" onchange="loadWriting(this.value)">
-        <option value="">— Elige una tarea —</option>
-        <option value="0">Respuesta corta a un email informal</option>
-        <option value="1">Texto personal (experiencia)</option>
-        <option value="2">Conversación en red social (3 respuestas)</option>
-        <option value="3">Dos emails: informal + formal</option>
-      </select>
-    </div>
-    <div class="card" id="writingCard" style="display:none;"></div>
-  </section>
-
-  <!-- ================= SPEAKING ================= -->
-  <section class="view" id="view-speaking">
-    <div class="card">
-      <h2>Speaking</h2>
-      <p class="muted">El speaking real dura 12 minutos y tiene 4 partes que suben en dificultad. Aquí practicas cada parte con su tiempo de preparación y de respuesta reales. Habla en voz alta como si te grabaran de verdad.</p>
-      <button class="btn" onclick="startSpeaking()">Empezar práctica de speaking</button>
-    </div>
-    <div class="card" id="speakingCard" style="display:none;"></div>
-  </section>
-
-  <footer class="note">Progreso guardado automáticamente en tu cuenta · Practica un poco cada día mejor que mucho de golpe</footer>
+<div id="setup" style="display:none">
+  <h1>Conecta la app</h1>
+  <p>Esta app genera cada ejercicio en el momento, así que necesita un punto de acceso al modelo.
+     Pega la dirección de tu Worker. Se guarda solo en este navegador.</p>
+  <label for="ep">Dirección del Worker</label>
+  <input id="ep" type="url" placeholder="https://aptis.tu-usuario.workers.dev" autocomplete="off">
+  <label for="pw">Contraseña (si le has puesto una)</label>
+  <input id="pw" type="password" placeholder="opcional" autocomplete="off">
+  <button id="go">Guardar y empezar</button>
+  <small>Sin esto la app no puede crear ejercicios. Las instrucciones para montar el Worker
+  están en <code>DESPLIEGUE.md</code>, dentro del repositorio.</small>
 </div>
 
+<div id="app"></div>
+<button id="reset">cambiar conexión</button>
+
+<script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone@7.24.7/babel.min.js"></script>
+
 <script>
-/* ============ STORAGE HELPERS ============ */
-async function loadProgress(){
-  try{
-    const raw = localStorage.getItem('aptis_progress');
-    return raw ? JSON.parse(raw) : {};
-  }catch(e){ return {}; }
-}
-async function saveProgress(p){
-  try{ localStorage.setItem('aptis_progress', JSON.stringify(p)); }catch(e){ console.error(e); }
-}
-let PROGRESS = {};
+  const CFG_KEY = "aptis-conexion";
+  const setup = document.getElementById("setup");
+  const resetBtn = document.getElementById("reset");
 
-async function initProgress(){
-  PROGRESS = await loadProgress();
-  // Migración: versiones antiguas puntuaban el speaking al 100% solo por completarlo
-  if(PROGRESS.speaking && PROGRESS.speaking.level !== 'Practicado'){
-    PROGRESS.speaking = { best: 0, level: 'Practicado', date: PROGRESS.speaking.date };
-    await saveProgress(PROGRESS);
+  function start(cfg) {
+    window.APTIS_CONFIG = cfg;
+    setup.style.display = "none";
+    resetBtn.style.display = "block";
+    const s = document.createElement("script");
+    s.type = "text/babel";
+    s.dataset.presets = "react";
+    s.textContent = document.getElementById("app-source").textContent;
+    document.body.appendChild(s);
+    Babel.transformScriptTags();
   }
-  renderDashboard();
-}
 
-const LEVEL_ORDER = ['A1','A2','B1','B2','C'];
-function levelFromPercent(pct){
-  if(pct>=90) return 'C';
-  if(pct>=75) return 'B2';
-  if(pct>=55) return 'B1';
-  if(pct>=35) return 'A2';
-  return 'A1';
-}
-
-async function recordResult(skill, pct){
-  if(!PROGRESS[skill] || pct > PROGRESS[skill].best){
-    PROGRESS[skill] = { best: pct, level: levelFromPercent(pct), date: new Date().toISOString().slice(0,10) };
-    await saveProgress(PROGRESS);
-  }
-  renderDashboard();
-}
-
-/* Writing y speaking no se autocorrigen: solo se registra que has practicado */
-async function markPracticed(skill){
-  PROGRESS[skill] = { best: 0, level: 'Practicado', date: new Date().toISOString().slice(0,10) };
-  await saveProgress(PROGRESS);
-  renderDashboard();
-}
-
-function renderDashboard(){
-  const skills = [
-    {key:'gramatica', label:'Gramática/Vocab'},
-    {key:'reading', label:'Reading'},
-    {key:'listening', label:'Listening'},
-    {key:'writing', label:'Writing (práctica)'},
-    {key:'speaking', label:'Speaking (práctica)'}
-  ];
-  const grid = document.getElementById('dashboardGrid');
-  grid.innerHTML = '';
-  let best = null;
-  skills.forEach(s=>{
-    const data = PROGRESS[s.key];
-    const div = document.createElement('div');
-    div.className = 'stamp-card';
-    if(data && LEVEL_ORDER.indexOf(data.level) >= 0){
-      const idx = LEVEL_ORDER.indexOf(data.level);
-      const pass = idx >= LEVEL_ORDER.indexOf('B2');
-      div.innerHTML = `<div class="skill">${s.label}</div>
-        <div class="level ${pass?'pass':''}">${data.level}</div>
-        <div class="sub">${data.best}% · ${data.date}</div>
-        <div class="meter"><span class="${pass?'pass':''}" style="width:${data.best}%"></span></div>`;
-      if(best===null || idx>best) best = idx;
-    } else if(data){
-      div.innerHTML = `<div class="skill">${s.label}</div>
-        <div class="level tag">Practicado ✓</div>
-        <div class="sub">Última práctica: ${data.date}</div>`;
-    } else {
-      div.innerHTML = `<div class="skill">${s.label}</div><div class="level empty">— sin datos —</div><div class="sub">Practica para ver tu nivel</div>
-        <div class="meter"><span style="width:0%"></span></div>`;
-    }
-    grid.appendChild(div);
+  document.getElementById("go").addEventListener("click", () => {
+    const endpoint = document.getElementById("ep").value.trim();
+    if (!endpoint) { document.getElementById("ep").focus(); return; }
+    const cfg = { endpoint, pass: document.getElementById("pw").value.trim() };
+    localStorage.setItem(CFG_KEY, JSON.stringify(cfg));
+    start(cfg);
   });
-  const badge = document.getElementById('overallBadge');
-  badge.textContent = best===null ? 'SIN NIVEL AÚN' : ('NIVEL ESTIMADO: ' + LEVEL_ORDER[best]);
-  badge.classList.toggle('has-level', best!==null);
-}
 
-/* ============ TABS ============ */
-document.getElementById('tabs').addEventListener('click', (e)=>{
-  if(e.target.tagName !== 'BUTTON') return;
-  document.querySelectorAll('nav.tabs button').forEach(b=>b.classList.remove('active'));
-  e.target.classList.add('active');
-  document.querySelectorAll('section.view').forEach(v=>v.classList.remove('active'));
-  document.getElementById('view-'+e.target.dataset.view).classList.add('active');
-});
-
-/* ============ TIPS ============ */
-const TIPS = [
-  "En gramática y vocabulario no te pares en una pregunta que no sabes: contesta lo más probable y sigue, se puntúa todo por igual.",
-  "En el reading, lee primero las preguntas y luego el texto: te ahorra tiempo al saber qué buscar.",
-  "En listening solo escuchas cada audio 2 veces: la primera vez capta la idea general, la segunda los detalles concretos.",
-  "En writing, cuenta las palabras: quedarte muy corto o muy largo respecto a lo pedido penaliza aunque el inglés esté bien.",
-  "En speaking usa el minuto de preparación para anotar 2-3 palabras clave por pregunta, no frases enteras.",
-  "El speaking suele ser la primera prueba del día: llega mentalizado para hablar nada más sentarte.",
-  "Aprende collocations (make a decision, take a risk) en vez de palabras sueltas: es lo que más se pregunta en vocabulario.",
-  "Para la parte de opinión del speaking, estructura tu respuesta: opinión clara + un ejemplo + un matiz o contraargumento."
-];
-function newTip(){
-  document.getElementById('dailyTip').textContent = TIPS[Math.floor(Math.random()*TIPS.length)];
-}
-newTip();
-
-/* ============ GRAMATICA Y VOCABULARIO ============ */
-const GRAM_QUESTIONS = [
-  {q:"By the time we arrived, the film ___ .", opts:["already started","had already started","already starts","has already started"], correct:1},
-  {q:"I wish I ___ more time to prepare for the interview.", opts:["have","had","would have","having"], correct:1},
-  {q:"She's really good at ___ new people feel welcome.", opts:["make","making","made","to make"], correct:1},
-  {q:"You'd better ___ an umbrella, it looks like rain.", opts:["to bring","bringing","bring","brought"], correct:2},
-  {q:"He apologised ___ being late for the meeting.", opts:["for","of","about","to"], correct:0},
-  {q:"If I ___ you, I'd think twice before accepting.", opts:["am","was","were","be"], correct:2},
-  {q:"The report needs to ___ before Friday.", opts:["finish","be finished","finishing","have finish"], correct:1},
-  {q:"It's high time we ___ a decision.", opts:["make","made","making","will make"], correct:1},
-  {q:"Choose the correct collocation: to ___ a risk", opts:["do","take","make","have"], correct:1},
-  {q:"Choose the correct collocation: to ___ an effort", opts:["make","do","take","have"], correct:0},
-  {q:"She's been feeling under the weather, so she ___ to the doctor's yesterday.", opts:["went","has gone","was going","goes"], correct:0},
-  {q:"Choose the correct word: The meeting was ___ postponed until next week.", opts:["hardly","barely","indefinitely","scarcely"], correct:2},
-  {q:"He's the kind of person who never gives ___ , no matter how hard things get.", opts:["in","up","out","off"], correct:1},
-  {q:"By next year, they ___ here for a decade.", opts:["will work","will have been working","are working","worked"], correct:1},
-  {q:"Choose the correct phrasal verb: I need to ___ this article before the deadline.", opts:["look up","hand in","turn down","get on"], correct:1},
-  {q:"Hardly ___ the house when it started to rain.", opts:["I had left","had I left","I left","did I leave"], correct:1},
-  {q:"The new law will ___ effect next month.", opts:["make","do","take","have"], correct:2},
-  {q:"She suggested ___ the meeting to Friday.", opts:["to move","move","moved","moving"], correct:3},
-  {q:"I'm not used ___ up so early.", opts:["to getting","to get","getting","get"], correct:0},
-  {q:"The film was ___ better than I expected.", opts:["very","far","too","more"], correct:1},
-  {q:"He denied ___ the window.", opts:["to break","breaking","break","broken"], correct:1},
-  {q:"___ the bad weather, the match went ahead.", opts:["Although","However","Despite","Even"], correct:2},
-  {q:"You ___ have seen Tom yesterday — he's been abroad all week.", opts:["mustn't","shouldn't","wouldn't","can't"], correct:3},
-  {q:"This time tomorrow, I ___ on a beach in Greece.", opts:["will be lying","will lie","am lying","lie"], correct:0},
-  {q:"A new bridge ___ across the river at the moment.", opts:["is built","is being built","builds","has built"], correct:1},
-  {q:"Choose the correct collocation: to ___ attention", opts:["give","put","pay","do"], correct:2},
-  {q:"Choose the correct collocation: to ___ a promise", opts:["keep","do","hold","stay"], correct:0},
-  {q:"Choose the correct collocation: ___ rain", opts:["strong","heavy","hard","big"], correct:1},
-  {q:"The plane finally ___ off two hours late.", opts:["got","set","put","took"], correct:3},
-  {q:"I came ___ an old photo while tidying my room.", opts:["across","up","into","over"], correct:0},
-  {q:"She asked me where ___ .", opts:["was I going","I was going","am I going","I am going"], correct:1},
-  {q:"If you ___ harder, you would have passed the exam.", opts:["studied","would study","had studied","study"], correct:2},
-  {q:"I'd rather you ___ smoke in here.", opts:["don't","won't","not","didn't"], correct:3},
-  {q:"The report, ___ was published yesterday, criticises the plan.", opts:["which","that","what","who"], correct:0},
-  {q:"The two products are almost identical; the differences are ___ .", opts:["substantial","negligible","considerable","remarkable"], correct:1},
-  {q:"The company decided to ___ the launch until spring.", opts:["dismiss","anticipate","advance","postpone"], correct:3},
-  {q:"We've run ___ of milk — could you buy some?", opts:["off","away","out","down"], correct:2},
-  {q:"It took me weeks to get ___ the flu.", opts:["over","through","by","up"], correct:0},
-  {q:"Not only ___ late, but he also forgot the documents.", opts:["he arrived","did he arrive","he did arrive","arrived he"], correct:1},
-  {q:"The teacher had the students ___ the essay again.", opts:["to write","writing","write","written"], correct:2},
-  {q:"By the end of this year, she ___ three novels.", opts:["will write","has written","writes","will have written"], correct:3},
-  {q:"Choose the correct collocation: to ___ a conclusion", opts:["draw","take","catch","pull"], correct:0},
-  {q:"His explanation was so ___ that nobody understood it.", opts:["clear","vague","precise","obvious"], correct:1},
-  {q:"You should ___ up smoking if you want to feel better.", opts:["take","get","give","put"], correct:2},
-  {q:"I didn't ___ to offend you — I'm sorry.", opts:["pretend","suppose","expect","mean"], correct:3}
-];
-
-function pickRandom(pool, n){
-  const copy = [...pool], set = [];
-  while(set.length < n && copy.length){
-    set.push(copy.splice(Math.floor(Math.random()*copy.length), 1)[0]);
-  }
-  return set;
-}
-let currentGramSet = [];
-
-let gramTimerInterval = null;
-function startGramQuiz(){
-  document.getElementById('gramIntro').style.display='none';
-  const card = document.getElementById('gramQuizCard');
-  card.style.display='block';
-  currentGramSet = pickRandom(GRAM_QUESTIONS, 15);
-  let html = '';
-  currentGramSet.forEach((item,i)=>{
-    html += `<div class="q-block" data-idx="${i}">
-      <div class="q-num">Pregunta ${i+1} de ${currentGramSet.length}</div>
-      <div class="q-text">${item.q}</div>
-      <div class="options">`;
-    item.opts.forEach((opt,j)=>{
-      html += `<label class="opt"><input type="radio" name="g${i}" value="${j}"> ${opt}</label>`;
-    });
-    html += `</div></div>`;
+  resetBtn.addEventListener("click", () => {
+    localStorage.removeItem(CFG_KEY);
+    location.reload();
   });
-  html += `<button class="btn" id="gramSubmit" style="margin-top:14px;">Corregir</button>
-           <div id="gramResult"></div>`;
-  card.innerHTML = html;
-  document.getElementById('gramSubmit').addEventListener('click', submitGramQuiz);
 
-  let seconds = 8*60;
-  const display = document.getElementById('gramTimerDisplay');
-  display.textContent = '08:00';
-  display.classList.remove('warn');
-  clearInterval(gramTimerInterval);
-  gramTimerInterval = setInterval(()=>{
-    seconds--;
-    if(seconds<=0){ clearInterval(gramTimerInterval); submitGramQuiz(); return; }
-    const m = String(Math.floor(seconds/60)).padStart(2,'0');
-    const s = String(seconds%60).padStart(2,'0');
-    display.textContent = m + ':' + s;
-    if(seconds<=60) display.classList.add('warn');
-  },1000);
-}
-
-function submitGramQuiz(){
-  clearInterval(gramTimerInterval);
-  let correct = 0;
-  currentGramSet.forEach((item,i)=>{
-    const selected = document.querySelector(`input[name="g${i}"]:checked`);
-    const opts = document.querySelectorAll(`.q-block[data-idx="${i}"] .opt`);
-    opts.forEach((optEl,j)=>{
-      if(j===item.correct) optEl.classList.add('correct');
-      if(selected && parseInt(selected.value)===j && j!==item.correct) optEl.classList.add('incorrect');
-    });
-    if(selected && parseInt(selected.value)===item.correct) correct++;
-  });
-  document.getElementById('gramSubmit').disabled = true;
-  const pct = Math.round((correct/currentGramSet.length)*100);
-  document.getElementById('gramResult').innerHTML = `
-    <div class="result-banner"><div class="big">${correct}/${currentGramSet.length}</div>
-    <div>Acierto: ${pct}% · Nivel estimado de esta prueba: <strong>${levelFromPercent(pct)}</strong></div></div>
-    <button class="btn secondary" style="margin-top:12px;" onclick="location.reload()">Volver a intentarlo</button>`;
-  recordResult('gramatica', pct);
-}
-
-/* ============ READING ============ */
-const READING_BANK = {
-  headings: [
-    {
-      title: "Empareja cada titular con su párrafo",
-      passage: `A) City councils across the country are introducing new cycle lanes, hoping to cut traffic and pollution in busy centres.
-B) A growing number of small businesses now let staff choose which days they come into the office, arguing it boosts morale without hurting output.
-C) Researchers have found that people who spend regular time outdoors report noticeably lower stress levels than those who rarely leave the house.
-D) Several supermarket chains are trialling packaging-free sections, allowing customers to bring their own containers for grains, pasta and cleaning products.`,
-      headingsBank: ["Nature and wellbeing", "Rethinking the working week", "Shopping without waste", "Making room for bicycles"],
-      answerMap: [3,1,0,2]
-    },
-    {
-      title: "Empareja cada titular con su párrafo",
-      passage: `A) Doctors are warning that adults who regularly sleep fewer than six hours a night face a higher risk of long-term health problems, from heart disease to memory loss.
-B) A local start-up has designed an app that instantly translates restaurant menus using your phone's camera, and it already works in over forty languages.
-C) The city museum has extended its opening hours and scrapped entrance fees for under-18s in an effort to attract younger visitors.
-D) Farmers in the region are experimenting with older varieties of wheat, which need less water and resist disease better than modern crops.`,
-      headingsBank: ["Making culture more accessible", "A return to traditional crops", "The dangers of too little sleep", "Instant help with foreign menus"],
-      answerMap: [2,3,0,1]
-    },
-    {
-      title: "Empareja cada titular con su párrafo",
-      passage: `A) Airlines are testing lighter seats and more efficient engines in an attempt to reduce the amount of fuel burned on long-haul flights.
-B) A survey of two thousand teenagers found that most would rather lose their television than their phone, which they see as their main link to friends.
-C) The council has approved plans to turn the disused railway line into a walking and cycling path connecting three villages.
-D) Nutritionists say that skipping breakfast does not necessarily help people lose weight, and may even lead to unhealthy snacking later in the day.`,
-      headingsBank: ["What young people value most", "A morning myth examined", "Greener air travel", "New life for an old route"],
-      answerMap: [2,0,3,1]
-    }
-  ],
-  gapfill: [
-    {
-      title: "Completa los huecos con la opción correcta",
-      passage: `Hi Laura,\n\nThanks for getting back to me so quickly. I just wanted to check a couple of things before the trip. First, could you (1)___ me know what time the coach leaves on Saturday? Also, I still haven't (2)___ my ticket, so if you could send it over that would be great. Finally, do you know if there's anywhere nearby where we could (3)___ some breakfast before we set off?\n\nThanks again,\nMark`,
-      blanks: [
-        {opts:["let","make","take"], correct:0},
-        {opts:["received","receiving","receive"], correct:0},
-        {opts:["grab","catch","hold"], correct:0}
-      ]
-    },
-    {
-      title: "Completa los huecos con la opción correcta",
-      passage: `Hi Carlos,\n\nGreat news about the new job! I knew you'd (1)___ the interview — you had prepared so well. We should (2)___ out to celebrate soon. Are you free on Friday evening? Let me (3)___ if that works for you and I'll book a table somewhere nice.\n\nBest,\nNina`,
-      blanks: [
-        {opts:["approve","pass","win"], correct:1},
-        {opts:["take","put","go"], correct:2},
-        {opts:["know","knowing","to know"], correct:0}
-      ]
-    },
-    {
-      title: "Completa los huecos con la opción correcta",
-      passage: `Dear Mrs Collins,\n\nThank you for your email about the delayed delivery. We would like to (1)___ for the inconvenience this has caused. Your order has now been sent and should (2)___ within three working days. As a gesture of goodwill, we have added a discount voucher to your account, which you can (3)___ on your next purchase.\n\nKind regards,\nCustomer Service`,
-      blanks: [
-        {opts:["regret","apologise","excuse"], correct:1},
-        {opts:["reach","arrive","enter"], correct:1},
-        {opts:["pay","spend","use"], correct:2}
-      ]
-    }
-  ],
-  sequencing: [
-    {
-      title: "Ordena las frases del email en el orden correcto",
-      lines: [
-        "Hi Sam, thanks so much for the invite to the barbecue this weekend!",
-        "I'd love to come, but I need to check with my sister first as we already had plans.",
-        "I'll let you know by Thursday at the latest so you can plan numbers.",
-        "By the way, is there anything I can bring?",
-        "Looking forward to hearing from you, Alex"
-      ],
-      correctOrder: [0,1,2,3,4]
-    },
-    {
-      title: "Ordena las frases del email en el orden correcto",
-      lines: [
-        "Dear Mr Reed, I am writing to ask about the evening Spanish course advertised on your website.",
-        "I studied Spanish at school, so I would not be a complete beginner.",
-        "Could you tell me whether there are still places available for the October start?",
-        "I would also like to know the total cost and whether course materials are included.",
-        "I look forward to your reply. Kind regards, Emma Watts"
-      ],
-      correctOrder: [0,1,2,3,4]
-    },
-    {
-      title: "Ordena las frases de la historia en el orden correcto",
-      lines: [
-        "Last summer, my brother and I decided to hike to a mountain lake we had seen on a map.",
-        "We set off early, but after two hours we realised we had taken the wrong path.",
-        "Luckily, a local farmer pointed us in the right direction.",
-        "By the time we finally reached the lake, we were exhausted but delighted.",
-        "It was so beautiful that we agreed the mistake had been worth it."
-      ],
-      correctOrder: [0,1,2,3,4]
-    }
-  ]
-};
-let currentReadingTask = null;
-
-function loadReading(type){
-  const card = document.getElementById('readingCard');
-  card.style.display='block';
-  const variants = READING_BANK[type];
-  const task = variants[Math.floor(Math.random()*variants.length)];
-  currentReadingTask = task;
-
-  if(type==='headings'){
-    let bankHtml = task.headingsBank.map(h=>`<span class="heading-chip">${h}</span>`).join('');
-    let paras = task.passage.split('\n');
-    let selectsHtml = paras.map((p,i)=>{
-      let opts = task.headingsBank.map((h,j)=>`<option value="${j}">${h}</option>`).join('');
-      return `<div style="margin-bottom:10px;"><div class="passage" style="margin-bottom:6px;">${p}</div>
-        <select data-idx="${i}" class="headingSelect"><option value="">— elige un titular —</option>${opts}</select></div>`;
-    }).join('');
-    card.innerHTML = `<h2>${task.title}</h2>
-      <div class="headings-bank">${bankHtml}</div>
-      ${selectsHtml}
-      <button class="btn" onclick="checkHeadings()">Corregir</button>
-      <div id="readingResult"></div>`;
-  }
-
-  if(type==='gapfill'){
-    let text = task.passage;
-    task.blanks.forEach((b,i)=>{
-      const select = `<select data-idx="${i}" class="gapSelect">` +
-        b.opts.map((o,j)=>`<option value="${j}">${o}</option>`).join('') + `</select>`;
-      text = text.replace(`(${i+1})___`, select);
-    });
-    card.innerHTML = `<h2>${task.title}</h2>
-      <div class="passage">${text.replace(/\n/g,'<br>')}</div>
-      <button class="btn" onclick="checkGapfill()">Corregir</button>
-      <div id="readingResult"></div>`;
-  }
-
-  if(type==='sequencing'){
-    const shuffled = [...task.lines.keys()].sort(()=>Math.random()-0.5);
-    let html = `<h2>${task.title}</h2><p class="muted">Arrastra o usa las flechas para ordenar las frases.</p><div id="seqList">`;
-    shuffled.forEach(origIdx=>{
-      html += `<div class="opt" draggable="true" data-orig="${origIdx}" style="cursor:grab; justify-content:space-between;">
-        <span>${task.lines[origIdx]}</span>
-        <span style="display:flex; gap:4px;">
-          <button type="button" onclick="moveLine(this,-1)" class="btn secondary" style="padding:2px 8px;">↑</button>
-          <button type="button" onclick="moveLine(this,1)" class="btn secondary" style="padding:2px 8px;">↓</button>
-        </span></div>`;
-    });
-    html += `</div><button class="btn" style="margin-top:12px;" onclick="checkSequencing()">Corregir</button><div id="readingResult"></div>`;
-    card.innerHTML = html;
-  }
-}
-
-function moveLine(btn, dir){
-  const row = btn.closest('.opt');
-  const list = document.getElementById('seqList');
-  if(dir===-1 && row.previousElementSibling) list.insertBefore(row, row.previousElementSibling);
-  if(dir===1 && row.nextElementSibling) list.insertBefore(row.nextElementSibling, row);
-}
-
-function checkHeadings(){
-  const task = currentReadingTask;
-  const selects = document.querySelectorAll('.headingSelect');
-  let correct = 0;
-  selects.forEach(sel=>{
-    const i = parseInt(sel.dataset.idx);
-    if(parseInt(sel.value) === task.answerMap[i]) correct++;
-  });
-  finishReading(correct, selects.length);
-}
-function checkGapfill(){
-  const task = currentReadingTask;
-  const selects = document.querySelectorAll('.gapSelect');
-  let correct = 0;
-  selects.forEach(sel=>{
-    const i = parseInt(sel.dataset.idx);
-    if(parseInt(sel.value) === task.blanks[i].correct) correct++;
-  });
-  finishReading(correct, selects.length);
-}
-function checkSequencing(){
-  const rows = document.querySelectorAll('#seqList .opt');
-  const order = Array.from(rows).map(r=>parseInt(r.dataset.orig));
-  let correct = 0;
-  order.forEach((val,i)=>{ if(val===currentReadingTask.correctOrder[i]) correct++; });
-  finishReading(correct, order.length);
-}
-function finishReading(correct, total){
-  const pct = Math.round((correct/total)*100);
-  document.getElementById('readingResult').innerHTML = `<div class="result-banner"><div class="big">${correct}/${total}</div>
-    <div>Acierto: ${pct}% · Nivel estimado: <strong>${levelFromPercent(pct)}</strong></div></div>`;
-  recordResult('reading', pct);
-}
-
-/* ============ LISTENING ============ */
-const LISTENING_BANK = {
-  short: [
-    {
-      type: 'audio',
-      title: "Mensaje corto: encuentra el dato",
-      script: "Hi, it's Rachel from the dentist's. I'm calling to remind you about your appointment on Thursday at half past three. If you need to change it, please call us back before Wednesday afternoon. Thanks, bye.",
-      questions: [
-        {q:"¿Qué día y hora es la cita?", opts:["Miércoles a las 3:30","Jueves a las 3:30","Jueves a las 2:30","Miércoles a las 2:30"], correct:1}
-      ]
-    },
-    {
-      type: 'audio',
-      title: "Mensaje corto: el gimnasio",
-      script: "Hello, this is a message for Mr Adams from City Gym. Your membership expires on the thirty-first of March. If you renew before the twenty-fifth, you'll get ten percent off the annual fee. You can call us back or renew online. Thank you.",
-      questions: [
-        {q:"¿Qué consigue si renueva antes del día 25?", opts:["Un mes gratis","Un 10% de descuento","Una sesión con entrenador","Un 20% de descuento"], correct:1}
-      ]
-    },
-    {
-      type: 'audio',
-      title: "Mensaje corto: la estación",
-      script: "Hello, this is a message from Northgate Station. The ten fifteen train to Manchester has been cancelled due to engineering works. Passengers should take the eleven o'clock service from platform four instead. We apologise for the inconvenience.",
-      questions: [
-        {q:"¿Qué debe hacer el pasajero?", opts:["Esperar al tren de las 10:15","Tomar el de las 11:00 en la vía 4","Hacer transbordo en Manchester","Ir a la vía 11"], correct:1}
-      ]
-    }
-  ],
-  opinions: [
-    {
-      type: 'audio',
-      title: "Diálogo de opiniones: teletrabajo",
-      script: "Man: I really think working from home has made people less connected to their teams. Woman: I disagree, actually. I think it's given people more time to focus without constant interruptions, and teams can still stay close through regular video calls.",
-      questions: [
-        {q:"¿Quién piensa que el trabajo en remoto ha mejorado la concentración?", opts:["El hombre","La mujer","Los dos","Ninguno de los dos"], correct:1}
-      ]
-    },
-    {
-      type: 'audio',
-      title: "Diálogo de opiniones: ciudad o campo",
-      script: "Woman: I'd love to live in the countryside one day. It's so much calmer, and houses are cheaper too. Man: Maybe, but I think you'd miss the city. Everything closes early in small villages, and you'd depend on your car for absolutely everything.",
-      questions: [
-        {q:"¿Qué desventaja del campo menciona el hombre?", opts:["Las casas son más caras","Hay demasiado ruido","Dependería del coche para todo","No hay trabajo"], correct:2}
-      ]
-    }
-  ],
-  speakers: [
-    {
-      type: 'speakers',
-      title: "Empareja cada hablante con la frase que lo resume",
-      intro: "Cuatro personas hablan de su trabajo. Escucha a cada una (máximo 2 veces por hablante) y elige la frase que mejor la describe. Hay una frase de sobra.",
-      speakers: [
-        {name:"Speaker A", script:"I spend most of my day in front of a screen, solving problems for customers over the phone. It can be repetitive, but I like knowing that I've helped someone by the end of the call."},
-        {name:"Speaker B", script:"No two weeks are the same for me. One week I'm in Berlin, the next in Lisbon. Living out of a suitcase is exhausting, though, and I really miss my family when I'm away."},
-        {name:"Speaker C", script:"I started my own business three years ago. The freedom is wonderful, but to be honest I work far longer hours now than I ever did when I had a boss."},
-        {name:"Speaker D", script:"My job is quite physical and we start very early in the morning, but by mid-afternoon I'm finished, which leaves me plenty of time for my hobbies."}
-      ],
-      statements: [
-        "Viaja constantemente y echa de menos a su familia",
-        "Trabaja más horas desde que es su propio jefe",
-        "Cambió de trabajo hace poco para ganar más dinero",
-        "Le gusta ayudar a la gente en su trabajo",
-        "Termina pronto y disfruta de su tiempo libre"
-      ],
-      answerMap: [3,0,1,4]
-    },
-    {
-      type: 'speakers',
-      title: "Empareja cada hablante con la frase que lo resume",
-      intro: "Cuatro personas hablan de sus vacaciones. Escucha a cada una (máximo 2 veces por hablante) y elige la frase que mejor la describe. Hay una frase de sobra.",
-      speakers: [
-        {name:"Speaker A", script:"For me, a holiday means lying on the beach with a good book and doing absolutely nothing. I don't even want to think about sightseeing."},
-        {name:"Speaker B", script:"I can't sit still when I travel. I book walking tours, museums, day trips — my friends joke that they need another holiday after travelling with me."},
-        {name:"Speaker C", script:"We always go back to the same little town every August. Some people find that boring, but knowing the place so well is exactly what we love about it."},
-        {name:"Speaker D", script:"Since the children arrived, we choose places with pools and kids' clubs. It's not what I'd pick for myself, but seeing them happy is worth it."}
-      ],
-      statements: [
-        "Le gusta tener el día lleno de actividades",
-        "Elige las vacaciones pensando en sus hijos",
-        "Prefiere viajar siempre al extranjero",
-        "Descansar sin planes es su vacación ideal",
-        "Vuelve al mismo sitio cada año"
-      ],
-      answerMap: [3,0,4,1]
-    }
-  ],
-  monologue: [
-    {
-      type: 'audio',
-      title: "Monólogo largo: el huerto comunitario",
-      script: "Good morning, everyone. Today I want to tell you about our community garden project. When we started five years ago, we had just twelve volunteers and a small piece of wasteland behind the library. Now, more than eighty people help out regularly, and we grow enough vegetables to supply two local schools. Next month we're launching gardening workshops for beginners. They'll run on Saturday mornings, and although they're free, places are limited, so you'll need to book in advance through our website.",
-      questions: [
-        {q:"¿Cuántos voluntarios participan actualmente?", opts:["Doce","Unos cincuenta","Más de ochenta","Doscientos"], correct:2},
-        {q:"¿Qué van a lanzar el mes que viene?", opts:["Otro huerto","Venta de verduras","Una ampliación de la biblioteca","Talleres para principiantes"], correct:3},
-        {q:"¿Cómo hay que reservar plaza?", opts:["Por la página web","Por teléfono","En la biblioteca","Pagando por adelantado"], correct:0}
-      ]
-    },
-    {
-      type: 'audio',
-      title: "Monólogo largo: avisos del museo",
-      script: "Welcome to the Riverside Museum. Before you begin your visit, here are a few announcements. The photography exhibition on the second floor closes at four thirty today, half an hour earlier than usual, because of a private event. Our guided tour begins at two o'clock by the main entrance and lasts about forty-five minutes. Finally, the café is offering visitors a ten percent discount this week — just show your entrance ticket.",
-      questions: [
-        {q:"¿A qué hora cierra hoy la exposición de fotografía?", opts:["A las 5:00","A las 4:30","A las 2:00","A las 4:00"], correct:1},
-        {q:"¿Dónde empieza la visita guiada?", opts:["En la cafetería","En la segunda planta","En la entrada principal","En la tienda"], correct:2},
-        {q:"¿Cómo se consigue el descuento en la cafetería?", opts:["Reservando la visita guiada","Mostrando la entrada","Pagando en efectivo","Siendo socio del museo"], correct:1}
-      ]
-    }
-  ]
-};
-
-let currentListeningTask = null;
-let playCounts = {};
-
-function speakText(text){
-  if(!('speechSynthesis' in window)){
-    alert('Tu navegador no soporta síntesis de voz.');
-    return false;
-  }
-  const utter = new SpeechSynthesisUtterance(text);
-  utter.lang = 'en-GB';
-  utter.rate = 0.95;
-  window.speechSynthesis.cancel();
-  window.speechSynthesis.speak(utter);
-  return true;
-}
-
-function playTracked(key){
-  const task = currentListeningTask;
-  const text = key==='main' ? task.script : task.speakers[key].script;
-  if(playCounts[key]===undefined) playCounts[key] = 2;
-  if(playCounts[key]<=0) return;
-  if(!speakText(text)) return;
-  playCounts[key]--;
-  document.getElementById('plays-'+key).textContent = 'Reproducciones restantes: ' + playCounts[key];
-  if(playCounts[key]<=0) document.getElementById('btn-'+key).disabled = true;
-}
-
-function loadListening(type){
-  const variants = LISTENING_BANK[type];
-  const task = variants[Math.floor(Math.random()*variants.length)];
-  currentListeningTask = task;
-  playCounts = {};
-  const card = document.getElementById('listeningCard');
-  card.style.display = 'block';
-
-  if(task.type==='speakers'){
-    const stmtOpts = task.statements.map((st,j)=>`<option value="${j}">${st}</option>`).join('');
-    const rows = task.speakers.map((sp,i)=>`
-      <div class="speaker-row" data-idx="${i}">
-        <span class="sp-name">${sp.name}</span>
-        <div class="listen-controls" style="margin-bottom:0;">
-          <button class="btn secondary" id="btn-${i}" onclick="playTracked(${i})">▶ Escuchar</button>
-          <span class="plays-left" id="plays-${i}">Reproducciones restantes: 2</span>
-        </div>
-        <select class="spSelect" data-idx="${i}"><option value="">— elige una frase —</option>${stmtOpts}</select>
-      </div>`).join('');
-    card.innerHTML = `<h2>${task.title}</h2>
-      <p class="muted">${task.intro}</p>
-      ${rows}
-      <button class="btn" onclick="checkListening()">Corregir</button>
-      <div id="listeningResult"></div>`;
-    return;
-  }
-
-  const questionsHtml = task.questions.map((qu,i)=>`
-    <div class="q-block" data-q="${i}">
-      <div class="q-text">${qu.q}</div>
-      <div class="options">
-        ${qu.opts.map((o,j)=>`<label class="opt"><input type="radio" name="lq${i}" value="${j}"> ${o}</label>`).join('')}
-      </div>
-    </div>`).join('');
-  card.innerHTML = `<h2>${task.title}</h2>
-    <div class="listen-controls">
-      <button class="btn" id="btn-main" onclick="playTracked('main')">▶ Reproducir</button>
-      <span class="plays-left" id="plays-main">Reproducciones restantes: 2</span>
-    </div>
-    ${questionsHtml}
-    <button class="btn" onclick="checkListening()">Corregir</button>
-    <div id="listeningResult"></div>`;
-}
-
-function checkListening(){
-  const task = currentListeningTask;
-  let correct = 0, total = 0;
-
-  if(task.type==='speakers'){
-    const selects = document.querySelectorAll('.spSelect');
-    total = selects.length;
-    selects.forEach(sel=>{
-      const i = parseInt(sel.dataset.idx);
-      const ok = parseInt(sel.value) === task.answerMap[i];
-      if(ok) correct++;
-      sel.closest('.speaker-row').classList.add(ok ? 'correct' : 'incorrect');
-    });
-  } else {
-    task.questions.forEach((qu,i)=>{
-      total++;
-      const selected = document.querySelector(`input[name="lq${i}"]:checked`);
-      const opts = document.querySelectorAll(`.q-block[data-q="${i}"] .opt`);
-      opts.forEach((el,j)=>{
-        if(j===qu.correct) el.classList.add('correct');
-        if(selected && parseInt(selected.value)===j && j!==qu.correct) el.classList.add('incorrect');
-      });
-      if(selected && parseInt(selected.value)===qu.correct) correct++;
-    });
-  }
-
-  const pct = Math.round((correct/total)*100);
-  document.getElementById('listeningResult').innerHTML = `<div class="result-banner"><div class="big">${correct}/${total}</div>
-    <div>Acierto: ${pct}% · Nivel estimado: <strong>${levelFromPercent(pct)}</strong></div></div>`;
-  recordResult('listening', pct);
-}
-
-/* ============ WRITING ============ */
-const WRITING_TASKS = [
-  {
-    title: "Respuesta corta a un email informal",
-    parts: [
-      {label:"Tu respuesta", prompt:"Your friend Chris has emailed you: 'I heard you're moving to a new flat next month — how exciting! Where is it and why did you choose that area?' Write a short reply.", target:[30,40]}
-    ]
-  },
-  {
-    title: "Texto personal",
-    parts: [
-      {label:"Tu texto", prompt:"Write about a time you learned something new that was difficult at first. Describe what it was, how you felt, and what helped you improve.", target:[50,70]}
-    ]
-  },
-  {
-    title: "Conversación en red social",
-    intro: "Te has unido al grupo 'City Photography Club'. Como en el examen real, responde a los tres mensajes del grupo, uno detrás de otro.",
-    parts: [
-      {label:"Mensaje 1", prompt:"'Welcome to the club! Tell us a bit about yourself and why you're interested in photography.'", target:[30,40]},
-      {label:"Mensaje 2", prompt:"'We're planning a photo walk next month. Where in the city do you think we should go, and why?'", target:[30,40]},
-      {label:"Mensaje 3", prompt:"'Some members prefer meeting on weekday evenings instead of weekends. What would suit you better?'", target:[30,40]}
-    ]
-  },
-  {
-    title: "Dos emails: informal y formal",
-    intro: "Escenario (como la parte 4 real): perteneces a un club de cine y recibes este aviso: 'We are sorry to announce that next month's film night has been cancelled due to a problem with the venue. Members will receive a refund. — The Film Club Team'",
-    parts: [
-      {label:"Email 1 · A un amigo del club", prompt:"Write an email to your friend from the club. Tell them the news and how you feel about it.", target:[40,50]},
-      {label:"Email 2 · Al responsable del club", prompt:"Write an email to the club manager. Express your opinion about the cancellation and suggest what the club could do for its members.", target:[120,150]}
-    ]
-  }
-];
-
-const escHtml = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;');
-
-async function loadWriting(idxStr){
-  if(idxStr==='') { document.getElementById('writingCard').style.display='none'; return; }
-  const idx = parseInt(idxStr);
-  const task = WRITING_TASKS[idx];
-  const card = document.getElementById('writingCard');
-  card.style.display='block';
-
-  let saved = [];
-  try{
-    const raw = localStorage.getItem('aptis_writing_'+idx);
-    if(raw){
-      const parsed = JSON.parse(raw);
-      saved = Array.isArray(parsed) ? parsed : [parsed];
-    }
-  }catch(e){}
-
-  const partsHtml = task.parts.map((part,p)=>`
-    <div class="prompt-box"><strong>${part.label} (${part.target[0]}-${part.target[1]} palabras):</strong><br>${part.prompt}</div>
-    <textarea id="writingArea${p}" style="min-height:${part.target[1]>=100 ? 220 : 110}px;" placeholder="Escribe tu respuesta aquí...">${escHtml(saved[p]||'')}</textarea>
-    <div class="word-count" id="wordCount${p}" style="margin-bottom:14px;"></div>`).join('');
-
-  card.innerHTML = `<h2>${task.title}</h2>
-    ${task.intro ? `<p class="muted">${task.intro}</p>` : ''}
-    ${partsHtml}
-    <div style="margin-top:12px; display:flex; gap:10px; flex-wrap:wrap;">
-      <button class="btn" onclick="saveWriting(${idx})">Guardar borrador</button>
-      <button class="btn secondary" onclick="toggleChecklist()">Ver checklist de autoevaluación</button>
-    </div>
-    <div id="writingChecklist" style="display:none; margin-top:14px;">
-      <h3>Antes de dar por terminado tu texto, revisa:</h3>
-      <ul class="tip-list">
-        <li>¿Respondes a todo lo que se pide en el enunciado, sin dejarte ninguna parte?</li>
-        <li>¿Cada parte está dentro de su rango de palabras? Quedarse corto o pasarse penaliza.</li>
-        <li>¿El registro es el adecuado (informal para un amigo, formal para una reclamación)?</li>
-        <li>¿Usas conectores variados (however, in addition, as a result) en vez de repetir "and" y "but"?</li>
-        <li>¿Revisaste tiempos verbales y concordancia sujeto-verbo?</li>
-      </ul>
-    </div>
-    <div id="writingSavedMsg" class="muted" style="margin-top:8px;"></div>`;
-
-  task.parts.forEach((part,p)=>{
-    const area = document.getElementById('writingArea'+p);
-    const updateCount = ()=>{
-      const words = area.value.trim().split(/\s+/).filter(Boolean).length;
-      const cEl = document.getElementById('wordCount'+p);
-      const inRange = words >= part.target[0] && words <= part.target[1];
-      cEl.textContent = `${words} palabras (objetivo: ${part.target[0]}-${part.target[1]})`;
-      cEl.className = 'word-count ' + (words===0 ? '' : (inRange ? 'ok' : 'low'));
-      cEl.style.marginBottom = '14px';
-    };
-    area.addEventListener('input', updateCount);
-    updateCount();
-  });
-}
-
-function toggleChecklist(){
-  const el = document.getElementById('writingChecklist');
-  el.style.display = el.style.display==='none' ? 'block' : 'none';
-}
-
-async function saveWriting(idx){
-  const task = WRITING_TASKS[idx];
-  const texts = task.parts.map((_,p)=>document.getElementById('writingArea'+p).value);
-  try{
-    localStorage.setItem('aptis_writing_'+idx, JSON.stringify(texts));
-    document.getElementById('writingSavedMsg').textContent = 'Guardado ✓';
-    await markPracticed('writing');
-  }catch(e){
-    document.getElementById('writingSavedMsg').textContent = 'No se pudo guardar. Inténtalo de nuevo.';
-  }
-}
-
-/* ============ SPEAKING ============ */
-const SPEAKING_PARTS = [
-  {label:"Parte 1 · Información personal", prep:0, speak:30, prompt:"What do you usually do at the weekend?"},
-  {label:"Parte 2 · Describir una imagen", prep:30, speak:45, prompt:"Imagine a photo of a busy street market. Describe what you can see in as much detail as possible."},
-  {label:"Parte 3 · Comparar dos imágenes", prep:30, speak:60, prompt:"Compare two situations: someone studying alone at home vs. someone studying in a group at a library. Talk about the similarities and differences, and say which you would prefer."},
-  {label:"Parte 4 · Tema abstracto", prep:60, speak:90, prompt:"Some people think technology has made us less sociable, while others think it has helped us stay more connected. What's your opinion?"}
-];
-
-let speakingIdx = 0;
-function startSpeaking(){
-  speakingIdx = 0;
-  document.getElementById('speakingCard').style.display='block';
-  renderSpeakingPart();
-}
-
-function renderSpeakingPart(){
-  const card = document.getElementById('speakingCard');
-  if(speakingIdx >= SPEAKING_PARTS.length){
-    card.innerHTML = `<h2>¡Práctica completada!</h2>
-      <p>Has pasado por las 4 partes del speaking. Recuerda que esta práctica no evalúa tu nivel: para saber cómo lo haces, grábate con el móvil y compara tu respuesta con los descriptores B2, o pídele a alguien (o a una IA) que te corrija.</p>
-      <button class="btn" onclick="startSpeaking()">Empezar de nuevo</button>`;
-    markPracticed('speaking');
-    return;
-  }
-  const part = SPEAKING_PARTS[speakingIdx];
-  card.innerHTML = `<div class="part-label">${part.label}</div>
-    <div class="prompt-box" style="margin-top:10px;">${part.prompt}</div>
-    <div id="speakingTimerArea"></div>`;
-  runSpeakingTimer(part);
-}
-
-function runSpeakingTimer(part){
-  const area = document.getElementById('speakingTimerArea');
-  let phase = part.prep>0 ? 'prep' : 'speak';
-  let seconds = part.prep>0 ? part.prep : part.speak;
-
-  function render(){
-    area.innerHTML = `<p class="muted">${phase==='prep' ? 'Tiempo de preparación' : 'Tiempo para hablar (habla en voz alta ahora)'}</p>
-      <div class="timer ${seconds<=5 ? 'warn':''}">${String(Math.floor(seconds/60)).padStart(2,'0')}:${String(seconds%60).padStart(2,'0')}</div>
-      <div style="margin-top:14px;"><button class="btn secondary" onclick="skipSpeakingPhase()">Saltar</button></div>`;
-  }
-  render();
-
-  window._speakingInterval = setInterval(()=>{
-    seconds--;
-    if(seconds<=0){
-      if(phase==='prep'){
-        phase='speak'; seconds=part.speak; render();
-      } else {
-        clearInterval(window._speakingInterval);
-        speakingIdx++;
-        renderSpeakingPart();
-      }
-      return;
-    }
-    render();
-  },1000);
-}
-
-function skipSpeakingPhase(){
-  clearInterval(window._speakingInterval);
-  speakingIdx++;
-  renderSpeakingPart();
-}
-
-/* ============ LECCIONES ============ */
-const LESSONS = [
-  {
-    title:"Tiempos del pasado", tag:"Gramática",
-    theory:`<ul>
-      <li><strong>Past simple</strong> — acción terminada, a menudo con un momento concreto: <span class="ej">I visited Rome in 2022.</span></li>
-      <li><strong>Present perfect</strong> — experiencia o algo que conecta con el presente (ever, never, yet, already, for, since): <span class="ej">I've lost my keys (y sigo sin ellas).</span> Nunca con fechas cerradas: ❌ <span class="ej">I have seen him yesterday.</span></li>
-      <li><strong>Past perfect</strong> — lo que pasó <em>antes</em> de otra acción pasada: <span class="ej">When we arrived, the film had already started.</span></li>
-      <li>Truco Aptis: si ves <em>by the time / when + pasado</em>, casi siempre piden past perfect.</li>
-    </ul>`,
-    quiz:[
-      {q:"I ___ my keys — I can't get into the house!", opts:["lost","have lost","had lost"], correct:1},
-      {q:"She ___ in Paris from 2010 to 2015.", opts:["lived","has lived","had lived"], correct:0},
-      {q:"When we got to the cinema, the film ___ .", opts:["started","has started","had already started"], correct:2}
-    ]
-  },
-  {
-    title:"Condicionales y wish", tag:"Gramática",
-    theory:`<ul>
-      <li><strong>1ª condicional</strong> (real): if + presente → will. <span class="ej">If it rains, we'll stay in.</span></li>
-      <li><strong>2ª condicional</strong> (hipotética ahora): if + pasado → would. <span class="ej">If I had more time, I would exercise.</span> Fíjate: <span class="ej">If I <strong>were</strong> you...</span></li>
-      <li><strong>3ª condicional</strong> (pasado que no ocurrió): if + past perfect → would have + participio. <span class="ej">If you had told me, I would have helped you.</span></li>
-      <li><strong>Wish + pasado</strong> = deseo presente: <span class="ej">I wish I could speak German.</span> <strong>Wish + past perfect</strong> = arrepentimiento: <span class="ej">I wish I had studied more.</span></li>
-    </ul>`,
-    quiz:[
-      {q:"If I ___ more money, I'd travel more often.", opts:["have","had","would have"], correct:1},
-      {q:"If you had told me earlier, I ___ you.", opts:["would help","will help","would have helped"], correct:2},
-      {q:"I wish I ___ speak German.", opts:["can","could","would"], correct:1}
-    ]
-  },
-  {
-    title:"Pasiva y causativo (have something done)", tag:"Gramática",
-    theory:`<ul>
-      <li><strong>Pasiva</strong>: be (en el tiempo que toque) + participio. Se usa cuando importa la acción, no quién la hace: <span class="ej">The results will be published tomorrow. · This bridge was built in 1900.</span></li>
-      <li>Presente continuo pasivo, muy preguntado: <span class="ej">A new hospital is being built.</span></li>
-      <li><strong>Causativo</strong> have/get + objeto + participio = encargar algo a otro: <span class="ej">I'm having my car repaired</span> (no lo reparo yo).</li>
-    </ul>`,
-    quiz:[
-      {q:"The results ___ tomorrow morning.", opts:["will publish","will be published","are publishing"], correct:1},
-      {q:"I'm having my car ___ this week.", opts:["repair","repaired","to repair"], correct:1},
-      {q:"This castle ___ in the twelfth century.", opts:["built","was built","has built"], correct:1}
-    ]
-  },
-  {
-    title:"Estilo indirecto (reported speech)", tag:"Gramática",
-    theory:`<ul>
-      <li>Al pasar a indirecto, el verbo "retrocede" un tiempo: <span class="ej">'I'm tired' → She said (that) she was tired.</span> · <span class="ej">'I'll call you' → He said he would call me.</span></li>
-      <li>En preguntas indirectas el orden es afirmativo, sin do/did: <span class="ej">He asked me where I lived</span> (❌ where did I live).</li>
-      <li>Órdenes: tell + persona + (not) to + infinitivo: <span class="ej">She told me not to touch it.</span></li>
-      <li><em>Say</em> no lleva persona; <em>tell</em> sí: <span class="ej">she said that... / she told me that...</span></li>
-    </ul>`,
-    quiz:[
-      {q:"'I'm tired' → She said she ___ tired.", opts:["is","was","were"], correct:1},
-      {q:"He asked me where ___ .", opts:["did I live","I lived","do I live"], correct:1},
-      {q:"'Don't touch it!' → She told me ___ it.", opts:["don't touch","not to touch","to not touching"], correct:1}
-    ]
-  },
-  {
-    title:"Gerundio o infinitivo", tag:"Gramática",
-    theory:`<ul>
-      <li><strong>+ -ing</strong>: enjoy, avoid, suggest, mind, deny, finish, keep, be used to, be good at, look forward to. <span class="ej">I enjoy walking. · She suggested moving the meeting.</span></li>
-      <li><strong>+ to</strong>: want, decide, hope, plan, promise, refuse, manage, afford. <span class="ej">She decided to take the job.</span></li>
-      <li>Cambian de significado: <span class="ej">remember to lock</span> (obligación futura) vs <span class="ej">remember locking</span> (recuerdo); <span class="ej">stop smoking</span> (dejar el hábito) vs <span class="ej">stop to smoke</span> (parar para fumar).</li>
-    </ul>`,
-    quiz:[
-      {q:"I really enjoy ___ in the mountains.", opts:["walking","to walk","walk"], correct:0},
-      {q:"She decided ___ the job in Dublin.", opts:["taking","to take","take"], correct:1},
-      {q:"Remember ___ the door when you leave.", opts:["locking","to lock","lock"], correct:1}
-    ]
-  },
-  {
-    title:"Modales de deducción", tag:"Gramática",
-    theory:`<ul>
-      <li><strong>must</strong> = seguro que sí: <span class="ej">He must be at home — his car is outside.</span></li>
-      <li><strong>can't</strong> = seguro que no: <span class="ej">She can't be 40, she looks so young!</span></li>
-      <li><strong>might / may / could</strong> = posible: <span class="ej">They might be on holiday.</span></li>
-      <li>Para el pasado, añade <strong>have + participio</strong>: <span class="ej">They might have missed the bus. · She can't have seen us, it was too dark.</span></li>
-    </ul>`,
-    quiz:[
-      {q:"He ___ be at home — his car is outside.", opts:["must","can't","might not"], correct:0},
-      {q:"She ___ have seen us; it was completely dark.", opts:["must","can't","should"], correct:1},
-      {q:"They're late. They ___ have missed the bus.", opts:["can't","might","mustn't"], correct:1}
-    ]
-  },
-  {
-    title:"Oraciones de relativo", tag:"Gramática",
-    theory:`<ul>
-      <li><strong>who</strong> (personas), <strong>which</strong> (cosas), <strong>whose</strong> (posesión), <strong>where</strong> (lugares). <em>That</em> puede sustituir a who/which solo en las especificativas.</li>
-      <li><strong>Especificativas</strong> (sin comas) — información necesaria: <span class="ej">The man who called didn't leave his name.</span></li>
-      <li><strong>Explicativas</strong> (con comas) — información extra; aquí <em>nunca</em> se usa that: <span class="ej">My sister, who lives in Rome, is visiting us.</span></li>
-    </ul>`,
-    quiz:[
-      {q:"The man ___ car was stolen called the police.", opts:["who","whose","which"], correct:1},
-      {q:"My sister, ___ lives in Rome, is visiting us next week.", opts:["that","who","which"], correct:1},
-      {q:"The hotel ___ we stayed last summer was lovely.", opts:["where","which","who"], correct:0}
-    ]
-  },
-  {
-    title:"Collocations: make, do, take, have", tag:"Vocabulario",
-    theory:`<ul>
-      <li><strong>make</strong>: a decision, a mistake, an effort, progress, money, a suggestion.</li>
-      <li><strong>do</strong>: homework, research, your best, business, someone a favour.</li>
-      <li><strong>take</strong>: a risk, a break, part (in), place, care of, responsibility.</li>
-      <li><strong>have</strong>: fun, a look, a rest, an argument, a good time.</li>
-      <li>Apréndelas como bloques: en el Aptis la pregunta típica es elegir el verbo correcto para el sustantivo dado.</li>
-    </ul>`,
-    quiz:[
-      {q:"to ___ progress", opts:["do","make","take"], correct:1},
-      {q:"to ___ your best", opts:["make","do","have"], correct:1},
-      {q:"to ___ part in a competition", opts:["take","make","do"], correct:0}
-    ]
-  },
-  {
-    title:"Phrasal verbs imprescindibles", tag:"Vocabulario",
-    theory:`<ul>
-      <li><span class="ej">give up</span> (dejar/rendirse) · <span class="ej">carry on</span> (continuar) · <span class="ej">come across</span> (encontrar por casualidad) · <span class="ej">look after</span> (cuidar) · <span class="ej">put off</span> (aplazar).</li>
-      <li><span class="ej">run out of</span> (quedarse sin) · <span class="ej">get over</span> (recuperarse de) · <span class="ej">set off</span> (partir) · <span class="ej">turn down</span> (rechazar) · <span class="ej">look forward to + -ing</span> (tener ganas de).</li>
-      <li>Ojo: <em>look forward to</em> va seguido de <strong>-ing</strong> porque ese "to" es preposición: <span class="ej">I look forward to hearing from you.</span></li>
-    </ul>`,
-    quiz:[
-      {q:"We had to ___ the meeting until Friday.", opts:["put off","take off","get off"], correct:0},
-      {q:"I'm really looking forward ___ you again.", opts:["to see","to seeing","seeing"], correct:1},
-      {q:"She ___ the job offer because of the low salary.", opts:["turned down","turned up","turned on"], correct:0}
-    ]
-  },
-  {
-    title:"Conectores para el writing", tag:"Writing",
-    theory:`<ul>
-      <li><strong>Contraste</strong>: however (tras punto y coma o punto), although + frase, despite / in spite of + sustantivo o -ing. <span class="ej">Despite the rain, we went out. · Although it was late, we stayed.</span></li>
-      <li><strong>Causa</strong>: because of, due to. <strong>Consecuencia</strong>: therefore, as a result.</li>
-      <li><strong>Adición</strong>: in addition, moreover, furthermore. <strong>Ejemplo</strong>: for instance, such as.</li>
-      <li>Usar 3-4 conectores variados (y bien usados) es de las cosas que más sube la nota del writing.</li>
-    </ul>`,
-    quiz:[
-      {q:"___ the rain, we decided to go out.", opts:["Despite","Although","However"], correct:0},
-      {q:"Although it was late, ___ .", opts:["but we stayed","we stayed","however we stayed"], correct:1},
-      {q:"It was expensive; ___ , we decided to buy it.", opts:["despite","because","however"], correct:2}
-    ]
-  },
-  {
-    title:"Emails: informal vs formal", tag:"Writing",
-    theory:`<ul>
-      <li><strong>Informal</strong>: Hi Sam, · Thanks for your email! / Great to hear from you. · contracciones (I'm, can't) · cierre: Take care / See you soon / Best.</li>
-      <li><strong>Formal</strong>: Dear Mr Reed, / Dear Sir or Madam, · <span class="ej">I am writing to enquire about / to complain about...</span> · sin contracciones · <span class="ej">I would appreciate it if you could...</span> · cierre: <span class="ej">I look forward to hearing from you. Yours sincerely</span> (con nombre) / <span class="ej">Yours faithfully</span> (sin nombre).</li>
-      <li>En la parte 4 del Aptis escribes los DOS registros sobre el mismo tema: el error típico es que suenen igual. Cambia saludo, contracciones y expresiones.</li>
-    </ul>`,
-    quiz:[
-      {q:"¿Cuál es un cierre adecuado para un email formal?", opts:["See you!","I look forward to hearing from you.","Cheers!"], correct:1},
-      {q:"Escribes a una empresa sin saber el nombre del destinatario:", opts:["Dear Sir or Madam,","Hi there,","Hello company,"], correct:0},
-      {q:"'I am writing to complain about...' es propio de...", opts:["un mensaje a un amigo","un email formal","un chat de grupo"], correct:1}
-    ]
-  },
-  {
-    title:"Speaking: describir, comparar, opinar", tag:"Speaking",
-    theory:`<ul>
-      <li><strong>Describir una foto</strong>: de lo general al detalle y especula al final: <span class="ej">This picture shows... · In the background I can see... · It looks as if... / They seem to be...</span></li>
-      <li><strong>Comparar</strong>: <span class="ej">Both pictures show... · In the first one... whereas in the second... · While studying alone is quieter, studying in a group...</span></li>
-      <li><strong>Opinar</strong> (parte 4): opinión clara + razón + ejemplo + matiz: <span class="ej">In my opinion... · The main reason is... · For instance... · Having said that,...</span></li>
-      <li>No pares de hablar: rellenar con <span class="ej">Well, let me think...</span> es mejor que el silencio.</li>
-    </ul>`,
-    quiz:[
-      {q:"Para especular sobre una foto dices:", opts:["It must being a party.","It looks as if they are celebrating.","It is looking a celebration."], correct:1},
-      {q:"Para contrastar dos imágenes usas:", opts:["whereas","moreover","in addition"], correct:0},
-      {q:"Estructura recomendada para la parte de opinión:", opts:["opinión + razón + ejemplo + matiz","ejemplo + saludo + despedida","razón + conclusión sin opinión"], correct:0}
-    ]
-  }
-];
-
-function loadLessonsProgress(){
-  try{ const r = localStorage.getItem('aptis_lessons'); return r ? JSON.parse(r) : {}; }catch(e){ return {}; }
-}
-function saveLessonsProgress(l){
-  try{ localStorage.setItem('aptis_lessons', JSON.stringify(l)); }catch(e){}
-}
-
-function gotoView(v){
-  document.querySelector(`nav.tabs button[data-view="${v}"]`).click();
-}
-
-function renderLessons(){
-  const prog = loadLessonsProgress();
-  const list = document.getElementById('lessonsList');
-  list.innerHTML = LESSONS.map((l,i)=>{
-    const done = prog[i] && prog[i].done;
-    return `<div class="lesson-row ${done?'completed':''}" onclick="openLesson(${i})">
-      <span class="l-num">${String(i+1).padStart(2,'0')}</span>
-      <span class="l-title">${l.title}</span>
-      <span class="l-tag">${l.tag}</span>
-      <span class="l-done">${done?'✓':''}</span>
-    </div>`;
-  }).join('');
-  updateLessonsSummary();
-}
-
-function updateLessonsSummary(){
-  const el = document.getElementById('lessonsSummary');
-  if(!el) return;
-  const prog = loadLessonsProgress();
-  const done = LESSONS.filter((_,i)=>prog[i] && prog[i].done).length;
-  el.innerHTML = `Lecciones completadas: <strong>${done}/${LESSONS.length}</strong> · <a href="#" onclick="gotoView('lecciones');return false;">Ir a las lecciones</a>`;
-}
-
-function openLesson(i){
-  const l = LESSONS[i];
-  document.getElementById('lessonsListCard').style.display='none';
-  const card = document.getElementById('lessonCard');
-  card.style.display='block';
-  const quizHtml = l.quiz.map((qu,qi)=>`
-    <div class="q-block">
-      <div class="q-num">Comprobación ${qi+1} de ${l.quiz.length}</div>
-      <div class="q-text">${qu.q}</div>
-      <div class="options" data-lq="${qi}">
-        ${qu.opts.map((o,j)=>`<label class="opt"><input type="radio" name="ls${qi}" value="${j}"> ${o}</label>`).join('')}
-      </div>
-    </div>`).join('');
-  card.innerHTML = `
-    <button class="btn secondary" onclick="closeLesson()" style="margin-bottom:14px;">← Volver a la lista</button>
-    <div class="part-label">Lección ${i+1} · ${l.tag}</div>
-    <h2 style="font-family:'Fraunces',serif; color:var(--ink); margin:6px 0 10px;">${l.title}</h2>
-    <div class="theory">${l.theory}</div>
-    <h3>Comprueba lo aprendido</h3>
-    ${quizHtml}
-    <button class="btn" id="lessonSubmit" onclick="checkLesson(${i})">Corregir</button>
-    <div id="lessonResult"></div>`;
-}
-
-function closeLesson(){
-  document.getElementById('lessonCard').style.display='none';
-  document.getElementById('lessonsListCard').style.display='block';
-  renderLessons();
-}
-
-function checkLesson(i){
-  const l = LESSONS[i];
-  let correct = 0;
-  l.quiz.forEach((qu,qi)=>{
-    const selected = document.querySelector(`input[name="ls${qi}"]:checked`);
-    const opts = document.querySelectorAll(`.options[data-lq="${qi}"] .opt`);
-    opts.forEach((el,j)=>{
-      if(j===qu.correct) el.classList.add('correct');
-      if(selected && parseInt(selected.value)===j && j!==qu.correct) el.classList.add('incorrect');
-    });
-    if(selected && parseInt(selected.value)===qu.correct) correct++;
-  });
-  document.getElementById('lessonSubmit').disabled = true;
-  const passed = correct >= 2;
-  if(passed){
-    const prog = loadLessonsProgress();
-    prog[i] = { done:true, score:correct, date:new Date().toISOString().slice(0,10) };
-    saveLessonsProgress(prog);
-    updateLessonsSummary();
-  }
-  const next = i+1 < LESSONS.length ? `<button class="btn teal" style="margin-top:12px; margin-left:8px;" onclick="openLesson(${i+1})">Siguiente lección →</button>` : '';
-  document.getElementById('lessonResult').innerHTML = `
-    <div class="result-banner"><div class="big">${correct}/${l.quiz.length}</div>
-    <div>${passed ? '¡Lección completada! ✓' : 'Aún no: relee la teoría y vuelve a intentarlo.'}</div></div>
-    <button class="btn secondary" style="margin-top:12px;" onclick="openLesson(${i})">${passed ? 'Repetir' : 'Volver a intentarlo'}</button>
-    ${passed ? next : ''}`;
-}
-
-/* ============ INIT ============ */
-initProgress();
-renderLessons();
+  const saved = localStorage.getItem(CFG_KEY);
+  if (saved) start(JSON.parse(saved));
+  else setup.style.display = "block";
 </script>
+
+<script type="text/plain" id="app-source">
+const { useState, useEffect, useRef, useCallback } = React;
+
+/* ================================================================
+   APTIS GENERAL · B2 — Entrenamiento diario
+   · Cada tarea reproduce una parte real del examen
+   · Registro de todo lo visto: no repite ejercicios
+   · Cada fallo se convierte en explicación y en lección
+   ================================================================ */
+
+const MODEL = "claude-sonnet-4-6";
+const STORE = "aptis-general-b2";
+
+/* ---------------- utilidades ---------------- */
+const pick = (a) => a[Math.floor(Math.random() * a.length)];
+const shuffle = (a) => a.map((v) => [Math.random(), v]).sort((x, y) => x[0] - y[0]).map((x) => x[1]);
+const key = (d = new Date()) =>
+  `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+const back = (n) => { const d = new Date(); d.setDate(d.getDate() - n); return key(d); };
+const fp = (s) => String(s || "").toLowerCase().replace(/[^a-z0-9]/g, "").slice(0, 45);
+const level = (p) => (p >= 90 ? "C" : p >= 75 ? "B2" : p >= 55 ? "B1" : p >= 35 ? "A2" : "A1");
+const pctOf = (lv) => ({ C: 92, B2: 78, B1: 60, A2: 42 }[lv] ?? 50);
+
+const TOPICS = [
+  "commuting by train", "second-hand shopping", "learning an instrument as an adult",
+  "night shifts", "city parks", "food delivery apps", "keeping a diary", "renting a flat",
+  "amateur football", "volunteering at an animal shelter", "coastal erosion", "board game cafés",
+  "sleep and screens", "island tourism", "repairing instead of replacing", "language exchanges",
+  "urban beekeeping", "noisy neighbours", "seasonal work abroad", "libraries reinventing themselves",
+  "cycling to school", "family businesses", "a village festival", "hospital waiting times",
+  "open-air cinema", "learning to cook late in life", "villages losing population", "street markets",
+  "wildfire prevention", "museums after dark", "swimming in rivers", "apprenticeships",
+  "caring for older relatives", "train travel across Europe", "a balcony vegetable garden",
+  "podcasts on the way to work", "small bookshops", "sharing a flat", "the olive harvest",
+  "night buses", "amateur choirs", "returning to your home town", "working in a call centre",
+  "school trips", "queueing", "lost property offices", "community radio", "winter swimming",
+];
+
+/* ---------------- llamadas al modelo ---------------- */
+async function callClaude(prompt) {
+  const cfg = window.APTIS_CONFIG || {};
+  const headers = { "Content-Type": "application/json" };
+  if (cfg.pass) headers["x-app-pass"] = cfg.pass;
+  const res = await fetch(cfg.endpoint, {
+    method: "POST",
+    headers,
+    body: JSON.stringify({ max_tokens: 1000, messages: [{ role: "user", content: prompt }] }),
+  });
+  if (!res.ok) throw new Error("HTTP " + res.status);
+  const data = await res.json();
+  return (data.content || []).map((b) => (b.type === "text" ? b.text : "")).join("");
+}
+
+function parseJSON(raw) {
+  const t = String(raw).trim().replace(/```json/gi, "").replace(/```/g, "").trim();
+  const starts = ["[", "{"].map((c) => t.indexOf(c)).filter((i) => i >= 0);
+  if (!starts.length) throw new Error("sin JSON");
+  const s = Math.min(...starts);
+  const e = Math.max(t.lastIndexOf("]"), t.lastIndexOf("}"));
+  return JSON.parse(t.slice(s, e + 1));
+}
+
+async function generate(prompt) {
+  let last;
+  for (let i = 0; i < 2; i++) {
+    try { return parseJSON(await callClaude(prompt)); } catch (err) { last = err; }
+  }
+  throw last;
+}
+
+/* ---------------- almacenamiento ---------------- */
+const blank = () => ({ days: {}, skills: {}, errors: [], seen: [], usedTopics: [], lessons: {} });
+
+async function load() {
+  try { const r = localStorage.getItem(STORE); return r ? { ...blank(), ...JSON.parse(r) } : blank(); }
+  catch { return blank(); }
+}
+async function save(s) { try { localStorage.setItem(STORE, JSON.stringify(s)); } catch (e) { console.warn(e); } }
+
+/* ================================================================
+   Catálogo: las tareas reales del Aptis General
+   ================================================================ */
+const TASKS = [
+  {
+    id: "core", skill: "core", name: "Gramática y vocabulario",
+    real: "Core · 50 preguntas en 25 min. Aquí haces 6.", format: "mcq", mins: 5,
+    build: (c) => `Genera 6 preguntas del componente Core (Grammar and Vocabulary) del Aptis General, nivel B2.
+3 de gramática (frase con hueco) y 3 de vocabulario (collocation, phrasal verb o palabra que se confunde). Todo EN INGLÉS, 4 opciones, una correcta, distractores que un hispanohablante elegiría. Contexto léxico: "${c.topic}".
+${c.focus ? `Incluye 2 preguntas sobre: ${c.focus}.` : ""}
+${c.avoid ? `PROHIBIDO reutilizar estas frases ya vistas: ${c.avoid}` : ""}
+"tag" = el punto exacto en español ("Tercer condicional", "Collocation con make"). "why" = una frase en español.
+Devuelve SOLO: {"intro":"","questions":[{"q":"","opts":["","","",""],"correct":0,"tag":"","why":""}]}`,
+  },
+  {
+    id: "r1", skill: "reading", name: "Reading 1 · Palabra en el hueco",
+    real: "Texto corto con 5 huecos y un banco de palabras.", format: "fill", mins: 4,
+    build: (c) => `Genera la Parte 1 del Reading del Aptis General (nivel B2). Tema: "${c.topic}".
+Un mensaje o nota EN INGLÉS de 70-90 palabras con exactamente 5 huecos escritos [1] [2] [3] [4] [5]. Un banco de 8 palabras: las 5 correctas más 3 distractores gramaticalmente posibles pero incorrectos. Que los huecos exijan colocación o preposición, no solo significado.
+${c.avoid ? `No repitas estos textos ya usados: ${c.avoid}` : ""}
+Devuelve SOLO: {"intro":"instrucción en español","text":"","bank":["","","","","","","",""],"answers":[0,1,2,3,4],"whys":["explicación breve en español","","","",""]}
+answers[i] = índice en "bank" de la palabra del hueco i+1.`,
+  },
+  {
+    id: "r2", skill: "reading", name: "Reading 2 · Ordenar el texto",
+    real: "6 frases desordenadas; la primera va dada.", format: "order", mins: 4,
+    build: (c) => `Genera la Parte 2 del Reading del Aptis General (nivel B2). Tema: "${c.topic}".
+6 frases EN INGLÉS que forman un email o una anécdota coherente, EN SU ORDEN CORRECTO. Cada frase encadena con la anterior por pronombres, conectores o referencias temporales, sin ser obvio.
+${c.avoid ? `No repitas estos textos: ${c.avoid}` : ""}
+Devuelve SOLO: {"intro":"qué es el texto, en español","lines":["","","","","",""],"whys":["por qué va en esta posición, en español","","","","",""]}`,
+  },
+  {
+    id: "r3", skill: "reading", name: "Reading 3 · Huecos con opciones",
+    real: "Texto largo de opinión con 5 huecos de 3 opciones.", format: "fill", mins: 5,
+    build: (c) => `Genera la Parte 3 del Reading del Aptis General (nivel B2). Tema: "${c.topic}".
+Un texto de opinión EN INGLÉS de 130-160 palabras con exactamente 5 huecos [1] [2] [3] [4] [5]. Cada hueco con 3 opciones: la correcta y dos que fallan por matiz, registro o colocación, no por gramática evidente.
+${c.avoid ? `No repitas estos textos: ${c.avoid}` : ""}
+Devuelve SOLO: {"intro":"instrucción en español","text":"","gaps":[{"opts":["","",""],"correct":0,"why":"en español, una frase"}]}`,
+  },
+  {
+    id: "r4", skill: "reading", name: "Reading 4 · Emparejar titulares",
+    real: "5 párrafos y 6 titulares: uno sobra.", format: "match", mins: 5,
+    build: (c) => `Genera la Parte 4 del Reading del Aptis General (nivel B2). Tema general: "${c.topic}".
+5 párrafos EN INGLÉS de 40-55 palabras, cada uno sobre un aspecto distinto del tema. 6 titulares breves en inglés: los 5 correctos más 1 que sobra y resulta tentador. Los titulares NO deben compartir palabras literales con su párrafo: obliga a inferir.
+${c.avoid ? `No repitas estos textos: ${c.avoid}` : ""}
+Devuelve SOLO: {"intro":"instrucción en español","items":[{"label":"A","text":""},{"label":"B","text":""},{"label":"C","text":""},{"label":"D","text":""},{"label":"E","text":""}],"options":["","","","","",""],"answers":[0,1,2,3,4],"whys":["en español","","","",""]}`,
+  },
+  {
+    id: "l1", skill: "listening", name: "Listening 1 · Audios cortos",
+    real: "13 audios breves con una pregunta cada uno. Aquí 3.", format: "mcq", mins: 4,
+    build: (c) => `Genera la Parte 1 del Listening del Aptis General (nivel B2). Contextos variados en torno a "${c.topic}".
+3 audios independientes EN INGLÉS de 35-50 palabras (mensaje de voz, aviso, conversación breve), cada uno con un dato concreto que captar: una hora, un cambio de plan, un número, un motivo. Cada uno con 1 pregunta EN INGLÉS y 4 opciones. Los distractores deben mencionar datos que SÍ aparecen en el audio pero no responden la pregunta.
+${c.avoid ? `No repitas estos audios: ${c.avoid}` : ""}
+Devuelve SOLO: {"intro":"instrucción en español","questions":[{"script":"","q":"","opts":["","","",""],"correct":0,"why":"en español"}]}`,
+  },
+  {
+    id: "l2", skill: "listening", name: "Listening 2 · Cuatro hablantes",
+    real: "4 monólogos y 5 frases: una sobra.", format: "match", mins: 5,
+    build: (c) => `Genera la Parte 2 del Listening del Aptis General (nivel B2). Tema: "${c.topic}".
+4 monólogos EN INGLÉS de 40-55 palabras, personas distintas contando su experiencia sobre el mismo tema, en lenguaje hablado natural. 5 frases resumen EN INGLÉS: 4 correctas y 1 que sobra. Cada frase resume la ACTITUD o la idea de fondo, no palabras sueltas del audio.
+${c.avoid ? `No repitas estos audios: ${c.avoid}` : ""}
+Devuelve SOLO: {"intro":"instrucción en español","items":[{"label":"Speaker 1","script":""},{"label":"Speaker 2","script":""},{"label":"Speaker 3","script":""},{"label":"Speaker 4","script":""}],"options":["","","","",""],"answers":[0,1,2,3],"whys":["en español","","",""]}`,
+  },
+  {
+    id: "l3", skill: "listening", name: "Listening 3 · ¿Quién lo dice?",
+    real: "Conversación: cada idea es de él, de ella o de los dos.", format: "match", mins: 5,
+    build: (c) => `Genera la Parte 3 del Listening del Aptis General (nivel B2). Tema: "${c.topic}".
+Una conversación EN INGLÉS entre un hombre (Ben) y una mujer (Clara), 160-200 palabras, alternando turnos marcados "Ben:" y "Clara:", en la que coinciden en algunas ideas y discrepan en otras.
+Luego 4 ideas EN INGLÉS parafraseadas, nunca literales del diálogo. Para cada una, quién la expresa: 0 = Ben, 1 = Clara, 2 = los dos. Incluye al menos una de cada.
+${c.avoid ? `No repitas estas conversaciones: ${c.avoid}` : ""}
+Devuelve SOLO: {"intro":"instrucción en español","script":"","items":[{"label":"1","text":""},{"label":"2","text":""},{"label":"3","text":""},{"label":"4","text":""}],"options":["Ben","Clara","Los dos"],"answers":[0,1,2,0],"whys":["en español","","",""]}`,
+  },
+  {
+    id: "l4", skill: "listening", name: "Listening 4 · Monólogo largo",
+    real: "Charla larga con preguntas de idea principal y actitud.", format: "mcq", mins: 5,
+    build: (c) => `Genera la Parte 4 del Listening del Aptis General (nivel B2). Tema: "${c.topic}".
+Un monólogo EN INGLÉS de 150-190 palabras: alguien cuenta un proyecto o una experiencia, con matices y una opinión que evoluciona. Lenguaje hablado, con alguna reformulación.
+3 preguntas EN INGLÉS de 4 opciones: una de idea principal, una de actitud del hablante y una de detalle implícito. Nada que se responda repitiendo una palabra literal del audio.
+${c.avoid ? `No repitas estos audios: ${c.avoid}` : ""}
+Devuelve SOLO: {"intro":"título en español","script":"","questions":[{"q":"","opts":["","","",""],"correct":0,"why":"en español"}]}`,
+  },
+  {
+    id: "w1", skill: "writing", name: "Writing 1 · Respuestas cortas",
+    real: "5 preguntas de un formulario, 1-5 palabras cada una.", format: "write", mins: 4,
+    build: (c) => `Genera la Parte 1 del Writing del Aptis General. Contexto: te apuntas a un club sobre "${c.topic}".
+5 preguntas de formulario EN INGLÉS que se responden con 1 a 5 palabras.
+Devuelve SOLO: {"intro":"instrucción en español","context":"presentación del club en inglés, 1 frase","fields":[{"prompt":"","words":"1-5 palabras"}]}`,
+  },
+  {
+    id: "w2", skill: "writing", name: "Writing 2 · Texto breve",
+    real: "Un apartado del formulario, 20-30 palabras en frases.", format: "write", mins: 5,
+    build: (c) => `Genera la Parte 2 del Writing del Aptis General. Contexto: club sobre "${c.topic}".
+Una única consigna EN INGLÉS que pida contar algo personal en frases completas, 20-30 palabras.
+Devuelve SOLO: {"intro":"instrucción en español","context":"en inglés, 1 frase","fields":[{"prompt":"","words":"20-30 palabras"}]}`,
+  },
+  {
+    id: "w3", skill: "writing", name: "Writing 3 · Chat del club",
+    real: "3 mensajes de otros socios, 30-40 palabras por respuesta.", format: "write", mins: 8,
+    build: (c) => `Genera la Parte 3 del Writing del Aptis General. Chat de un club sobre "${c.topic}".
+3 mensajes EN INGLÉS de tres socios distintos, cada uno con su nombre, en tono coloquial, y cada uno pidiendo algo diferente: una opinión, una experiencia, una recomendación.
+Devuelve SOLO: {"intro":"instrucción en español","context":"en inglés, 1 frase de contexto","fields":[{"prompt":"Marta: ...","words":"30-40 palabras"}]}`,
+  },
+  {
+    id: "w4", skill: "writing", name: "Writing 4 · Los dos emails",
+    real: "Informal 40-50 palabras y formal 120-150. La parte que más pesa.", format: "write", mins: 12,
+    build: (c) => `Genera la Parte 4 del Writing del Aptis General. Club o servicio relacionado con "${c.topic}".
+Una situación EN INGLÉS (un cambio, un problema o una novedad que afecta a los socios) y dos consignas: un email informal a un amigo del club (40-50 palabras) y un email formal a la persona responsable (120-150 palabras) que pida DOS cosas concretas.
+Devuelve SOLO: {"intro":"instrucción en español","context":"la situación en inglés, 40-60 palabras","fields":[{"prompt":"Write to your friend...","words":"40-50 palabras"},{"prompt":"Write to the manager...","words":"120-150 palabras"}]}`,
+  },
+  {
+    id: "s1", skill: "speaking", name: "Speaking 1 · Preguntas personales",
+    real: "3 preguntas, 30 segundos cada una, sin preparación.", format: "speak", mins: 4,
+    build: (c) => `Genera la Parte 1 del Speaking del Aptis General. Tema cotidiano relacionado con "${c.topic}".
+3 preguntas personales EN INGLÉS, sencillas pero que no se respondan con una sola frase.
+Devuelve SOLO: {"intro":"instrucción en español","prep":0,"rounds":[{"prompt":"","seconds":30},{"prompt":"","seconds":30},{"prompt":"","seconds":30}],"useful":["expresión útil en inglés","",""]}`,
+  },
+  {
+    id: "s2", skill: "speaking", name: "Speaking 2 · Describir una escena",
+    real: "Describes una foto y respondes 2 preguntas, 45 s cada una.", format: "speak", mins: 4,
+    build: (c) => `Genera la Parte 2 del Speaking del Aptis General. Tema: "${c.topic}".
+Como no hay imagen, describe la foto en 2 frases EN INGLÉS con detalle visual suficiente para poder hablar de ella. Después: la consigna de descripción y 2 preguntas EN INGLÉS que conecten la escena con la experiencia del candidato.
+Devuelve SOLO: {"intro":"instrucción en español","scene":"Picture: ...","prep":0,"rounds":[{"prompt":"Describe the picture.","seconds":45},{"prompt":"","seconds":45},{"prompt":"","seconds":45}],"useful":["expresión útil en inglés","",""]}`,
+  },
+  {
+    id: "s3", skill: "speaking", name: "Speaking 3 · Comparar",
+    real: "Comparas dos fotos y respondes 2 preguntas, 45 s cada una.", format: "speak", mins: 4,
+    build: (c) => `Genera la Parte 3 del Speaking del Aptis General. Tema: "${c.topic}".
+Describe DOS fotos contrastadas, 1 frase cada una EN INGLÉS. Después: comparar las dos, y 2 preguntas EN INGLÉS sobre ventajas, inconvenientes o cambios con el tiempo.
+Devuelve SOLO: {"intro":"instrucción en español","scene":"Picture A: ... / Picture B: ...","prep":0,"rounds":[{"prompt":"Compare the two pictures.","seconds":45},{"prompt":"","seconds":45},{"prompt":"","seconds":45}],"useful":["expresión de comparación en inglés","",""]}`,
+  },
+  {
+    id: "s4", skill: "speaking", name: "Speaking 4 · Tema abstracto",
+    real: "1 min de preparación y 2 min para 3 preguntas seguidas.", format: "speak", mins: 5,
+    build: (c) => `Genera la Parte 4 del Speaking del Aptis General. Tema abstracto derivado de "${c.topic}".
+Una escena de partida en 1 frase EN INGLÉS y 3 preguntas EN INGLÉS encadenadas: una sobre experiencia personal, otra sobre por qué la gente actúa así, y otra sobre cómo puede cambiar en el futuro. Se responden seguidas en 2 minutos.
+Devuelve SOLO: {"intro":"instrucción en español","scene":"Picture: ...","prep":60,"questions3":["","",""],"rounds":[{"prompt":"Answer the three questions.","seconds":120}],"useful":["conector de discurso en inglés","",""]}`,
+  },
+];
+
+const BY_ID = Object.fromEntries(TASKS.map((t) => [t.id, t]));
+const SKILLS = { core: "Gramática y vocabulario", reading: "Reading", listening: "Listening", writing: "Writing", speaking: "Speaking" };
+
+/* Temario B2 que el Aptis pregunta de verdad */
+const SYLLABUS = [
+  { id: "cond", t: "Los tres condicionales y el mixto", a: "Gramática" },
+  { id: "perf", t: "Present perfect frente a past simple", a: "Gramática" },
+  { id: "futperf", t: "Future perfect y future continuous", a: "Gramática" },
+  { id: "pass", t: "Pasiva y pasiva impersonal", a: "Gramática" },
+  { id: "rep", t: "Estilo indirecto y verbos de reporte", a: "Gramática" },
+  { id: "rel", t: "Oraciones de relativo especificativas y explicativas", a: "Gramática" },
+  { id: "mod", t: "Verbos modales de deducción", a: "Gramática" },
+  { id: "wish", t: "Wish, if only y los arrepentimientos", a: "Gramática" },
+  { id: "ging", t: "Gerundio o infinitivo tras verbo", a: "Gramática" },
+  { id: "inv", t: "Inversión: hardly, not only, no sooner", a: "Gramática" },
+  { id: "used", t: "Used to, would y be used to", a: "Gramática" },
+  { id: "art", t: "Artículos y sustantivos incontables", a: "Gramática" },
+  { id: "coll", t: "Collocations con make, do, take y have", a: "Vocabulario" },
+  { id: "phr", t: "Phrasal verbs de uso frecuente", a: "Vocabulario" },
+  { id: "prep", t: "Preposiciones que dependen del verbo o del adjetivo", a: "Vocabulario" },
+  { id: "false", t: "Falsos amigos del español", a: "Vocabulario" },
+  { id: "conn", t: "Conectores de contraste y consecuencia", a: "Vocabulario" },
+  { id: "reg", t: "Registro formal frente a informal", a: "Vocabulario" },
+  { id: "adj", t: "Adjetivos fuertes y matices de intensidad", a: "Vocabulario" },
+  { id: "idio", t: "Expresiones idiomáticas cotidianas", a: "Vocabulario" },
+];
+
+/* ================================================================
+   Piezas de interfaz
+   ================================================================ */
+function Loading({ text }) {
+  return <div className="loading"><span className="pulse" />{text}</div>;
+}
+function Failed({ onRetry }) {
+  return (
+    <div className="failed">
+      <p>No he podido preparar el ejercicio. Suele ser un corte momentáneo.</p>
+      <button className="btn" onClick={onRetry}>Volver a intentarlo</button>
+    </div>
+  );
+}
+function Score({ correct, total }) {
+  const p = Math.round((correct / total) * 100);
+  return (
+    <div className="score">
+      <strong>{correct}/{total}</strong>
+      <span>{p}% · equivale a un {level(p)}</span>
+    </div>
+  );
+}
+
+/* Reproductor limitado a 2 escuchas, como en el examen */
+function Player({ script, label }) {
+  const [left, setLeft] = useState(2);
+  const [on, setOn] = useState(false);
+  useEffect(() => () => window.speechSynthesis?.cancel(), []);
+  const play = () => {
+    if (!("speechSynthesis" in window) || left <= 0) return;
+    const u = new SpeechSynthesisUtterance(script);
+    u.lang = "en-GB"; u.rate = 0.95;
+    u.onend = () => setOn(false);
+    u.onerror = () => setOn(false);
+    window.speechSynthesis.cancel();
+    window.speechSynthesis.speak(u);
+    setOn(true); setLeft(left - 1);
+  };
+  return (
+    <div className="playRow">
+      <button className="btn small" onClick={play} disabled={left <= 0 || on}>
+        {on ? "Sonando…" : left > 0 ? (label ? `Escuchar ${label}` : "Escuchar") : "Agotado"}
+      </button>
+      <span className="plays">{left} de 2</span>
+    </div>
+  );
+}
+
+/* Explicación bajo demanda cuando fallas */
+function WhyMore({ q, right, chosen }) {
+  const [data, setData] = useState(null);
+  const [busy, setBusy] = useState(false);
+  const ask = async () => {
+    setBusy(true);
+    try {
+      setData(await generate(
+        `Un estudiante español que prepara el Aptis B2 ha fallado esto.
+PREGUNTA: ${q}
+CORRECTA: ${right}
+ÉL ELIGIÓ: ${chosen || "nada"}
+Explícale la regla de fondo en español, máximo 3 frases, sin jerga. Di por qué su opción falla. Añade 2 ejemplos nuevos en inglés con traducción.
+Devuelve SOLO: {"rule":"","mistake":"","examples":[{"en":"","es":""},{"en":"","es":""}]}`
+      ));
+    } catch { setData({ rule: "No he podido generar la explicación.", mistake: "", examples: [] }); }
+    setBusy(false);
+  };
+  if (data) return (
+    <div className="deep">
+      <p className="deepRule">{data.rule}</p>
+      {data.mistake && <p className="deepMiss">{data.mistake}</p>}
+      {data.examples?.map((e, i) => (
+        <p key={i} className="deepEx"><span>{e.en}</span><em>{e.es}</em></p>
+      ))}
+    </div>
+  );
+  return <button className="linkBtn" onClick={ask} disabled={busy}>{busy ? "Pensando…" : "Explícamelo mejor"}</button>;
+}
+
+/* ================================================================
+   Motor de tareas
+   ================================================================ */
+function TaskRunner({ def, ctx, onDone, onErrors, onSeen }) {
+  const [data, setData] = useState(null);
+  const [err, setErr] = useState(false);
+  const [ans, setAns] = useState({});
+  const [order, setOrder] = useState([]);
+  const [shown, setShown] = useState(false);
+
+  const build = useCallback(async () => {
+    setErr(false); setData(null); setAns({}); setShown(false);
+    try {
+      const d = await generate(def.build(ctx));
+      setData(d);
+      if (def.format === "order") setOrder(shuffle(d.lines.map((_, i) => i).slice(1)));
+      const marks = [
+        ...(d.questions || []).map((q) => fp(q.q)),
+        fp(d.text), fp(d.script), fp(d.context), fp((d.lines || [])[1]),
+        ...(d.items || []).map((i) => fp(i.text || i.script)),
+        ...(d.rounds || []).map((r) => fp(r.prompt)),
+      ].filter(Boolean);
+      onSeen(marks, ctx.topic);
+    } catch { setErr(true); }
+  }, [def.id]);
+
+  useEffect(() => { build(); }, [def.id]);
+
+  if (err) return <Failed onRetry={build} />;
+  if (!data) return <Loading text="Preparando un ejercicio que no has hecho nunca…" />;
+
+  /* ---------- opción múltiple ---------- */
+  if (def.format === "mcq") {
+    const qs = data.questions || [];
+    const nOk = qs.filter((q, i) => ans[i] === q.correct).length;
+    const reveal = () => {
+      setShown(true);
+      onErrors(qs.filter((q, i) => ans[i] !== q.correct)
+        .map((q) => ({ tag: q.tag || def.name, q: q.q, right: q.opts[q.correct], why: q.why })));
+    };
+    return (
+      <div>
+        {data.intro && <p className="hint">{data.intro}</p>}
+        {data.script && <Player script={data.script} />}
+        {qs.map((q, i) => (
+          <div key={i} className="qblock">
+            {q.script && <Player script={q.script} label={`audio ${i + 1}`} />}
+            <p className="qtext"><span className="qnum">{i + 1}</span>{q.q}</p>
+            <div className="opts">
+              {q.opts.map((o, j) => (
+                <button key={j} disabled={shown} onClick={() => setAns({ ...ans, [i]: j })}
+                  className={"opt" + (shown && j === q.correct ? " right" : shown && j === ans[i] ? " wrong" : !shown && j === ans[i] ? " picked" : "")}>
+                  <span className="dot" />{o}
+                </button>
+              ))}
+            </div>
+            {shown && (
+              <div className="after">
+                <p className={"why " + (ans[i] === q.correct ? "ok" : "no")}>
+                  {q.tag && <span className="tag">{q.tag}</span>}{q.why}
+                </p>
+                {ans[i] !== q.correct && <WhyMore q={q.q} right={q.opts[q.correct]} chosen={q.opts[ans[i]]} />}
+              </div>
+            )}
+          </div>
+        ))}
+        {shown && data.script && <p className="passage">{data.script}</p>}
+        {!shown
+          ? <button className="btn" disabled={Object.keys(ans).length < qs.length} onClick={reveal}>Corregir</button>
+          : <><Score correct={nOk} total={qs.length} />
+             <button className="btn" onClick={() => onDone(Math.round((nOk / qs.length) * 100))}>Continuar</button></>}
+      </div>
+    );
+  }
+
+  /* ---------- huecos ---------- */
+  if (def.format === "fill") {
+    const withBank = Array.isArray(data.bank);
+    const n = withBank ? data.answers.length : data.gaps.length;
+    const parts = String(data.text).split(/\[\d\]/);
+    const right = (i) => (withBank ? data.answers[i] : data.gaps[i].correct);
+    const nOk = Array.from({ length: n }, (_, i) => (ans[i] === right(i) ? 1 : 0)).reduce((a, b) => a + b, 0);
+    return (
+      <div>
+        {data.intro && <p className="hint">{data.intro}</p>}
+        {withBank && <div className="bank">{data.bank.map((w, i) => <span key={i} className="chip">{w}</span>)}</div>}
+        <p className="passage">
+          {parts.map((p, i) => (
+            <span key={i}>{p}
+              {i < n && (
+                <select className="selInline" disabled={shown} value={ans[i] ?? ""}
+                  onChange={(e) => setAns({ ...ans, [i]: Number(e.target.value) })}>
+                  <option value="">____</option>
+                  {(withBank ? data.bank : data.gaps[i].opts).map((o, j) => <option key={j} value={j}>{o}</option>)}
+                </select>
+              )}
+            </span>
+          ))}
+        </p>
+        {shown && Array.from({ length: n }, (_, i) => (
+          <p key={i} className={"why " + (ans[i] === right(i) ? "ok" : "no")}>
+            <span className="tag">{i + 1}. {(withBank ? data.bank : data.gaps[i].opts)[right(i)]}</span>
+            {withBank ? data.whys?.[i] : data.gaps[i].why}
+          </p>
+        ))}
+        {!shown
+          ? <button className="btn" disabled={Object.keys(ans).length < n} onClick={() => setShown(true)}>Corregir</button>
+          : <><Score correct={nOk} total={n} />
+             <button className="btn" onClick={() => onDone(Math.round((nOk / n) * 100))}>Continuar</button></>}
+      </div>
+    );
+  }
+
+  /* ---------- emparejar ---------- */
+  if (def.format === "match") {
+    const items = data.items || [];
+    const nOk = items.filter((_, i) => ans[i] === data.answers[i]).length;
+    return (
+      <div>
+        {data.intro && <p className="hint">{data.intro}</p>}
+        {data.script && <Player script={String(data.script).replace(/\b(Ben|Clara):/g, "$1 says,")} />}
+        {items.map((it, i) => (
+          <div key={i} className="matchRow">
+            <span className="matchLabel">{it.label}</span>
+            {it.script && <Player script={it.script} label={it.label} />}
+            {it.text && <p className={data.script ? "matchStatement" : "passage"}>{it.text}</p>}
+            <select className="sel" disabled={shown} value={ans[i] ?? ""}
+              onChange={(e) => setAns({ ...ans, [i]: Number(e.target.value) })}>
+              <option value="">— elige —</option>
+              {data.options.map((o, j) => <option key={j} value={j}>{o}</option>)}
+            </select>
+            {shown && (
+              <p className={"why " + (ans[i] === data.answers[i] ? "ok" : "no")}>
+                {ans[i] === data.answers[i] ? "Correcto. " : `Era «${data.options[data.answers[i]]}». `}
+                {data.whys?.[i]}
+              </p>
+            )}
+            {shown && it.script && <p className="script">{it.script}</p>}
+          </div>
+        ))}
+        {shown && data.script && <p className="passage">{data.script}</p>}
+        {!shown
+          ? <button className="btn" disabled={Object.keys(ans).length < items.length} onClick={() => setShown(true)}>Corregir</button>
+          : <><Score correct={nOk} total={items.length} />
+             <button className="btn" onClick={() => onDone(Math.round((nOk / items.length) * 100))}>Continuar</button></>}
+      </div>
+    );
+  }
+
+  /* ---------- ordenar ---------- */
+  if (def.format === "order") {
+    const move = (i, d) => {
+      const j = i + d;
+      if (j < 0 || j >= order.length) return;
+      const next = [...order];
+      [next[i], next[j]] = [next[j], next[i]];
+      setOrder(next);
+    };
+    const nOk = order.filter((v, i) => v === i + 1).length;
+    return (
+      <div>
+        {data.intro && <p className="hint">{data.intro} La primera frase ya está colocada.</p>}
+        <div className="seqRow fixed"><span className="seqText">{data.lines[0]}</span></div>
+        {order.map((orig, i) => (
+          <div key={orig} className={"seqRow " + (shown ? (orig === i + 1 ? "right" : "wrong") : "")}>
+            <span className="seqText">{data.lines[orig]}</span>
+            {!shown && (
+              <span className="seqBtns">
+                <button onClick={() => move(i, -1)} aria-label="Subir">↑</button>
+                <button onClick={() => move(i, 1)} aria-label="Bajar">↓</button>
+              </span>
+            )}
+          </div>
+        ))}
+        {shown && (
+          <div className="solution">
+            {data.lines.map((l, i) => <p key={i}><span className="tag">{i + 1}</span>{data.whys?.[i]}</p>)}
+          </div>
+        )}
+        {!shown
+          ? <button className="btn" onClick={() => setShown(true)}>Corregir</button>
+          : <><Score correct={nOk} total={order.length} />
+             <button className="btn" onClick={() => onDone(Math.round((nOk / order.length) * 100))}>Continuar</button></>}
+      </div>
+    );
+  }
+
+  if (def.format === "write") return <WriteTask data={data} def={def} onDone={onDone} />;
+  if (def.format === "speak") return <SpeakTask data={data} def={def} onDone={onDone} />;
+  return null;
+}
+
+/* ---------------- Writing ---------------- */
+function WriteTask({ data, def, onDone }) {
+  const [vals, setVals] = useState({});
+  const [busy, setBusy] = useState(false);
+  const [fb, setFb] = useState(null);
+  const fields = data.fields || [];
+
+  const grade = async () => {
+    setBusy(true);
+    const body = fields.map((f, i) => `CONSIGNA: ${f.prompt} (${f.words})\nRESPUESTA: ${vals[i] || ""}`).join("\n\n");
+    try {
+      setFb(await generate(
+        `Eres examinador oficial del Aptis General y corriges esta tarea de Writing (${def.name}) con los criterios reales: cumplimiento de la tarea, registro, cohesión, riqueza léxica y corrección. Penaliza salirse del número de palabras.
+${body}
+Sé exigente y concreto. Máximo 5 correcciones: las que más le bajan el nivel.
+Devuelve SOLO: {"level":"A2|B1|B2|C","summary":"dos frases en español: qué funciona y qué le impide subir","corrections":[{"original":"","better":"","why":"en español"}],"upgrade":"una frase suya reescrita con lenguaje de B2 alto","next":"un consejo concreto en español"}`
+      ));
+    } catch { setFb({ level: "?", summary: "No he podido corregirlo. Prueba otra vez.", corrections: [] }); }
+    setBusy(false);
+  };
+
+  const enough = fields.every((f, i) => (vals[i] || "").trim().split(/\s+/).filter(Boolean).length >= 2);
+  if (fb) return <Feedback fb={fb} onDone={() => onDone(pctOf(fb.level))} />;
+
+  return (
+    <div>
+      {data.intro && <p className="hint">{data.intro}</p>}
+      {data.context && <p className="passage">{data.context}</p>}
+      {fields.map((f, i) => {
+        const w = (vals[i] || "").trim().split(/\s+/).filter(Boolean).length;
+        return (
+          <div key={i} className="field">
+            <p className="prompt">{f.prompt}</p>
+            <textarea className={"ta " + (def.id === "w1" ? "tiny" : def.id === "w4" && i === 1 ? "" : "small")}
+              value={vals[i] || ""} disabled={busy} placeholder="Write in English…"
+              onChange={(e) => setVals({ ...vals, [i]: e.target.value })} />
+            <div className="wc">{w} palabras · piden {f.words}</div>
+          </div>
+        );
+      })}
+      <button className="btn" disabled={!enough || busy} onClick={grade}>{busy ? "Corrigiendo…" : "Corregir mi texto"}</button>
+    </div>
+  );
+}
+
+/* ---------------- Speaking ---------------- */
+function SpeakTask({ data, def, onDone }) {
+  const [phase, setPhase] = useState("brief");
+  const [round, setRound] = useState(0);
+  const [left, setLeft] = useState(0);
+  const [texts, setTexts] = useState([]);
+  const [live, setLive] = useState("");
+  const [mic, setMic] = useState(true);
+  const [fb, setFb] = useState(null);
+  const [busy, setBusy] = useState(false);
+  const rec = useRef(null);
+  const tick = useRef(null);
+  const liveRef = useRef("");
+  const rounds = data.rounds || [];
+
+  useEffect(() => () => { clearInterval(tick.current); try { rec.current?.stop(); } catch { /* ya parado */ } }, []);
+
+  const countdown = (secs, then) => {
+    setLeft(secs);
+    clearInterval(tick.current);
+    tick.current = setInterval(() => setLeft((v) => {
+      if (v <= 1) { clearInterval(tick.current); then(); return 0; }
+      return v - 1;
+    }), 1000);
+  };
+
+  const listen = () => {
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SR) { setMic(false); return; }
+    try {
+      const r = new SR();
+      r.lang = "en-GB"; r.continuous = true; r.interimResults = true;
+      r.onresult = (e) => {
+        let out = "";
+        for (let i = 0; i < e.results.length; i++) out += e.results[i][0].transcript + " ";
+        liveRef.current = out.trim();
+        setLive(liveRef.current);
+      };
+      r.onerror = () => setMic(false);
+      r.start(); rec.current = r;
+    } catch { setMic(false); }
+  };
+
+  const startRound = (i) => {
+    liveRef.current = "";
+    setRound(i); setLive(""); setPhase("speak"); listen();
+    countdown(rounds[i].seconds, () => endRound(i));
+  };
+  const endRound = (i) => {
+    clearInterval(tick.current);
+    try { rec.current?.stop(); } catch { /* ya parado */ }
+    const said = liveRef.current;
+    setTexts((t) => { const n = [...t]; n[i] = said; return n; });
+    if (i + 1 < rounds.length) setTimeout(() => startRound(i + 1), 700);
+    else setPhase("review");
+  };
+
+  const grade = async () => {
+    setBusy(true);
+    const body = rounds.map((r, i) => `PREGUNTA: ${r.prompt}\nDIJO: ${texts[i] || ""}`).join("\n\n");
+    try {
+      setFb(await generate(
+        `Eres examinador de Speaking del Aptis General y evalúas ${def.name}. Esto es una TRANSCRIPCIÓN automática: ignora la puntuación y los errores de transcripción, juzga contenido, gramática hablada, léxico y desarrollo de las ideas.
+${data.scene ? `ESCENA: ${data.scene}` : ""}
+${body}
+Devuelve SOLO: {"level":"A2|B1|B2|C","summary":"dos frases en español","corrections":[{"original":"lo que dijo","better":"cómo se dice","why":"en español"}],"upgrade":"respuesta modelo EN INGLÉS de nivel B2, 60-80 palabras","next":"consejo concreto en español"}
+Máximo 4 correcciones.`
+      ));
+    } catch { setFb({ level: "?", summary: "No he podido evaluarlo. Prueba otra vez.", corrections: [] }); }
+    setBusy(false);
+  };
+
+  const mm = (s) => `${String(Math.floor(s / 60)).padStart(2, "0")}:${String(s % 60).padStart(2, "0")}`;
+  if (fb) return <Feedback fb={fb} modelLabel="Respuesta modelo" onDone={() => onDone(pctOf(fb.level))} />;
+
+  return (
+    <div>
+      {data.intro && <p className="hint">{data.intro}</p>}
+      {data.scene && <p className="passage">{data.scene}</p>}
+      {data.questions3?.map((q, i) => <p key={i} className="prompt">{q}</p>)}
+
+      {phase === "brief" && (
+        <>
+          {rounds.map((r, i) => <p key={i} className="prompt dim">{r.prompt}<span className="secs">{r.seconds}s</span></p>)}
+          <p className="hint">Habla en voz alta, sin leer. Si el navegador lo permite, transcribo lo que digas y lo corrijo.</p>
+          <button className="btn" onClick={() => (data.prep ? (setPhase("prep"), countdown(data.prep, () => startRound(0))) : startRound(0))}>
+            {data.prep ? `Empezar · ${data.prep}s de preparación` : "Empezar a hablar"}
+          </button>
+        </>
+      )}
+
+      {phase === "prep" && (
+        <div className="timerBox"><span className="timer">{mm(left)}</span><span>preparación · apunta palabras clave, no frases</span></div>
+      )}
+
+      {phase === "speak" && (
+        <div>
+          <p className="prompt">{rounds[round].prompt}</p>
+          <div className="timerBox live"><span className="timer">{mm(left)}</span><span>pregunta {round + 1} de {rounds.length}</span></div>
+          <p className="live-text">{live || "…"}</p>
+          <button className="btn ghost" onClick={() => endRound(round)}>He terminado</button>
+        </div>
+      )}
+
+      {phase === "review" && (
+        <div>
+          {!mic && <p className="hint">El navegador no me ha dejado usar el micrófono. Escribe abajo, más o menos, lo que has dicho y lo corrijo igual.</p>}
+          {rounds.map((r, i) => (
+            <div key={i} className="field">
+              <p className="prompt dim">{r.prompt}</p>
+              <textarea className="ta tiny" value={texts[i] || ""} placeholder="Lo que has dicho…"
+                onChange={(e) => setTexts((t) => { const n = [...t]; n[i] = e.target.value; return n; })} />
+            </div>
+          ))}
+          {data.useful && (
+            <div className="upgrade">
+              <span className="tag">Te habrían servido</span>
+              {data.useful.map((u, i) => <p key={i}>{u}</p>)}
+            </div>
+          )}
+          <button className="btn" disabled={busy || texts.join(" ").trim().split(/\s+/).filter(Boolean).length < 15} onClick={grade}>
+            {busy ? "Evaluando…" : "Evaluar mi respuesta"}
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function Feedback({ fb, onDone, modelLabel }) {
+  return (
+    <div>
+      <div className="fbLevel"><strong>{fb.level}</strong><span>nivel de esta respuesta</span></div>
+      <p className="fbSummary">{fb.summary}</p>
+      {fb.corrections?.map((c, i) => (
+        <div key={i} className="corr">
+          <p className="corrBad">{c.original}</p>
+          <p className="corrGood">{c.better}</p>
+          <p className="corrWhy">{c.why}</p>
+        </div>
+      ))}
+      {fb.upgrade && <div className="upgrade"><span className="tag">{modelLabel || "Sube de registro así"}</span><p>{fb.upgrade}</p></div>}
+      {fb.next && <p className="next">{fb.next}</p>}
+      <button className="btn" onClick={onDone}>Continuar</button>
+    </div>
+  );
+}
+
+/* ================================================================
+   Lecciones
+   ================================================================ */
+function Lesson({ item, seen, onLearn, onBack }) {
+  const [data, setData] = useState(null);
+  const [err, setErr] = useState(false);
+  const [ans, setAns] = useState({});
+  const [shown, setShown] = useState(false);
+
+  const build = useCallback(async () => {
+    setErr(false); setData(null); setAns({}); setShown(false);
+    try {
+      setData(await generate(
+        `Eres profesor de inglés preparando a un hispanohablante para el Aptis General (nivel B2). Da una micro-lección sobre: "${item.t}".
+Explica en español, claro y sin jerga, centrado en lo que el Aptis pregunta de verdad de este punto. Incluye el error típico que comete un español y por qué lo comete.
+Ejemplos EN INGLÉS con traducción, en situaciones cotidianas.
+${seen.length ? `No uses estos ejemplos ya vistos: ${seen.join(" | ")}` : ""}
+Después 3 preguntas de comprobación tipo Aptis, EN INGLÉS, 4 opciones.
+Devuelve SOLO: {"idea":"la regla en español, 3-4 frases","trap":"el error típico del hispanohablante, 2 frases","examples":[{"en":"","es":"","note":"matiz en español"},{"en":"","es":"","note":""},{"en":"","es":"","note":""}],"exam":"en qué parte del Aptis te lo van a preguntar y cómo, 2 frases","check":[{"q":"","opts":["","","",""],"correct":0,"why":"en español"}]}`
+      ));
+    } catch { setErr(true); }
+  }, [item.id]);
+
+  useEffect(() => { build(); }, [item.id]);
+
+  if (err) return <Failed onRetry={build} />;
+  if (!data) return <Loading text="Preparando la lección con ejemplos nuevos…" />;
+
+  const check = data.check || [];
+  const nOk = check.filter((c, i) => ans[i] === c.correct).length;
+
+  return (
+    <div>
+      <p className="lessonIdea">{data.idea}</p>
+      {data.trap && <div className="trap"><span className="tag">Trampa para españoles</span><p>{data.trap}</p></div>}
+      {data.examples?.map((e, i) => (
+        <div key={i} className="ex">
+          <p className="exEn">{e.en}</p>
+          <p className="exEs">{e.es}</p>
+          {e.note && <p className="exNote">{e.note}</p>}
+        </div>
+      ))}
+      {data.exam && <div className="upgrade"><span className="tag">En el examen</span><p>{data.exam}</p></div>}
+
+      <h3 className="checkTitle">Compruébalo</h3>
+      {check.map((c, i) => (
+        <div key={i} className="qblock">
+          <p className="qtext"><span className="qnum">{i + 1}</span>{c.q}</p>
+          <div className="opts">
+            {c.opts.map((o, j) => (
+              <button key={j} disabled={shown} onClick={() => setAns({ ...ans, [i]: j })}
+                className={"opt" + (shown && j === c.correct ? " right" : shown && j === ans[i] ? " wrong" : !shown && j === ans[i] ? " picked" : "")}>
+                <span className="dot" />{o}
+              </button>
+            ))}
+          </div>
+          {shown && <p className={"why " + (ans[i] === c.correct ? "ok" : "no")}>{c.why}</p>}
+        </div>
+      ))}
+      {!shown
+        ? <button className="btn" disabled={Object.keys(ans).length < check.length} onClick={() => setShown(true)}>Corregir</button>
+        : <>
+            <Score correct={nOk} total={check.length} />
+            <div className="row">
+              <button className="btn" onClick={() => { onLearn(nOk === check.length, (data.examples || []).map((e) => fp(e.en))); onBack(); }}>
+                {nOk === check.length ? "Marcar como aprendida" : "Guardar y volver"}
+              </button>
+              <button className="btn ghost" onClick={build}>Otra tanda de ejemplos</button>
+            </div>
+          </>}
+    </div>
+  );
+}
+
+/* ================================================================
+   App
+   ================================================================ */
+function App() {
+  const [st, setSt] = useState(null);
+  const [view, setView] = useState("hoy");
+  const [running, setRunning] = useState(null);
+  const [lesson, setLesson] = useState(null);
+
+  useEffect(() => { load().then(setSt); }, []);
+  const update = (fn) => setSt((p) => { const n = fn(structuredClone(p)); save(n); return n; });
+
+  if (!st) return <Shell><Loading text="Cargando tu progreso…" /></Shell>;
+
+  const today = key();
+  const dayN = Math.floor(Date.now() / 86400000);
+
+  /* El plan del día rota por las 4 partes de cada componente */
+  const plan = [
+    BY_ID.core,
+    BY_ID[["r1", "r2", "r3", "r4"][dayN % 4]],
+    BY_ID[["l1", "l2", "l3", "l4"][dayN % 4]],
+    BY_ID[["w1", "w2", "w3", "w4"][dayN % 4]],
+    BY_ID[["s1", "s2", "s3", "s4"][dayN % 4]],
+  ];
+  const doneToday = st.days[today]?.blocks || {};
+  const doneN = plan.filter((t) => doneToday[t.id]).length;
+
+  const errorTags = Object.entries(st.errors.reduce((a, e) => { a[e.tag] = (a[e.tag] || 0) + 1; return a; }, {}))
+    .sort((a, b) => b[1] - a[1]);
+
+  const ctxFor = (def) => {
+    const fresh = TOPICS.filter((t) => !st.usedTopics.includes(t));
+    return {
+      topic: pick(fresh.length > 6 ? fresh : TOPICS),
+      avoid: st.seen.slice(0, 18).join(" | "),
+      focus: def.id === "core" ? errorTags.slice(0, 2).map((t) => t[0]).join(", ") : "",
+    };
+  };
+
+  const finish = (id, skill, pct) => {
+    update((s) => {
+      s.days[today] = s.days[today] || { blocks: {} };
+      s.days[today].blocks[id] = true;
+      s.skills[skill] = [...(s.skills[skill] || []), { d: today, pct }].slice(-40);
+      if (plan.every((t) => s.days[today].blocks[t.id])) s.days[today].done = true;
+      return s;
+    });
+    setRunning(null);
+  };
+  const addErrors = (list) => update((s) => {
+    s.errors = [...list.map((e) => ({ ...e, date: today })), ...s.errors].slice(0, 90);
+    return s;
+  });
+  const addSeen = (marks, topic) => update((s) => {
+    s.seen = [...marks, ...s.seen].slice(0, 260);
+    s.usedTopics = [topic, ...s.usedTopics.filter((t) => t !== topic)].slice(0, 40);
+    return s;
+  });
+
+  const runTask = (def) => (
+    <div className="stage">
+      <button className="back" onClick={() => setRunning(null)}>← Volver</button>
+      <h2>{def.name}</h2>
+      <p className="realNote">{def.real}</p>
+      <TaskRunner def={def} ctx={ctxFor(def)} onErrors={addErrors} onSeen={addSeen}
+        onDone={(pct) => finish(def.id, def.skill, pct)} />
+    </div>
+  );
+
+  const streak = streakOf(st.days);
+  const weakFirst = (list) => {
+    const weak = (s) => errorTags.some(([t]) => t.toLowerCase().includes(s.t.split(" ")[0].toLowerCase())) ? 0 : 1;
+    return [...list].sort((a, b) => weak(a) - weak(b));
+  };
+
+  return (
+    <Shell>
+      <header className="head">
+        <div>
+          <h1>Aptis General · B2</h1>
+          <p className="sub">Cada ejercicio se genera de cero. No repite nada de lo que ya has hecho.</p>
+        </div>
+        <div className="streak">
+          <span className="streakN">{streak}</span>
+          <span className="streakL">{streak === 1 ? "día seguido" : "días seguidos"}</span>
+          <div className="dots">
+            {Array.from({ length: 14 }, (_, i) => 13 - i).map((n) => (
+              <span key={n} className={"dotDay " + (st.days[back(n)]?.done ? "on" : "")} />
+            ))}
+          </div>
+        </div>
+      </header>
+
+      <nav className="nav">
+        {[["hoy", "Hoy"], ["aprender", "Aprender"], ["libre", "Por partes"], ["fallos", "Mis fallos"], ["progreso", "Progreso"]].map(([k, l]) => (
+          <button key={k} className={view === k ? "on" : ""}
+            onClick={() => { setView(k); setRunning(null); setLesson(null); }}>{l}</button>
+        ))}
+      </nav>
+
+      {/* ---------------- HOY ---------------- */}
+      {view === "hoy" && (running ? runTask(running) : (
+        <section>
+          <div className="progressStrip">
+            {plan.map((t) => <span key={t.id} className={"seg " + (doneToday[t.id] ? "on" : "")} />)}
+            <span className="stripLabel">{doneN} de {plan.length}</span>
+          </div>
+          {doneN === plan.length && <p className="doneMsg">Sesión completa. Mañana te tocan las siguientes partes del examen.</p>}
+          <div className="blocks">
+            {plan.map((t) => (
+              <button key={t.id} className={"blockRow " + (doneToday[t.id] ? "isDone" : "")} onClick={() => setRunning(t)}>
+                <span className="mark" />
+                <span className="blockName">{t.name}<em>{t.real}</em></span>
+                <span className="blockMins">{t.mins} min</span>
+              </button>
+            ))}
+          </div>
+        </section>
+      ))}
+
+      {/* ---------------- APRENDER ---------------- */}
+      {view === "aprender" && (lesson ? (
+        <div className="stage">
+          <button className="back" onClick={() => setLesson(null)}>← Volver al temario</button>
+          <h2>{lesson.t}</h2>
+          <p className="realNote">{lesson.a}</p>
+          <Lesson item={lesson} seen={st.lessons[lesson.id]?.examples || []} onBack={() => setLesson(null)}
+            onLearn={(perfect, exs) => update((s) => {
+              const prev = s.lessons[lesson.id] || { done: false, examples: [] };
+              s.lessons[lesson.id] = { done: prev.done || perfect, examples: [...exs, ...prev.examples].slice(0, 24) };
+              return s;
+            })} />
+        </div>
+      ) : (
+        <section>
+          <p className="hint">
+            Teoría en español con la trampa concreta en la que caemos los hispanohablantes, y comprobación al final.
+            Si repites una lección los ejemplos son otros. Lo que fallas en los tests sube al principio de la lista.
+          </p>
+          {["Gramática", "Vocabulario"].map((area) => (
+            <div key={area}>
+              <h3 className="areaTitle">{area}</h3>
+              <div className="blocks">
+                {weakFirst(SYLLABUS.filter((s) => s.a === area)).map((s) => (
+                  <button key={s.id} className={"blockRow " + (st.lessons[s.id]?.done ? "isDone" : "")} onClick={() => setLesson(s)}>
+                    <span className="mark" />
+                    <span className="blockName">{s.t}</span>
+                    <span className="blockMins">{st.lessons[s.id]?.done ? "aprendida" : ""}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          ))}
+        </section>
+      ))}
+
+      {/* ---------------- POR PARTES ---------------- */}
+      {view === "libre" && (running ? runTask(running) : (
+        <section>
+          <p className="hint">Las tareas del Aptis General, una a una. Entra las veces que quieras: el contenido siempre es nuevo.</p>
+          {Object.entries(SKILLS).map(([sk, label]) => (
+            <div key={sk}>
+              <h3 className="areaTitle">{label}</h3>
+              <div className="blocks">
+                {TASKS.filter((t) => t.skill === sk).map((t) => (
+                  <button key={t.id} className="blockRow" onClick={() => setRunning(t)}>
+                    <span className="mark" />
+                    <span className="blockName">{t.name}<em>{t.real}</em></span>
+                    <span className="blockMins">{t.mins} min</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          ))}
+        </section>
+      ))}
+
+      {/* ---------------- FALLOS ---------------- */}
+      {view === "fallos" && (
+        <section>
+          {errorTags.length === 0 ? (
+            <p className="hint">Todavía no hay fallos registrados. Haz un test de gramática y aquí aparecerá lo que se te resiste.</p>
+          ) : (
+            <>
+              <p className="hint">
+                Tus puntos débiles. Los dos primeros se cuelan automáticamente en el test de gramática de cada día,
+                siempre con frases nuevas.
+              </p>
+              <div className="tags">
+                {errorTags.map(([tag, n]) => {
+                  const match = SYLLABUS.find((s) => s.t.toLowerCase().includes(tag.split(" ")[0].toLowerCase()));
+                  return (
+                    <div key={tag} className="tagRow">
+                      <span className="tagName">{tag}</span>
+                      <span className="tagRight">
+                        <span className="tagN">{n} {n === 1 ? "fallo" : "fallos"}</span>
+                        {match && <button className="linkBtn" onClick={() => { setView("aprender"); setLesson(match); }}>ver lección</button>}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+              <details className="details">
+                <summary>Las preguntas que fallé</summary>
+                {st.errors.slice(0, 25).map((e, i) => (
+                  <div key={i} className="errItem">
+                    <p className="errQ">{e.q}</p>
+                    <p className="errA">{e.right} — {e.why}</p>
+                  </div>
+                ))}
+              </details>
+              <button className="btn ghost" onClick={() => update((s) => { s.errors = []; return s; })}>Vaciar la lista</button>
+            </>
+          )}
+        </section>
+      )}
+
+      {/* ---------------- PROGRESO ---------------- */}
+      {view === "progreso" && (
+        <section>
+          <p className="hint">Media de tus 5 últimos intentos. La marca roja es el 75%, la frontera aproximada del B2.</p>
+          <div className="bars">
+            {Object.entries(SKILLS).map(([k, label]) => {
+              const last = (st.skills[k] || []).slice(-5);
+              const avg = last.length ? Math.round(last.reduce((a, b) => a + b.pct, 0) / last.length) : null;
+              return (
+                <div key={k} className="barRow">
+                  <span className="barLabel">{label}</span>
+                  <div className="bar">
+                    <span className={"fill " + (avg >= 75 ? "pass" : "")} style={{ width: `${avg || 0}%` }} />
+                    <span className="threshold" />
+                  </div>
+                  <span className="barVal">{avg == null ? "—" : `${avg}% · ${level(avg)}`}</span>
+                </div>
+              );
+            })}
+          </div>
+          <div className="statRow">
+            <div><strong>{st.seen.length}</strong><span>fragmentos vistos que no volverán a salir</span></div>
+            <div><strong>{Object.values(st.lessons).filter((l) => l.done).length}/{SYLLABUS.length}</strong><span>lecciones aprendidas</span></div>
+            <div><strong>{Object.keys(st.days).length}</strong><span>días de práctica</span></div>
+          </div>
+          <p className="hint" style={{ marginTop: 26 }}>
+            Son orientativos, no una nota oficial. En el examen real la gramática no puntúa por sí sola: sirve para
+            desempatar cuando estás entre dos niveles en el resto de destrezas.
+          </p>
+        </section>
+      )}
+    </Shell>
+  );
+}
+
+/* ================================================================
+   Envoltorio y estilos
+   ================================================================ */
+function Shell({ children }) {
+  return (<><style>{css}</style><div className="wrap">{children}</div></>);
+}
+
+const css = `
+@import url('https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&display=swap');
+
+.wrap{
+  --paper:#E7ECE4; --card:#FBFCFA; --ink:#15302A; --ink2:#2E4840; --muted:#63756D;
+  --line:rgba(21,48,42,.14); --accent:#2C3B8E; --accentSoft:rgba(44,59,142,.08);
+  --ochre:#A97911; --good:#2C6B4F; --bad:#9E3327;
+  --sans:'Bricolage Grotesque',system-ui,sans-serif; --serif:'Source Serif 4',Georgia,serif;
+  background:var(--paper); color:var(--ink); font-family:var(--sans); min-height:100vh; padding:26px 18px 80px;
+}
+.wrap *{box-sizing:border-box;}
+.wrap > *{max-width:660px; margin-left:auto; margin-right:auto;}
+.wrap button:focus-visible{outline:2px solid var(--accent); outline-offset:2px;}
+
+.head{display:flex; justify-content:space-between; align-items:flex-start; gap:20px; flex-wrap:wrap; margin-bottom:24px;}
+.head h1{font-size:30px; font-weight:800; letter-spacing:-.03em; margin:0; line-height:1.05;}
+.sub{margin:7px 0 0; font-size:13.5px; color:var(--muted); max-width:42ch; line-height:1.5;}
+.streak{text-align:right;}
+.streakN{font-size:26px; font-weight:800; letter-spacing:-.03em;}
+.streakL{font-size:13px; color:var(--muted); margin-left:6px;}
+.dots{display:flex; gap:3px; margin-top:8px; justify-content:flex-end;}
+.dotDay{width:9px; height:9px; border-radius:2px; background:rgba(21,48,42,.13);}
+.dotDay.on{background:var(--accent);}
+
+.nav{display:flex; gap:20px; border-bottom:1px solid var(--line); margin-bottom:26px; overflow-x:auto;}
+.nav button{background:none; border:none; font-family:var(--sans); font-size:14.5px; font-weight:600; white-space:nowrap;
+  color:var(--muted); padding:0 0 11px; cursor:pointer; border-bottom:2px solid transparent; margin-bottom:-1px;}
+.nav button.on{color:var(--ink); border-bottom-color:var(--ink);}
+.nav button:hover{color:var(--ink);}
+
+.progressStrip{display:flex; gap:5px; align-items:center; margin-bottom:20px;}
+.seg{height:5px; flex:1; border-radius:3px; background:rgba(21,48,42,.13);}
+.seg.on{background:var(--accent);}
+.stripLabel{font-size:12.5px; color:var(--muted); margin-left:8px; flex:none;}
+.doneMsg{font-size:14px; color:var(--good); margin:0 0 18px;}
+
+.areaTitle{font-size:13px; font-weight:600; color:var(--muted); margin:26px 0 10px;}
+.blocks{display:flex; flex-direction:column; gap:7px;}
+.blockRow{display:flex; align-items:center; gap:13px; width:100%; text-align:left; cursor:pointer;
+  background:var(--card); border:1px solid var(--line); border-radius:9px; padding:14px 16px;
+  font-family:var(--sans); font-size:15px; color:var(--ink);}
+.blockRow:hover{border-color:var(--ink2);}
+.mark{width:11px; height:11px; border-radius:3px; border:1.5px solid var(--muted); flex:none;}
+.blockRow.isDone .mark{background:var(--good); border-color:var(--good);}
+.blockName{flex:1; font-weight:600; line-height:1.35;}
+.blockName em{display:block; font-style:normal; font-weight:400; font-size:12.5px; color:var(--muted); margin-top:3px;}
+.blockMins{font-size:12.5px; color:var(--muted); flex:none;}
+
+.stage h2{font-size:21px; font-weight:800; letter-spacing:-.02em; margin:14px 0 4px;}
+.realNote{font-size:13px; color:var(--muted); margin:0 0 20px;}
+.back{background:none; border:none; padding:0; font-family:var(--sans); font-size:13.5px; color:var(--muted); cursor:pointer;}
+.back:hover{color:var(--ink);}
+.hint{font-size:14px; color:var(--muted); line-height:1.6; margin:0 0 18px;}
+.row{display:flex; gap:10px; flex-wrap:wrap;}
+
+.passage,.prompt,.qtext,.opt,.ta,.sel,.selInline,.seqText,.corrBad,.corrGood,.upgrade p,
+.live-text,.errQ,.exEn,.exEs,.chip,.matchStatement,.script,.deepEx span{font-family:var(--serif);}
+
+.passage{background:var(--card); border:1px solid var(--line); border-left:3px solid var(--ochre);
+  border-radius:0 8px 8px 0; padding:15px 18px; font-size:16px; line-height:1.75; margin:0 0 16px; white-space:pre-wrap;}
+.prompt{font-size:16.5px; line-height:1.6; font-weight:600; margin:0 0 14px;}
+.prompt.dim{font-weight:400; color:var(--ink2); font-size:15.5px;}
+.secs{font-family:var(--sans); font-size:12px; color:var(--muted); margin-left:8px;}
+.script{font-size:14.5px; line-height:1.65; color:var(--muted); margin:8px 0 0;}
+
+.bank{display:flex; flex-wrap:wrap; gap:7px; margin-bottom:14px;}
+.chip{border:1px solid var(--line); background:var(--card); border-radius:999px; padding:5px 13px; font-size:14.5px;}
+
+.qblock{padding:16px 0; border-top:1px solid var(--line);}
+.qblock:first-child{border-top:none;}
+.qtext{font-size:16px; line-height:1.6; margin:0 0 12px;}
+.qnum{font-family:var(--sans); font-size:12px; font-weight:700; color:var(--muted); margin-right:9px;}
+.opts{display:flex; flex-direction:column; gap:6px;}
+.opt{display:flex; align-items:center; gap:11px; text-align:left; width:100%; cursor:pointer;
+  background:var(--card); border:1px solid var(--line); border-radius:7px; padding:10px 14px; font-size:15px; color:var(--ink);}
+.opt:hover:not(:disabled){border-color:var(--ink2);}
+.opt:disabled{cursor:default;}
+.dot{width:9px; height:9px; border-radius:50%; border:1.5px solid var(--muted); flex:none;}
+.opt.picked{border-color:var(--accent); background:var(--accentSoft);}
+.opt.picked .dot{background:var(--accent); border-color:var(--accent);}
+.opt.right{border-color:var(--good); background:rgba(44,107,79,.09);}
+.opt.right .dot{background:var(--good); border-color:var(--good);}
+.opt.wrong{border-color:var(--bad); background:rgba(158,51,39,.08);}
+.opt.wrong .dot{background:var(--bad); border-color:var(--bad);}
+
+.after{margin-top:9px;}
+.why{font-size:13.5px; line-height:1.6; margin:0; color:var(--muted);}
+.why.no{color:var(--ink2);}
+.tag{display:inline-block; font-size:11px; font-weight:700; color:var(--ochre);
+  border:1px solid rgba(169,121,17,.4); border-radius:4px; padding:1px 6px; margin-right:8px;}
+
+.linkBtn{background:none; border:none; padding:0; margin-top:7px; cursor:pointer;
+  font-family:var(--sans); font-size:13px; font-weight:600; color:var(--accent); text-decoration:underline;}
+.deep{border-left:2px solid var(--accent); padding:2px 0 2px 14px; margin-top:11px;}
+.deepRule{margin:0; font-size:14px; line-height:1.6;}
+.deepMiss{margin:6px 0 0; font-size:13.5px; line-height:1.6; color:var(--muted);}
+.deepEx{margin:9px 0 0; font-size:14.5px; line-height:1.5;}
+.deepEx span{display:block;}
+.deepEx em{display:block; font-style:normal; font-size:13px; color:var(--muted); font-family:var(--sans);}
+
+.sel,.selInline{font-size:15px; padding:8px 11px; border-radius:7px; border:1px solid var(--line);
+  background:var(--card); color:var(--ink); max-width:100%;}
+.selInline{padding:1px 5px; border-radius:4px; margin:0 2px;}
+
+.matchRow{padding:16px 0; border-top:1px solid var(--line);}
+.matchRow:first-of-type{border-top:none;}
+.matchLabel{font-size:12px; font-weight:700; color:var(--muted); display:block; margin-bottom:7px;}
+.matchStatement{font-size:16px; line-height:1.6; margin:0 0 10px;}
+
+.seqRow{display:flex; align-items:center; gap:10px; background:var(--card); border:1px solid var(--line);
+  border-radius:7px; padding:11px 14px; margin-bottom:6px;}
+.seqRow.fixed{background:none; border-style:dashed;}
+.seqRow.right{border-color:var(--good); background:rgba(44,107,79,.07);}
+.seqRow.wrong{border-color:var(--bad); background:rgba(158,51,39,.06);}
+.seqText{flex:1; font-size:15px; line-height:1.55;}
+.seqBtns{display:flex; gap:4px;}
+.seqBtns button{background:none; border:1px solid var(--line); border-radius:5px; width:26px; height:26px; cursor:pointer; color:var(--ink2);}
+.solution{margin-top:16px;}
+.solution p{font-size:13.5px; color:var(--muted); line-height:1.6; margin:0 0 7px;}
+
+.btn{font-family:var(--sans); font-weight:600; font-size:14.5px; background:var(--ink); color:var(--paper);
+  border:none; border-radius:8px; padding:12px 22px; cursor:pointer; margin-top:18px;}
+.btn:hover:not(:disabled){background:var(--ink2);}
+.btn:disabled{opacity:.4; cursor:not-allowed;}
+.btn.ghost{background:none; color:var(--ink); border:1px solid var(--line);}
+.btn.ghost:hover:not(:disabled){border-color:var(--ink2); background:none;}
+.btn.small{padding:8px 15px; font-size:13.5px; margin-top:0;}
+
+.score{display:flex; align-items:baseline; gap:12px; margin-top:22px; padding:14px 18px;
+  background:var(--card); border:1px solid var(--line); border-radius:8px;}
+.score strong{font-size:24px; font-weight:800; letter-spacing:-.02em;}
+.score span{font-size:13.5px; color:var(--muted);}
+
+.playRow{display:flex; align-items:center; gap:12px; margin-bottom:12px;}
+.plays{font-size:12.5px; color:var(--muted);}
+
+.field{margin-bottom:22px;}
+.ta{width:100%; min-height:210px; font-size:16px; line-height:1.7; padding:14px;
+  border:1px solid var(--line); border-radius:8px; background:var(--card); color:var(--ink); resize:vertical;}
+.ta.small{min-height:110px;}
+.ta.tiny{min-height:64px;}
+.ta:focus{outline:none; border-color:var(--accent);}
+.wc{font-size:12.5px; color:var(--muted); margin-top:6px;}
+
+.fbLevel{display:flex; align-items:baseline; gap:11px; margin-bottom:14px;}
+.fbLevel strong{font-size:34px; font-weight:800; letter-spacing:-.03em;}
+.fbLevel span{font-size:13px; color:var(--muted);}
+.fbSummary{font-size:15px; line-height:1.65; margin:0 0 20px;}
+.corr{border-left:2px solid var(--line); padding:2px 0 2px 15px; margin-bottom:15px;}
+.corrBad{margin:0; font-size:15px; color:var(--bad); text-decoration:line-through; text-decoration-thickness:1px;}
+.corrGood{margin:3px 0 0; font-size:15px; color:var(--good);}
+.corrWhy{margin:5px 0 0; font-size:13px; color:var(--muted);}
+.upgrade{background:var(--card); border:1px solid var(--line); border-radius:8px; padding:14px 17px; margin:0 0 16px;}
+.upgrade p{margin:8px 0 0; font-size:15.5px; line-height:1.65;}
+.next{font-size:14px; line-height:1.6; color:var(--ink2); margin:0;}
+
+.timerBox{display:flex; align-items:center; gap:13px; margin:16px 0;}
+.timer{font-size:30px; font-weight:800; letter-spacing:-.03em; font-variant-numeric:tabular-nums;}
+.timerBox span:last-child{font-size:13.5px; color:var(--muted);}
+.timerBox.live .timer{color:var(--accent);}
+.live-text{font-size:15px; line-height:1.7; color:var(--muted); background:var(--card);
+  border:1px dashed var(--line); border-radius:8px; padding:13px 16px; margin:0 0 8px; min-height:52px;}
+
+.lessonIdea{font-size:16px; line-height:1.75; margin:0 0 18px;}
+.trap{border-left:3px solid var(--bad); padding:2px 0 2px 15px; margin-bottom:20px;}
+.trap p{margin:7px 0 0; font-size:14.5px; line-height:1.65;}
+.ex{margin-bottom:14px;}
+.exEn{margin:0; font-size:16px; line-height:1.5;}
+.exEs{margin:2px 0 0; font-size:14.5px; color:var(--muted);}
+.exNote{margin:4px 0 0; font-size:12.5px; color:var(--ochre);}
+.checkTitle{font-size:16px; font-weight:800; letter-spacing:-.02em; margin:28px 0 6px;}
+
+.tags{margin-top:22px;}
+.tagRow{display:flex; justify-content:space-between; align-items:center; gap:14px; padding:11px 0; border-bottom:1px solid var(--line);}
+.tagName{font-size:14.5px; font-weight:600;}
+.tagRight{display:flex; align-items:center; gap:14px;}
+.tagN{font-size:13px; color:var(--muted);}
+.tagRight .linkBtn{margin-top:0;}
+.details{margin-top:22px;}
+.details summary{cursor:pointer; color:var(--muted); font-size:13.5px;}
+.errItem{margin-top:15px;}
+.errQ{margin:0; font-size:15px; line-height:1.55;}
+.errA{margin:4px 0 0; font-size:13px; color:var(--muted);}
+
+.bars{display:flex; flex-direction:column; gap:15px;}
+.barRow{display:flex; align-items:center; gap:13px;}
+.barLabel{font-size:13.5px; width:150px; flex:none;}
+.bar{position:relative; flex:1; height:7px; border-radius:4px; background:rgba(21,48,42,.11);}
+.fill{position:absolute; left:0; top:0; bottom:0; border-radius:4px; background:var(--ochre);}
+.fill.pass{background:var(--good);}
+.threshold{position:absolute; left:75%; top:-3px; bottom:-3px; width:1.5px; background:var(--bad); opacity:.5;}
+.barVal{font-size:12.5px; color:var(--muted); width:78px; text-align:right; flex:none;}
+.statRow{display:flex; gap:26px; flex-wrap:wrap; margin-top:30px; padding-top:22px; border-top:1px solid var(--line);}
+.statRow div{max-width:155px;}
+.statRow strong{display:block; font-size:22px; font-weight:800; letter-spacing:-.02em;}
+.statRow span{font-size:12.5px; color:var(--muted); line-height:1.45; display:block; margin-top:3px;}
+
+.loading{display:flex; align-items:center; gap:11px; font-size:14px; color:var(--muted); padding:26px 0;}
+.pulse{width:8px; height:8px; border-radius:50%; background:var(--accent); animation:p 1.2s ease-in-out infinite;}
+@keyframes p{0%,100%{opacity:.25;}50%{opacity:1;}}
+.failed{padding:20px 0;}
+.failed p{font-size:14.5px; color:var(--ink2); margin:0;}
+
+@media (prefers-reduced-motion:reduce){.wrap *{animation:none !important; transition:none !important;}}
+@media (max-width:520px){
+  .head h1{font-size:25px;}
+  .nav{gap:15px;}
+  .nav button{font-size:13.5px;}
+  .barLabel{width:105px; font-size:12.5px;}
+}
+`;
+
+
+const root = ReactDOM.createRoot(document.getElementById("app"));
+root.render(React.createElement(App));
+
+</script>
+
 </body>
 </html>
