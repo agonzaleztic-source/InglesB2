@@ -4,6 +4,22 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="theme-color" content="#E7ECE4">
+<!-- La app compila JSX en el propio navegador con Babel standalone y lo
+     inyecta como <script> inline (ver más abajo): por eso script-src necesita
+     'unsafe-inline'. Todo lo demás va cerrado a 'self' y a los sitios
+     concretos que hacen falta. -->
+<meta http-equiv="Content-Security-Policy" content="
+  default-src 'self';
+  script-src 'self' https://unpkg.com 'unsafe-inline';
+  style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
+  img-src 'self' data:;
+  connect-src 'self' https://api.anthropic.com https://*.workers.dev;
+  font-src 'self' https://fonts.gstatic.com;
+  object-src 'none';
+  base-uri 'self';
+  form-action 'self';
+  frame-ancestors 'none';
+">
 <title>Aptis General · B2</title>
 <style>
   html,body{margin:0;padding:0;background:#E7ECE4;}
@@ -37,8 +53,12 @@
   <p>Cada ejercicio se genera en el momento, así que la app necesita una clave de la API de
      Anthropic. Se guarda <strong>solo en este navegador</strong>: no viaja al repositorio ni a
      ningún otro sitio.</p>
-  <label for="ep">Clave de la API</label>
-  <input id="ep" type="password" placeholder="sk-ant-..." autocomplete="off" spellcheck="false">
+  <label for="ep">Clave de la API o dirección del Worker</label>
+  <input id="ep" type="password" placeholder="sk-ant-... o https://tu-worker.workers.dev" autocomplete="off" spellcheck="false">
+  <div id="epPassWrap" style="display:none">
+    <label for="eppass">Contraseña del Worker</label>
+    <input id="eppass" type="password" placeholder="la que pusiste en APP_PASS" autocomplete="off" spellcheck="false">
+  </div>
   <p id="epErr" class="err"></p>
   <button id="go">Guardar y empezar</button>
   <button id="free" class="ghost">Empezar gratis, sin clave</button>
@@ -53,7 +73,9 @@
     2-3 € al mes.<br><br>
     No uses esto en un ordenador compartido: quien lo use podría leer la clave.
     Si prefieres que la clave no esté en el navegador, aquí también puedes pegar la dirección de
-    un Worker de Cloudflare — la guía está en <code>DESPLIEGUE.md</code>.
+    un Worker de Cloudflare — la guía está en <code>DESPLIEGUE.md</code>.<br><br>
+    Entrenador independiente y no oficial. «Aptis» es una marca del British Council, que no ha
+    creado, revisado ni respalda esta aplicación.
   </small>
 </div>
 
@@ -61,9 +83,12 @@
 <button id="reset">cambiar conexión</button>
 
 <script src="banco.js"></script>
-<script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-<script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-<script src="https://unpkg.com/@babel/standalone@7.24.7/babel.min.js"></script>
+<script crossorigin="anonymous" src="https://unpkg.com/react@18.3.1/umd/react.production.min.js"
+  integrity="sha384-DGyLxAyjq0f9SPpVevD6IgztCFlnMF6oW/XQGmfe+IsZ8TqEiDrcHkMLKI6fiB/Z"></script>
+<script crossorigin="anonymous" src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js"
+  integrity="sha384-gTGxhz21lVGYNMcdJOyq01Edg0jhn/c22nsx0kyqP0TxaV5WVdsSH1fSDUf5YJj1"></script>
+<script crossorigin="anonymous" src="https://unpkg.com/@babel/standalone@7.24.7/babel.min.js"
+  integrity="sha384-AISI5AuDG6E8DeEiFMVB3rGQxhZt24OU0avMp+GMV64+tpnA3+Z6F5MT0f96iPva"></script>
 
 <script>
   const CFG_KEY = "aptis-conexion";
@@ -83,6 +108,11 @@
     document.body.appendChild(s);
   }
 
+  const passWrap = document.getElementById("epPassWrap");
+  document.getElementById("ep").addEventListener("input", (e) => {
+    passWrap.style.display = /^https?:\/\//i.test(e.target.value.trim()) ? "block" : "none";
+  });
+
   document.getElementById("go").addEventListener("click", () => {
     const input = document.getElementById("ep");
     const errBox = document.getElementById("epErr");
@@ -93,8 +123,10 @@
     // Dos formas de conectar: la clave directa (lo normal) o un Worker que la
     // guarde por ti. Se distinguen solas por cómo empiezan.
     let cfg;
-    if (/^https?:\/\//i.test(v)) cfg = { mode: "worker", endpoint: v };
-    else if (/^sk-ant-/.test(v)) cfg = { mode: "key", key: v };
+    if (/^https?:\/\//i.test(v)) {
+      const pass = document.getElementById("eppass").value.trim();
+      cfg = { mode: "worker", endpoint: v, pass: pass || undefined };
+    } else if (/^sk-ant-/.test(v)) cfg = { mode: "key", key: v };
     else {
       errBox.textContent = "Eso no parece una clave (empiezan por sk-ant-) ni la dirección de un Worker.";
       input.focus();
@@ -206,6 +238,13 @@ async function callClaude(prompt) {
     throw new Error("No hay conexión con el modelo. Revisa tu conexión a internet.");
   }
   if (!res.ok) {
+    // El Worker devuelve sus propios mensajes en {error: "..."} (contraseña,
+    // origen, límite diario); si vienen, son más precisos que los genéricos.
+    if (cfg.mode === "worker") {
+      let workerMsg;
+      try { workerMsg = (await res.clone().json()).error; } catch { /* no era JSON */ }
+      if (workerMsg) throw new Error(workerMsg);
+    }
     if (res.status === 401 || res.status === 403) {
       throw new Error("La clave no es válida. Pulsa «cambiar conexión» abajo a la derecha y vuelve a pegarla.");
     }
@@ -1354,9 +1393,41 @@ function App() {
   const [view, setView] = useState("hoy");
   const [running, setRunning] = useState(null);
   const [lesson, setLesson] = useState(null);
+  const [importMsg, setImportMsg] = useState(null);
+  const importRef = useRef(null);
 
   useEffect(() => { load().then(setSt); }, []);
   const update = (fn) => setSt((p) => { const n = fn(structuredClone(p)); save(n); return n; });
+
+  const exportProgress = () => {
+    const blob = new Blob([JSON.stringify(st, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `aptis-progreso-${key()}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const importProgress = (e) => {
+    const file = e.target.files[0];
+    e.target.value = "";
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const data = JSON.parse(reader.result);
+        if (!data || typeof data !== "object" || Array.isArray(data)) throw new Error();
+        const merged = { ...blank(), ...data };
+        setSt(merged);
+        save(merged);
+        setImportMsg({ ok: true, text: "Progreso importado." });
+      } catch {
+        setImportMsg({ ok: false, text: "Ese archivo no es un progreso válido de esta app." });
+      }
+    };
+    reader.readAsText(file);
+  };
 
   if (!st) return <Shell><Loading text="Cargando tu progreso…" /></Shell>;
 
@@ -1648,6 +1719,16 @@ function App() {
           <p className="hint" style={{ marginTop: 26 }}>
             Son orientativos, no una nota oficial. En el examen real la gramática no puntúa por sí sola: sirve para
             desempatar cuando estás entre dos niveles en el resto de destrezas.
+          </p>
+          <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 20 }}>
+            <button className="btn ghost" style={{ marginTop: 0 }} onClick={exportProgress}>Exportar progreso</button>
+            <button className="btn ghost" style={{ marginTop: 0 }} onClick={() => importRef.current.click()}>Importar progreso</button>
+            <input ref={importRef} type="file" accept="application/json" style={{ display: "none" }} onChange={importProgress} />
+          </div>
+          {importMsg && <p className="hint" style={{ color: importMsg.ok ? "var(--good)" : "var(--bad)" }}>{importMsg.text}</p>}
+          <p className="hint">
+            Exporta un archivo con todo tu progreso para guardarlo o pasarlo a otro dispositivo, e impórtalo ahí con
+            «Importar progreso». Sustituye lo que hubiera antes en ese dispositivo.
           </p>
         </section>
       )}

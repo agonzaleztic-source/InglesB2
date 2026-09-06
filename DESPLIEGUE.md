@@ -45,26 +45,46 @@ Anthropic y crea otra: es gratis e inmediato.
 
 ## Opción C · Un Worker de Cloudflare (10 minutos)
 
-Solo si prefieres que la clave no viva en el navegador — por ejemplo, si vas a
-pasarle la URL a otra persona.
+Solo si prefieres que la clave no viva en el navegador de tu propio dispositivo
+(por ejemplo, para usar la misma URL desde el móvil y el ordenador).
+
+Este proyecto es de aprendizaje personal, no un servicio para repartir: no
+compartas la URL de tu Worker ni la contraseña con otras personas, porque sus
+peticiones gastarían tu saldo de la API y pasarían por tu cuenta de Anthropic.
+Si alguien más quiere usar la app, que despliegue su propio Worker con su
+propia clave — es el mismo proceso descrito aquí.
 
 1. Entra en <https://dash.cloudflare.com> y crea una cuenta si no la tienes.
 2. *Workers & Pages* → *Create* → *Start with Hello World* → *Deploy*.
 3. Abre el editor del Worker, borra el contenido y pega entero `worker.js`.
    Guarda y despliega.
-4. En *Settings* → *Variables and Secrets*, añade dos secretos:
+4. Crea el KV que lleva la cuenta de peticiones por día: *Storage & Databases*
+   → *KV* → *Create namespace* (por ejemplo `aptis-rate-limit`). Vuelve al
+   Worker, pestaña *Settings* → *Bindings* → *Add binding* → *KV Namespace*,
+   y ponle el nombre de variable `RATE_LIMIT` apuntando a ese namespace.
+   Sin este paso el Worker responde error 500 a todo.
+5. En *Settings* → *Variables and Secrets*, añade los secretos:
 
-   | Nombre              | Valor                                   |
-   | ------------------- | --------------------------------------- |
-   | `ANTHROPIC_API_KEY` | la clave del paso 1 de la opción B      |
-   | `APP_PASS`          | una contraseña que te inventes          |
+   | Nombre              | Valor                                            |
+   | ------------------- | ------------------------------------------------- |
+   | `ANTHROPIC_API_KEY` | la clave del paso 1 de la opción B                |
+   | `APP_PASS`          | una contraseña que te inventes (obligatoria)      |
+   | `DAILY_LIMIT`       | opcional: peticiones por IP y día (60 por defecto)|
 
-5. Cloudflare te da una dirección tipo `https://aptis.tu-usuario.workers.dev`.
-   Pégala en la app, en el mismo campo donde iría la clave: la app distingue
-   sola una cosa de la otra.
+   `APP_PASS` ya no es opcional: sin ella el Worker rechaza toda petición,
+   para que la URL no sirva de nada si se filtra sin la contraseña.
+6. Cloudflare te da una dirección tipo `https://aptis.tu-usuario.workers.dev`.
+   Pégala en la app, en el campo de conexión; al detectar que es una URL
+   aparece un segundo campo para la contraseña que pusiste en `APP_PASS`.
 
-Si usas contraseña, revisa que `ALLOWED_ORIGIN` coincida exactamente con
-`https://agonzaleztic-source.github.io`, sin barra final.
+Revisa que `ALLOWED_ORIGIN` coincida exactamente con
+`https://agonzaleztic-source.github.io`, sin barra final: el Worker rechaza
+cualquier petición sin esa cabecera `Origin` exacta, venga o no de un
+navegador.
+
+Si en vez de la dirección `*.workers.dev` le pones un dominio propio al
+Worker, añade ese dominio a `connect-src` en la etiqueta `<meta>` de CSP al
+principio de `index.html`: si no, el navegador bloqueará la petición.
 
 ---
 
@@ -90,6 +110,10 @@ Anthropic. Pulsa *cambiar conexión*, abajo a la derecha, y vuelve a pegarla.
 **«Tu cuenta de Anthropic no tiene saldo»** — recarga en *Billing*.
 
 **«Has llegado al límite de peticiones»** — espera un minuto.
+
+**«Se ha llegado al límite diario de peticiones desde tu conexión»** — solo con
+la opción C: el Worker corta a las `DAILY_LIMIT` peticiones diarias por IP.
+Vuelve mañana, o sube el valor de `DAILY_LIMIT` en el Worker.
 
 **Falla solo a veces**: el modelo devolvió algo que no era JSON válido. La app ya
 reintenta por su cuenta; con *Volver a intentarlo* se resuelve.

@@ -6,13 +6,18 @@
  *
  * Variables de entorno que hay que configurar en Cloudflare:
  *   ANTHROPIC_API_KEY  (secreto, obligatorio)
- *   APP_PASS           (secreto, opcional: contraseña para que no lo use cualquiera)
+ *   APP_PASS           (secreto, obligatorio: sin esto el Worker no atiende peticiones)
  *   ALLOWED_ORIGIN     (opcional, por defecto tu GitHub Pages)
+ *   DAILY_LIMIT        (opcional, por defecto 60 peticiones por IP y día)
+ *
+ * Binding que hay que configurar en Cloudflare:
+ *   RATE_LIMIT  (KV Namespace, obligatorio: sin esto no hay corte diario)
  */
 
 const DEFAULT_ORIGIN = "https://agonzaleztic-source.github.io";
 const MODEL = "claude-sonnet-5";
 const MAX_TOKENS = 1200;
+const DEFAULT_DAILY_LIMIT = 60;
 
 export default {
   async fetch(request, env) {
@@ -29,16 +34,37 @@ export default {
       return json({ error: "Solo se admite POST" }, 405, cors);
     }
 
-    // Solo desde tu página
+    // Sin cabecera Origin no es un navegador el que llama: fuera.
     const origin = request.headers.get("Origin");
-    if (origin && origin !== allowed) {
+    if (!origin || origin !== allowed) {
       return json({ error: "Origen no autorizado" }, 403, cors);
     }
 
-    // Contraseña opcional, para que nadie más gaste tu saldo
-    if (env.APP_PASS && request.headers.get("x-app-pass") !== env.APP_PASS) {
+    // La contraseña ya no es opcional: sin ella, cualquiera con la URL del
+    // Worker gastaría tu saldo de la API.
+    if (!env.APP_PASS) {
+      return json({ error: "El Worker no está configurado del todo: falta el secreto APP_PASS." }, 500, cors);
+    }
+    if (request.headers.get("x-app-pass") !== env.APP_PASS) {
       return json({ error: "Contraseña incorrecta" }, 401, cors);
     }
+
+    // Corte diario por IP, para que un uso descontrolado (o malicioso) no se
+    // coma el saldo de la clave. Necesita el binding KV "RATE_LIMIT".
+    if (!env.RATE_LIMIT) {
+      return json({ error: "El Worker no está configurado del todo: falta el KV Namespace RATE_LIMIT." }, 500, cors);
+    }
+    const ip = request.headers.get("CF-Connecting-IP") || "sin-ip";
+    const day = new Date().toISOString().slice(0, 10);
+    const rateKey = `rl:${day}:${ip}`;
+    const limit = Number(env.DAILY_LIMIT) || DEFAULT_DAILY_LIMIT;
+    const used = Number(await env.RATE_LIMIT.get(rateKey)) || 0;
+    if (used >= limit) {
+      return json({ error: "Se ha llegado al límite diario de peticiones desde tu conexión. Vuelve mañana." }, 429, cors);
+    }
+    // Un día de margen sobre la expiración: aunque la fecha cambie a medianoche
+    // en dos zonas horarias distintas, la clave vieja desaparece sola igual.
+    await env.RATE_LIMIT.put(rateKey, String(used + 1), { expirationTtl: 172800 });
 
     let body;
     try { body = await request.json(); }
