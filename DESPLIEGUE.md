@@ -10,9 +10,17 @@ Hay tres formas de usarla. La primera no cuesta nada y no requiere montar nada.
 
 Pulsa **«Empezar gratis, sin clave»** y ya está.
 
-La app trae dentro (`banco.js`) los ejercicios de las 17 tareas del examen, cada
+La app trae dentro (`banco.js`) ejercicios de las 17 tareas del examen, cada
 uno con su explicación al fallar y con la teoría a fondo detrás del botón
-*Explícamelo mejor*. Funciona sin conexión al modelo y sin gastar un céntimo.
+*Explícamelo mejor*: 47 preguntas de gramática, dos o tres textos por parte de
+Reading y tres ejercicios por cada parte de Listening, Writing y Speaking.
+Funciona sin conexión al modelo y sin gastar un céntimo.
+
+Además funciona **sin conexión a internet**: la primera vez que abres la app,
+un *service worker* (`sw.js`) guarda en el navegador la página, el banco y las
+librerías de `vendor/`. A partir de ahí puedes abrirla en el metro o en un
+avión y el modo gratuito sigue funcionando. Las actualizaciones se descargan
+en segundo plano y se ven en la siguiente carga.
 
 Lo que **no** puede hacer sin modelo:
 
@@ -129,5 +137,17 @@ igual.
 ## Los datos
 
 Todo tu progreso vive en el `localStorage` de tu navegador: no hay servidor ni
-cuenta. Si cambias de dispositivo o vacías la caché, empiezas de cero. En el
-móvil y en el ordenador tendrás progresos separados.
+cuenta. En el móvil y en el ordenador tendrás progresos separados.
+
+Para llevarlo de un dispositivo a otro, o para tener una copia antes de vaciar
+la caché, en la pantalla de inicio de la app están los botones **Exportar
+progreso** (descarga un JSON) e **Importar progreso** (lo restaura; sustituye lo
+que hubiera en ese dispositivo).
+
+## Actualizar las librerías
+
+React y Babel no se cargan de un CDN sino de `vendor/`, con su hash de
+integridad en `index.html`. Si algún día subes de versión, hay que hacer tres
+cosas: sustituir los ficheros de `vendor/`, recalcular los hashes
+(`openssl dgst -sha384 -binary fichero.js | openssl base64 -A`) y cambiar la
+constante `VERSION` de `sw.js` para que los navegadores tiren la caché antigua.

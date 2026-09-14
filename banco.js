@@ -584,6 +584,31 @@ l1: [
       q: "What does the speaker suggest?", opts: ["Bringing a dish", "Bringing a drink", "Bringing nothing at all", "Arriving early"], correct: 1,
       why: "«A bottle of something» apunta a una bebida; la comida dice que ya está cubierta." }
   ] },
+{ intro: "Escucha cada audio y responde. Puedes escucharlo dos veces.",
+  questions: [
+    { script: "I was going to cancel the whole thing, to be honest. But then my sister said she'd cover the deposit if I paid her back by Christmas, so it's going ahead after all.",
+      q: "Why is the event still going ahead?", opts: ["The speaker found a cheaper venue", "A relative offered to lend money", "The deposit was refunded", "It was postponed until Christmas"], correct: 1,
+      why: "La hermana adelanta la fianza («cover the deposit») a cambio de que se lo devuelva: un préstamo familiar, no una rebaja." },
+    { script: "The course itself was fine. What annoyed me was that they'd advertised small groups, and there were nearly thirty of us in the room. You couldn't get a question in.",
+      q: "What is the speaker unhappy about?", opts: ["The content of the course", "The size of the class", "The price of the course", "The teacher's attitude"], correct: 1,
+      why: "El contenido le pareció bien («the course itself was fine»); la queja es que prometieron grupos pequeños y eran casi treinta." },
+    { script: "Hi, it's Dan from the garage. The part's arrived, but the mechanic who does that model is off till Thursday, so realistically it'll be Friday before you can pick it up.",
+      q: "When will the car be ready?", opts: ["Today", "On Thursday", "On Friday", "Next week"], correct: 2,
+      why: "El mecánico vuelve el jueves, y por eso «realistically it'll be Friday»: el viernes. El jueves es un distractor." }
+  ] },
+
+{ intro: "Escucha cada audio y responde. Puedes escucharlo dos veces.",
+  questions: [
+    { script: "We'd planned to go camping, but the forecast was awful, so we ended up booking a cheap hotel in town instead. Nowhere near as fun, but at least we stayed dry.",
+      q: "Where did the speaker stay in the end?", opts: ["At a campsite", "At a friend's house", "At a hotel", "At home"], correct: 2,
+      why: "«We ended up booking a cheap hotel»: el camping era el plan, no lo que pasó. Ended up siempre marca el resultado final." },
+    { script: "I do like him, don't get me wrong. It's just that he's always late, and then acts as if it's nothing. Twenty minutes, half an hour… and not a word of apology.",
+      q: "What bothers the speaker about their friend?", opts: ["He is unfriendly", "He is unreliable about time", "He talks too much", "He makes mistakes at work"], correct: 1,
+      why: "Lo que le molesta es la impuntualidad y que no pida perdón por ella. Que le cae bien lo dice al principio: «I do like him»." },
+    { script: "This is a message for Mrs Patel. Your appointment on the twelfth has had to be moved. We can offer you the fourteenth at ten, or the following Monday at two. Please ring us back to confirm.",
+      q: "Why is the clinic calling?", opts: ["To cancel the appointment altogether", "To confirm the original date", "To offer new dates", "To ask for a payment"], correct: 2,
+      why: "«Has had to be moved» y después dos fechas alternativas: llaman para recolocar la cita, no para anularla." }
+  ] },
 ],
 
 /* ================================================================
@@ -603,6 +628,33 @@ l2: [
           "Lo dejó por el tiempo de desplazamiento, no por el ejercicio.",
           "Sigue siendo malo pero valora su propia constancia.",
           "Fue por recomendación médica y no le divierte: motivo de salud." ] },
+{ intro: "Escucha a los cuatro hablantes y empareja cada uno con la frase que le corresponde. Sobra una.",
+  items: [
+    { label: "Speaker 1", script: "Everyone assumed it was for the job, and I let them think that. The truth is my mum's on her own now, and being three hours away had started to feel wrong." },
+    { label: "Speaker 2", script: "We simply couldn't afford to stay. The rent went up twice in a year, and the second time it was more than my whole pay rise. So that was that." },
+    { label: "Speaker 3", script: "Nothing dramatic. The lease ended, I fancied a change, and a friend had a spare room. If I'd hated it I'd have moved back, but I didn't." },
+    { label: "Speaker 4", script: "I'd been offered a promotion, but only if I relocated. I thought about it for about a day. Opportunities like that don't come round twice." }
+  ],
+  options: [ "Moved to be closer to family", "Could no longer afford the rent", "Moved without any strong reason", "Moved because of a career opportunity", "Moved to get away from noisy neighbours" ],
+  answers: [0, 1, 2, 3],
+  whys: [ "Deja que crean que fue por el trabajo, pero la verdad es su madre, que está sola.",
+          "La subida del alquiler superó su subida de sueldo: puro dinero.",
+          "«Nothing dramatic»: se acabó el contrato y le apetecía un cambio. Sin motivo de peso.",
+          "Un ascenso condicionado a mudarse: la oportunidad profesional." ] },
+
+{ intro: "Escucha a los cuatro hablantes y empareja cada uno con la frase que le corresponde. Sobra una.",
+  items: [
+    { label: "Speaker 1", script: "I bought the guitar on a whim and it sat in the corner for a year. What finally got me playing was a colleague who offered to show me three chords in the lunch break." },
+    { label: "Speaker 2", script: "I practise every day, but I've deliberately never had a lesson. I know I've picked up bad habits. I just don't want it to feel like school." },
+    { label: "Speaker 3", script: "I'm not bad now, honestly. But the point was never to be good. It's the only half hour in the day when I'm not looking at a screen." },
+    { label: "Speaker 4", script: "I gave it up twice before this. The third time I paid for ten lessons in advance, and not wanting to waste the money is what kept me going." }
+  ],
+  options: [ "Started thanks to a colleague's help", "Prefers to learn without a teacher", "Values the time away from screens more than the skill", "Kept going so as not to waste money", "Now plays in public with other people" ],
+  answers: [0, 1, 2, 3],
+  whys: [ "La guitarra estuvo un año en un rincón hasta que un compañero le enseñó tres acordes.",
+          "«Deliberately never had a lesson»: sin profesor, y a propósito.",
+          "«The point was never to be good»: lo que valora es la media hora sin pantalla.",
+          "Pagó diez clases por adelantado y no querer perder el dinero es lo que le mantuvo." ] },
 ],
 
 /* ================================================================
@@ -623,6 +675,35 @@ l3: [
           "Solo Ben dice que se ha vuelto más perezoso y ha dejado de salir.",
           "Ben lo dice y Clara lo confirma: «No, you can't». Los dos.",
           "Solo Clara camina cada mediodía, algo que antes no hacía." ] },
+{ intro: "Escucha la conversación y decide de quién es cada idea.",
+  script: "Sam: I'll be honest, I was dreading the open-plan office. I need quiet to write anything decent. Priya: I thought the same, and then I found the small rooms on the third floor. Nobody uses them. Sam: I'll try that, then. What I do like is that I actually know who the finance team are now. Priya: That's true. Before, they were just names on emails. Sam: The other thing is the noise at lunchtime. It's like a canteen. Priya: Oh, it doesn't bother me. I've got headphones and I'm gone, mentally.",
+  items: [
+    { label: "1", text: "Finds it easier to get to know colleagues now." },
+    { label: "2", text: "Has found a quiet place to work." },
+    { label: "3", text: "Is bothered by the noise at midday." },
+    { label: "4", text: "Was worried about the change before it happened." }
+  ],
+  options: ["Sam", "Priya", "Los dos"],
+  answers: [2, 1, 0, 2],
+  whys: [ "Sam lo dice del equipo de finanzas y Priya confirma: «That's true». Los dos.",
+          "Solo Priya ha encontrado las salas de la tercera planta; Sam dice que lo probará.",
+          "Sam compara el ruido con una cantina; a Priya no le molesta porque se pone auriculares.",
+          "Sam «was dreading» el cambio y Priya «thought the same»: los dos tenían miedo antes." ] },
+
+{ intro: "Escucha la conversación y decide de quién es cada idea.",
+  script: "Rosa: So, a month of cycling to work. Are you still doing it? Liam: Every day, apart from the week it rained non-stop. I feel better, though I didn't expect the saving to be so big. Rosa: That's the bit that got me too. I worked it out and it's nearly a hundred a month. Liam: The roads scare me a bit, I'll admit. Rosa: They did me at first, but I've found a route through the park now and it's fine. Liam: I still think the council should do more. A painted line isn't a bike lane. Rosa: Couldn't agree more.",
+  items: [
+    { label: "1", text: "Has noticed how much money it saves." },
+    { label: "2", text: "Feels nervous about the traffic." },
+    { label: "3", text: "Thinks the local authority should improve the roads." },
+    { label: "4", text: "Has changed route to avoid busy roads." }
+  ],
+  options: ["Liam", "Rosa", "Los dos"],
+  answers: [2, 0, 2, 1],
+  whys: [ "Liam no esperaba ahorrar tanto y Rosa dice «that's the bit that got me too». Los dos.",
+          "Liam admite que las carreteras le asustan; a Rosa le pasaba antes, pero ya no: «it's fine».",
+          "Liam critica al ayuntamiento y Rosa responde «Couldn't agree more». Los dos.",
+          "Solo Rosa ha buscado una ruta por el parque." ] },
 ],
 
 /* ================================================================
@@ -638,6 +719,27 @@ l4: [
       why: "«The council certainly thought so» se refiere a que parecía lo contrario de lo que debe hacer una biblioteca: dudaron." },
     { q: "What is the speaker's attitude at the end?", opts: ["Every library should copy them", "The question itself was wrong for years", "Reading matters less than before", "The project was a failure"], correct: 1,
       why: "Aclara que no propone copiarlo; su conclusión es que llevaban veinte años haciéndose la pregunta equivocada." }
+  ] },
+{ intro: "Escucha la charla y responde a las preguntas.",
+  script: "People assume a repair café is about saving money, and for some of the people who come in, it is. But if that were the whole story, we'd have closed years ago, because honestly a new kettle costs less than the bus fare to get here. What keeps people coming is something else. They bring in a lamp that belonged to a grandparent, or a radio they've had since they were students, and they want it to work again. Not a replacement. That one. And then there's what happens at the table. We don't fix things for people; we fix them with people. You sit next to the volunteer, you hold the screwdriver, and half the time you leave able to do the next repair yourself. I won't pretend it's going to change the economy. But I've stopped apologising for it being small. Small is rather the point.",
+  questions: [
+    { q: "According to the speaker, why do most people really come to the repair café?", opts: ["To save money", "Because the objects matter to them", "Because new products are hard to find", "To meet the volunteers"], correct: 1,
+      why: "Dice que el ahorro no explica que sigan abiertos; lo que trae a la gente es el apego al objeto concreto: «Not a replacement. That one»." },
+    { q: "What does the speaker say about how repairs are done?", opts: ["Volunteers do them while the owner waits", "The owner takes part in the repair", "Items are sent to a workshop", "Only simple repairs are accepted"], correct: 1,
+      why: "«We don't fix things for people; we fix them with people»: el dueño sostiene el destornillador y aprende a hacerlo." },
+    { q: "How does the speaker feel about the project's size?", opts: ["Embarrassed that it is so small", "Determined to make it much bigger", "Comfortable with it being small", "Worried that it will close"], correct: 2,
+      why: "«I've stopped apologising for it being small. Small is rather the point»: lo asume con naturalidad, sin disculparse." }
+  ] },
+
+{ intro: "Escucha la charla y responde a las preguntas.",
+  script: "I ran kitchens for twenty years, and if you'd told me I'd end up teaching fourteen-year-olds to make soup, I'd have laughed. The school asked me as a favour, one term, and I said yes mainly because I was tired. What I didn't expect was how much they already knew. Not about cooking, most of them had never held a proper knife, but about food. They'd watched hours of it online. They could tell you what a reduction was; they'd just never made one. So I stopped explaining and started handing out onions. The first few weeks were chaos, and I'm sure the head considered replacing me. But by the end of term every one of them could feed a family of four for under ten pounds, and I'm not sure I've done anything more useful in my life, restaurants included.",
+  questions: [
+    { q: "Why did the speaker agree to teach at the school?", opts: ["It had been a long-term ambition", "They needed the money", "They were exhausted by restaurant work", "A former student asked them"], correct: 2,
+      why: "Lo aceptó «mainly because I was tired»: el cansancio de las cocinas, no una vocación ni el dinero." },
+    { q: "What surprised the speaker about the students?", opts: ["How well they could cook", "How much they knew about food", "How little interest they had", "How careless they were with knives"], correct: 1,
+      why: "Sabían mucho de comida por los vídeos, aunque nunca hubieran cocinado: conocimiento sin práctica. Eso es lo que le sorprende." },
+    { q: "How does the speaker feel about the experience now?", opts: ["It was less useful than running a restaurant", "It was the most worthwhile thing they have done", "It was a chaotic failure", "It should only have lasted one term"], correct: 1,
+      why: "Cierra diciendo que no está seguro de haber hecho nada más útil en su vida, «restaurants included». El caos fue solo al principio." }
   ] },
 ],
 
@@ -660,6 +762,35 @@ w1: [
            "¿Te has mantenido dentro de 1-5 palabras? Pasarse penaliza.",
            "¿Empiezan por mayúscula y acaban en punto?",
            "Aquí no hacen falta frases completas, pero sí que la respuesta encaje con la pregunta." ] },
+{ intro: "Te apuntas a un club de lectura de la biblioteca. Responde con 1-5 palabras por casilla.",
+  context: "City Library — reading group registration form.",
+  fields: [
+    { prompt: "What is your name?", words: "1-5 palabras" },
+    { prompt: "How old are you?", words: "1-5 palabras" },
+    { prompt: "What kind of books do you enjoy?", words: "1-5 palabras" },
+    { prompt: "When are you free to meet?", words: "1-5 palabras" },
+    { prompt: "How did you find out about the group?", words: "1-5 palabras" }
+  ],
+  model: [ "Alejandro González.", "Thirty-four.", "Crime novels and history.", "Weekday evenings.", "A poster in the library." ],
+  check: [ "¿Has respondido a lo que se pregunta, sin irte por las ramas?",
+           "¿Te has mantenido dentro de 1-5 palabras? Pasarse penaliza.",
+           "En «how old» vale un número escrito con letras o cifras, pero no una frase entera.",
+           "¿Empiezan por mayúscula y acaban en punto?" ] },
+
+{ intro: "Te apuntas a un polideportivo. Responde con 1-5 palabras por casilla.",
+  context: "Greenhill Sports Centre — new member form.",
+  fields: [
+    { prompt: "What is your full name?", words: "1-5 palabras" },
+    { prompt: "Which activities are you interested in?", words: "1-5 palabras" },
+    { prompt: "What time of day suits you best?", words: "1-5 palabras" },
+    { prompt: "Do you have any health problems we should know about?", words: "1-5 palabras" },
+    { prompt: "Who should we contact in an emergency?", words: "1-5 palabras" }
+  ],
+  model: [ "Alejandro González Sánchez.", "Swimming and badminton.", "Early mornings.", "No, none.", "My brother, Carlos." ],
+  check: [ "¿Has respondido a lo que se pregunta, sin irte por las ramas?",
+           "¿Te has mantenido dentro de 1-5 palabras? Pasarse penaliza.",
+           "A una pregunta de sí o no se contesta con «No, none» o «Yes, asthma»: ni una palabra suelta ni una frase larga.",
+           "¿Empiezan por mayúscula y acaban en punto?" ] },
 ],
 
 w2: [
@@ -671,6 +802,23 @@ w2: [
            "¿Has respondido a las DOS partes: por qué te apuntas y qué esperas aprender?",
            "¿Has usado frases completas con sujeto y verbo, no una lista?",
            "¿Hay algún conector (because, so, and then) que una las ideas?" ] },
+{ intro: "Ahora escribe 20-30 palabras, en frases completas.",
+  context: "City Library reading group — tell us about your reading.",
+  fields: [ { prompt: "What was the last book you really enjoyed, and why did you like it?", words: "20-30 palabras" } ],
+  model: [ "The last book I really enjoyed was a crime novel set in Lisbon. I liked it because the city felt real and the ending surprised me." ],
+  check: [ "¿Estás entre 20 y 30 palabras? Cuéntalas: salirse baja la nota.",
+           "¿Has respondido a las DOS partes: qué libro y por qué te gustó?",
+           "¿Has usado pasado para el libro (was, liked, surprised) y no presente?",
+           "¿Hay un because o un so que una el libro con el motivo?" ] },
+
+{ intro: "Ahora escribe 20-30 palabras, en frases completas.",
+  context: "Greenhill Sports Centre — about your goals.",
+  fields: [ { prompt: "Why have you decided to join the sports centre, and what do you want to achieve?", words: "20-30 palabras" } ],
+  model: [ "I have decided to join because I spend all day sitting at a desk and I feel tired. I want to get fitter and swim twice a week." ],
+  check: [ "¿Estás entre 20 y 30 palabras? Cuéntalas: salirse baja la nota.",
+           "¿Has respondido a las DOS partes: por qué te apuntas y qué quieres conseguir?",
+           "¿Has usado frases completas con sujeto y verbo, no una lista de actividades?",
+           "Para el objetivo, ¿has puesto algo concreto (swim twice a week) y no solo «be healthy»?" ] },
 ],
 
 w3: [
@@ -690,6 +838,39 @@ w3: [
            "¿Suena a chat entre amigos? Contracciones (I'd, that's) sí; «I would be grateful» no.",
            "¿Has respondido de verdad a la pregunta concreta de cada uno?",
            "¿Has añadido algo propio — un detalle, una pregunta de vuelta — o solo has contestado seco?" ] },
+{ intro: "Tres miembros del club de lectura te escriben en el chat. Responde a cada uno con 30-40 palabras, en tono informal.",
+  context: "You have joined the reading group's chat.",
+  fields: [
+    { prompt: "Nadia: Welcome to the group! What are you reading at the moment?", words: "30-40 palabras" },
+    { prompt: "Owen: We usually meet on Thursdays, but some people want to change to Tuesdays. What do you think?", words: "30-40 palabras" },
+    { prompt: "Fatima: I'm choosing next month's book. Any suggestions? Nothing too long, please!", words: "30-40 palabras" }
+  ],
+  model: [
+    "Thanks, Nadia! At the moment I'm halfway through a Norwegian crime novel that a colleague lent me. It's slow at the start, but I can't put it down now. Has anyone here read it?",
+    "Either works for me, to be honest, though Tuesdays would be slightly easier because I finish work earlier that day. If most people prefer Thursdays, I'm happy to keep things as they are. What does everyone else think?",
+    "How about a short story collection? That way nobody has to finish a huge novel in a month. I read one by an Irish writer last year that was brilliant and under two hundred pages. I'll send you the title."
+  ],
+  check: [ "¿Cada respuesta está entre 30 y 40 palabras?",
+           "¿Suena a chat entre amigos? Contracciones (I'm, can't) sí; «I would be delighted» no.",
+           "¿Has respondido de verdad a la pregunta concreta de cada uno? A Owen hay que darle una opinión, no solo «fine».",
+           "¿Has añadido algo propio, un detalle o una pregunta de vuelta, o solo has contestado seco?" ] },
+
+{ intro: "Tres personas del grupo de bádminton te escriben en el chat. Responde a cada uno con 30-40 palabras, en tono informal.",
+  context: "You have joined the sports centre's badminton group chat.",
+  fields: [
+    { prompt: "Priya: Hi and welcome! How long have you been playing badminton?", words: "30-40 palabras" },
+    { prompt: "Jack: We're entering a friendly tournament in June. Would you be up for joining the team?", words: "30-40 palabras" },
+    { prompt: "Elena: The courts are getting really busy on Saturdays. Would you mind if we moved to Sunday mornings?", words: "30-40 palabras" }
+  ],
+  model: [
+    "Hi Priya, thanks! Not long at all, really. I played a bit at school, but I only picked it up again a couple of months ago, so I'm quite rusty. I hope nobody minds a beginner!",
+    "I'd love to, although I'm not sure I'm good enough yet! If there's a place for someone who's still learning, count me in. When exactly is it, and how often would we need to train before then?",
+    "That's fine by me, Elena. Sunday mornings are actually better for me, because on Saturdays I often visit my parents. The only thing is, could we start at ten rather than nine? I'm not great before then!"
+  ],
+  check: [ "¿Cada respuesta está entre 30 y 40 palabras?",
+           "¿Suena a chat entre amigos? Contracciones (I'd, that's) sí; «I would be grateful» no.",
+           "A «would you mind if…» se contesta «that's fine» o «not at all», nunca «yes» a secas: en inglés eso significa que sí te importa.",
+           "¿Has añadido algo propio, una pregunta de vuelta o una condición, o solo has contestado seco?" ] },
 ],
 
 w4: [
@@ -709,6 +890,39 @@ w4: [
            "¿El formal cubre las dos cosas que piden: explicar tu preocupación Y preguntar por alternativas?",
            "¿Has usado párrafos separados en el formal? Un bloque único baja la cohesión.",
            "Reserva la mitad del tiempo del Writing para esta parte: es la que más puntúa." ] },
+{ intro: "Dos textos con registros distintos. Es la parte que más pesa de todo el Writing.",
+  context: "The library has announced that, from next month, it will close at 5 p.m. every day, so the reading group will no longer be able to use the meeting room in the evenings.",
+  fields: [
+    { prompt: "Write to your friend Nadia, who is also in the group. Tell her how you feel about the news. (Informal)", words: "40-50 palabras" },
+    { prompt: "Write to the head librarian. Explain the effect on the group and suggest a solution. (Formal)", words: "120-150 palabras" }
+  ],
+  model: [
+    "Hi Nadia, did you see the email about the library closing at five? That's the end of our Thursday evenings, basically. Most of us don't finish work until six. I'm really annoyed, to be honest. Shall we write to the librarian together and suggest something?",
+    "Dear Ms Hughes,\n\nI am writing on behalf of the Thursday reading group regarding the new closing time announced for next month.\n\nAs you know, the group has met in the library's meeting room every Thursday evening for over three years. Most of our members work during the day and are unable to attend before six o'clock, so closing at five would effectively mean the end of the group.\n\nI fully understand that the library has to manage its budget. However, I would like to suggest two possible solutions. Firstly, the library could remain open late on Thursdays only, perhaps with a volunteer from the group helping to lock up. Secondly, if that is not possible, could the group use a room in the community centre next door under the library's name?\n\nI would be grateful for the opportunity to discuss this with you.\n\nYours sincerely,\nAlejandro González"
+  ],
+  check: [ "¿El informal está entre 40 y 50 palabras y el formal entre 120 y 150? Cuéntalos.",
+           "¿Se nota la diferencia de registro? El informal con contracciones y preguntas directas; el formal sin contracciones.",
+           "En el formal: si te dan el nombre (Ms Hughes), abres con «Dear Ms Hughes» y cierras con «Yours sincerely». Sin nombre, «Dear Sir or Madam … Yours faithfully».",
+           "¿El formal cubre las dos cosas que piden: explicar el EFECTO en el grupo Y proponer una solución?",
+           "¿Has usado párrafos separados en el formal? Un bloque único baja la cohesión.",
+           "Reserva la mitad del tiempo del Writing para esta parte: es la que más puntúa." ] },
+
+{ intro: "Dos textos con registros distintos. Es la parte que más pesa de todo el Writing.",
+  context: "The sports centre has announced that the swimming pool will be closed for six months for repairs, and that membership fees will not be reduced during that time.",
+  fields: [
+    { prompt: "Write to your friend Jack, who also swims there. Tell him what you think about the news. (Informal)", words: "40-50 palabras" },
+    { prompt: "Write to the manager of the sports centre. Explain why you are unhappy and say what you would like them to do. (Formal)", words: "120-150 palabras" }
+  ],
+  model: [
+    "Hi Jack, have you heard about the pool? Six months closed and they still want the full fee! I only joined for the swimming, so I'm pretty fed up. I'm thinking of asking for a refund, or at least a discount. Are you going to complain too? Let me know.",
+    "Dear Sir or Madam,\n\nI am writing about the announcement that the swimming pool will be closed for six months while repairs are carried out.\n\nI appreciate that the work is necessary and that the centre cannot control how long it takes. However, I was surprised to learn that membership fees will remain the same during this period. I joined the centre mainly in order to swim, and I use the other facilities very rarely. For members like me, paying the full fee for six months without access to the pool does not seem fair.\n\nI would therefore like to ask whether the centre could offer a reduced rate while the pool is closed, or alternatively allow members to suspend their membership until it reopens. Either option would be reasonable and would show that the centre values its members.\n\nI look forward to your reply.\n\nYours faithfully,\nAlejandro González"
+  ],
+  check: [ "¿El informal está entre 40 y 50 palabras y el formal entre 120 y 150? Cuéntalos.",
+           "¿Se nota la diferencia de registro? «Fed up» y «pretty» valen en el informal; en el formal serían «disappointed» y «rather».",
+           "En el formal: ¿has abierto con «Dear Sir or Madam» y cerrado con «Yours faithfully»? (Si sabes el nombre: Dear Mr/Ms X … Yours sincerely.)",
+           "¿El formal cubre las dos cosas que piden: por qué estás descontento Y qué quieres que hagan? Una queja sin petición se queda a medias.",
+           "¿Has reconocido el punto de vista del otro («I appreciate that…») antes de quejarte? Es lo que da tono de B2.",
+           "¿Has usado párrafos separados en el formal? Un bloque único baja la cohesión." ] },
 ],
 
 /* ================================================================
@@ -729,6 +943,41 @@ s1: [
     "Outdoors, definitely — though I should say it depends on the weather. Being outside clears my head after a week at a desk, and I sleep much better when I've walked a lot."
   ],
   check: [ "¿Has hablado los 30 segundos enteros? El silencio penaliza más que un error.",
+           "¿Has dado un motivo o un ejemplo, en vez de una respuesta de una frase?",
+           "¿Has usado alguna de las expresiones de arriba para ganar tiempo sin callarte?" ] },
+{ intro: "Tres preguntas personales, 30 segundos cada una, sin preparación.",
+  prep: 0,
+  rounds: [
+    { prompt: "Tell me about your job or your studies.", seconds: 30 },
+    { prompt: "What kind of food do you like?", seconds: 30 },
+    { prompt: "Do you prefer travelling alone or with other people? Why?", seconds: 30 }
+  ],
+  useful: [ "At the moment I'm…", "To be honest…", "It depends on… but on the whole…" ],
+  model: [
+    "At the moment I work in an office for a company that sells software. My job is mostly talking to customers and solving their problems, which I enjoy, although some days can be quite stressful. I've been there for about three years now.",
+    "I like most things, to be honest, but if I had to choose, I'd say Italian food. I love cooking pasta at home at the weekend. I'm not so keen on very spicy food, because I can't really taste anything else.",
+    "It depends on the trip, but on the whole I prefer travelling with other people. It's more fun to share what you see, and it's cheaper too. Having said that, I did one trip alone last year and I found it surprisingly relaxing."
+  ],
+  check: [ "¿Has hablado los 30 segundos enteros? El silencio penaliza más que un error.",
+           "¿Has dado un motivo o un ejemplo, en vez de una respuesta de una frase?",
+           "En la tercera, ¿has dado tu preferencia Y el motivo? Lo pregunta explícitamente («Why?»).",
+           "¿Has usado alguna de las expresiones de arriba para ganar tiempo sin callarte?" ] },
+
+{ intro: "Tres preguntas personales, 30 segundos cada una, sin preparación.",
+  prep: 0,
+  rounds: [
+    { prompt: "Tell me about a friend you have known for a long time.", seconds: 30 },
+    { prompt: "How do you usually get to work or to your place of study?", seconds: 30 },
+    { prompt: "Would you rather live in a city or in the countryside? Why?", seconds: 30 }
+  ],
+  useful: [ "We've known each other since…", "Most days I…, unless…", "I'd rather… because…" ],
+  model: [
+    "My oldest friend is called Marta. We've known each other since primary school, so nearly thirty years. We don't live in the same city any more, but we talk every week and we still go on holiday together every summer. She's the person I call when something goes wrong.",
+    "Most days I take the metro, which takes about twenty-five minutes door to door. If the weather's good I sometimes cycle instead, unless I have meetings, because I don't want to arrive sweaty. I hardly ever drive, because parking near the office is impossible.",
+    "I'd rather live in a city, at least for now, because my work and most of my friends are here, and I like being able to walk everywhere. The countryside is lovely for a weekend, but I think I'd get bored after a month. Maybe when I'm older I'll change my mind."
+  ],
+  check: [ "¿Has hablado los 30 segundos enteros? El silencio penaliza más que un error.",
+           "En la primera, ¿has usado present perfect (we've known each other for/since) y no presente simple?",
            "¿Has dado un motivo o un ejemplo, en vez de una respuesta de una frase?",
            "¿Has usado alguna de las expresiones de arriba para ganar tiempo sin callarte?" ] },
 ],
@@ -752,6 +1001,43 @@ s2: [
            "¿Has usado present continuous para lo que está pasando: she is arranging, they are waiting?",
            "¿Has deducido algo de la imagen («it looks as if it has been raining») en vez de solo listar objetos?",
            "¿Has llegado a los 45 segundos en las tres?" ] },
+{ intro: "Describe la escena y responde a dos preguntas. 45 segundos cada una.",
+  scene: "Picture: a crowded railway platform early in the morning. A young woman with a large backpack is checking the departures board. Next to her, a man in a suit is talking on his phone and holding a coffee. A train is arriving in the background.",
+  prep: 0,
+  rounds: [
+    { prompt: "Describe the picture.", seconds: 45 },
+    { prompt: "Do you enjoy travelling by train? Why or why not?", seconds: 45 },
+    { prompt: "How has the way people travel changed in your country in recent years?", seconds: 45 }
+  ],
+  useful: [ "On the left / On the right…", "She seems to be…", "These days, more and more people…" ],
+  model: [
+    "This is a busy railway platform, and it looks like the morning rush hour because there are a lot of people. On the left there's a young woman with a big backpack who seems to be looking for her train on the departures board, so she's probably going on a trip. Next to her, a man in a suit is on the phone with a coffee in his hand, and in the background a train is just arriving.",
+    "I do, actually, much more than flying. You can read or work, there's more space, and you arrive in the centre of the city instead of an airport an hour away. The only problem is the price: in my country, if you don't book early, the train can be more expensive than a flight, which makes no sense to me.",
+    "The biggest change is that people fly much more than they used to. Twenty years ago a flight was something special; now people go abroad for a weekend. At the same time, in the cities there's been a move towards bikes and electric scooters, and more people work from home, so fewer people commute every day."
+  ],
+  check: [ "En la descripción, ¿has situado a cada persona (on the left, next to her, in the background) en vez de enumerarlas sueltas?",
+           "¿Has usado present continuous para lo que está pasando: she is checking, he is talking?",
+           "¿Has deducido algo de la imagen («she's probably going on a trip») en vez de solo listar objetos?",
+           "En la tercera, ¿has comparado antes y ahora (used to, twenty years ago… now)? Es lo que pide la pregunta." ] },
+
+{ intro: "Describe la escena y responde a dos preguntas. 45 segundos cada una.",
+  scene: "Picture: a small classroom. An older teacher is standing at a whiteboard covered in diagrams. Six adult students sit at desks; two of them are taking notes and one is looking out of the window.",
+  prep: 0,
+  rounds: [
+    { prompt: "Describe the picture.", seconds: 45 },
+    { prompt: "Did you enjoy school when you were younger? Why or why not?", seconds: 45 },
+    { prompt: "Is it a good idea for adults to go back to studying? Why?", seconds: 45 }
+  ],
+  useful: [ "It looks like a…", "Looking back, I…", "The main advantage is that…" ],
+  model: [
+    "It looks like an evening class for adults, because the students are clearly not children. An older teacher is standing at the front, next to a whiteboard that's completely covered in diagrams, so it might be a science or maths lesson. Six students are sitting at desks. Two of them are taking notes, but one man is looking out of the window, so he's probably bored or tired after a day at work.",
+    "Looking back, I'd say I enjoyed the social side much more than the lessons. I had a good group of friends and I liked sport. The classes themselves were often boring, because we mostly copied from the board. There was one history teacher, though, who told stories instead of reading from the book, and I still remember her lessons.",
+    "I think it's a very good idea, and not only for the job. The main advantage is that as an adult you choose what to study, so you're much more motivated than at fifteen. The difficulty is finding the time and the energy after work. Still, I know people who did a degree in their forties and they say it changed their lives."
+  ],
+  check: [ "En la descripción, ¿has situado a cada persona (at the front, at desks, by the window) en vez de enumerarlas sueltas?",
+           "¿Has usado present continuous para lo que está pasando: he is standing, they are taking notes?",
+           "En la segunda, ¿has hablado en pasado (I enjoyed, we copied, there was)? Es una pregunta sobre entonces, no sobre ahora.",
+           "¿Has llegado a los 45 segundos en las tres?" ] },
 ],
 
 s3: [
@@ -772,6 +1058,43 @@ s3: [
   check: [ "¿Has COMPARADO de verdad, con whereas o while, en vez de describir una y luego la otra por separado?",
            "¿Has dado tu opinión con un motivo en las dos últimas?",
            "¿Has evitado quedarte callado? Si te bloqueas, repite la idea con otras palabras y sigue." ] },
+{ intro: "Compara las dos escenas y responde a dos preguntas. 45 segundos cada una.",
+  scene: "Picture A: a busy high street, people carrying shopping bags, a queue outside a shop. / Picture B: a person sitting on a sofa with a laptop; boxes from online orders are piled by the door.",
+  prep: 0,
+  rounds: [
+    { prompt: "Compare the two pictures.", seconds: 45 },
+    { prompt: "Which way of shopping do you prefer? Why?", seconds: 45 },
+    { prompt: "Do you think traditional shops will disappear in the future? Why or why not?", seconds: 45 }
+  ],
+  useful: [ "While the first picture shows…, the second…", "In contrast…", "I doubt that… / I suspect that…" ],
+  model: [
+    "Both pictures are about shopping, but they show two completely different ways of doing it. While the first one shows a crowded high street, with people carrying bags and even queuing outside a shop, the second shows someone shopping from the sofa with a laptop. In contrast to the street, the room is quiet and empty, apart from a pile of delivery boxes by the door.",
+    "For most things, I prefer shopping online, simply because it saves time and it's usually cheaper. Having said that, for clothes and shoes I still go to the shops, because I want to try things on. And I like going to the market for food, which is more of a social thing than a practical one.",
+    "I doubt that they'll disappear completely, but I do think there will be far fewer of them. Shops that only sell things will struggle, because the internet does that better. The ones that survive will offer something you can't get online: advice, a coffee, a place to meet. In my town several shops have already become cafés or delivery points."
+  ],
+  check: [ "¿Has COMPARADO de verdad, con while, whereas o in contrast, en vez de describir una y luego la otra?",
+           "¿Has dado tu opinión con un motivo en las dos últimas?",
+           "En la tercera, ¿has matizado (I doubt that…, but…) en vez de un sí o no rotundo? Los matices son lo que se valora en B2.",
+           "¿Has evitado quedarte callado? Si te bloqueas, repite la idea con otras palabras y sigue." ] },
+
+{ intro: "Compara las dos escenas y responde a dos preguntas. 45 segundos cada una.",
+  scene: "Picture A: a group of teenagers playing football on a muddy pitch in the rain. / Picture B: two teenagers sitting side by side on a bed, each looking at their own phone.",
+  prep: 0,
+  rounds: [
+    { prompt: "Compare the two pictures.", seconds: 45 },
+    { prompt: "How did you spend your free time when you were a teenager?", seconds: 45 },
+    { prompt: "Do you think young people today spend too much time on their phones? Why?", seconds: 45 }
+  ],
+  useful: [ "The first picture shows…, whereas…", "When I was that age, I used to…", "It's easy to say that…, but…" ],
+  model: [
+    "Both pictures show teenagers in their free time, but they couldn't be more different. The first one shows a group playing football on a muddy pitch, and it's raining, so they clearly don't mind getting wet. In the second picture, two teenagers are sitting next to each other on a bed, but they're not talking: each of them is looking at their own phone.",
+    "When I was that age, I used to spend most of my free time outside. We played football in the park after school, and at the weekend we'd cycle to the river or just hang around the town centre. We didn't have phones, so if you wanted to see someone you went to their house and rang the bell.",
+    "It's easy to say that, and I probably do say it, but I'm not sure it's fair. Adults spend just as long on their phones. The difference is what they do with them. If a teenager is chatting to friends or watching something interesting, I don't see the problem. What worries me more is when they can't put the phone down even when they're with people."
+  ],
+  check: [ "¿Has COMPARADO de verdad, con whereas, while o but, en vez de describir una y luego la otra por separado?",
+           "En la segunda, ¿has usado used to o would para los hábitos del pasado?",
+           "En la tercera, ¿has dado una opinión con matices y un motivo, en vez de un sí rotundo?",
+           "¿Has evitado quedarte callado? Si te bloqueas, repite la idea con otras palabras y sigue." ] },
 ],
 
 s4: [
@@ -791,6 +1114,41 @@ s4: [
   check: [ "¿Has usado el minuto de preparación para apuntar palabras sueltas, no frases enteras?",
            "¿Has respondido a las TRES preguntas? Dejarse una es lo que más baja la nota aquí.",
            "¿Has marcado la estructura en voz alta (firstly, secondly, to sum up)? Es lo que separa un B1 de un B2.",
+           "¿Has llegado a los dos minutos? Es la parte más larga y la que más cuesta sostener." ] },
+{ intro: "Un minuto de preparación y dos minutos para las tres preguntas seguidas. Apunta palabras clave, no frases.",
+  scene: "Picture: a modern city square with a large new glass office building. In front of it stands a small old café with a «closing down» sign in the window.",
+  prep: 60,
+  questions3: [
+    "Describe what you can see in the picture.",
+    "Why do you think small businesses like this one close?",
+    "Should cities protect old buildings and shops, or let them change? Why?"
+  ],
+  rounds: [ { prompt: "Answer the three questions.", seconds: 120 } ],
+  useful: [ "What strikes me most is…", "There are several reasons. The main one is…", "On balance, I'd say…" ],
+  model: [
+    "The picture shows a modern square in a city, dominated by a big new office building made of glass. What strikes me most is the contrast: right in front of it there's a small, old-fashioned café with a sign in the window saying it's closing down. It looks as if the old and the new can't live side by side.\n\nAs for why small businesses like this close, there are several reasons. The main one is rent: when an area becomes fashionable, rents go up and a café can't pay what an office can. Another reason is that habits change. People who work in that building probably get their coffee from a chain, because it's faster and they don't know the owner.\n\nOn the question of whether cities should protect old places, on balance I'd say yes, but not everything. Cities have to change, or they die. What I think is worth protecting is what gives a place its character: a café that's been there fifty years is part of the neighbourhood's memory. Some cities give lower rents to old businesses, and that seems a sensible middle way to me."
+  ],
+  check: [ "¿Has usado el minuto de preparación para apuntar palabras sueltas (rent, chains, character), no frases enteras?",
+           "¿Has respondido a las TRES preguntas? Dejarse una es lo que más baja la nota aquí.",
+           "En la tercera, ¿has dado una respuesta con matices (yes, but not everything) y un motivo? Es una pregunta de opinión, no de descripción.",
+           "¿Has marcado la estructura en voz alta (as for…, on the question of…, on balance)? Es lo que separa un B1 de un B2." ] },
+
+{ intro: "Un minuto de preparación y dos minutos para las tres preguntas seguidas. Apunta palabras clave, no frases.",
+  scene: "Picture: a beach covered in plastic rubbish. A group of volunteers wearing gloves are filling bags, while a family with small children sits nearby eating a picnic.",
+  prep: 60,
+  questions3: [
+    "Describe what you can see in the picture.",
+    "Why do you think people leave rubbish in public places?",
+    "Whose responsibility is it to keep public spaces clean: individuals or the authorities? Why?"
+  ],
+  rounds: [ { prompt: "Answer the three questions.", seconds: 120 } ],
+  useful: [ "The first thing you notice is…", "Partly it's because…, and partly…", "I'd argue that it's both, but…" ],
+  model: [
+    "The first thing you notice is how much rubbish there is: the beach is covered in plastic bottles and bags. A group of volunteers in gloves are picking it up and filling big bags, and it looks like hard work. What's striking is that just next to them a family with small children is having a picnic, as if the rubbish weren't there at all.\n\nAs for why people leave rubbish, I think partly it's because there aren't enough bins, or they're full, and partly it's simple laziness: people think one bottle doesn't matter. There's also the fact that if a place is already dirty, people feel less guilty about adding to it. A clean beach stays clean much longer than a dirty one.\n\nOn the question of responsibility, I'd argue that it's both, but not in equal parts. The authorities have to provide bins, collect the rubbish and fine people who don't respect the rules, because without that nothing works. But no council can put a cleaner behind every person. In the end it comes down to education, and to the example we give children, like the ones in the picture, who are watching the volunteers work."
+  ],
+  check: [ "¿Has usado el minuto de preparación para apuntar palabras sueltas (bins, laziness, fines, education), no frases enteras?",
+           "¿Has respondido a las TRES preguntas? Dejarse una es lo que más baja la nota aquí.",
+           "En la tercera, ¿has considerado los dos lados (both, but…) antes de decidirte? Es lo que da profundidad a la respuesta.",
            "¿Has llegado a los dos minutos? Es la parte más larga y la que más cuesta sostener." ] },
 ],
 };

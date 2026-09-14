@@ -10,7 +10,7 @@
      concretos que hacen falta. -->
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' https://unpkg.com 'unsafe-inline';
+  script-src 'self' 'unsafe-inline';
   style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
   img-src 'self' data:;
   connect-src 'self' https://api.anthropic.com https://*.workers.dev;
@@ -83,11 +83,14 @@
 <button id="reset">cambiar conexión</button>
 
 <script src="banco.js"></script>
-<script crossorigin="anonymous" src="https://unpkg.com/react@18.3.1/umd/react.production.min.js"
+<!-- React 18.3.1 y Babel standalone 7.24.7, copiados de unpkg a vendor/ para
+     que el service worker pueda cachearlos y la app funcione sin conexión.
+     Los hashes son los mismos que tenían en el CDN. -->
+<script src="vendor/react.production.min.js"
   integrity="sha384-DGyLxAyjq0f9SPpVevD6IgztCFlnMF6oW/XQGmfe+IsZ8TqEiDrcHkMLKI6fiB/Z"></script>
-<script crossorigin="anonymous" src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js"
+<script src="vendor/react-dom.production.min.js"
   integrity="sha384-gTGxhz21lVGYNMcdJOyq01Edg0jhn/c22nsx0kyqP0TxaV5WVdsSH1fSDUf5YJj1"></script>
-<script crossorigin="anonymous" src="https://unpkg.com/@babel/standalone@7.24.7/babel.min.js"
+<script src="vendor/babel.min.js"
   integrity="sha384-AISI5AuDG6E8DeEiFMVB3rGQxhZt24OU0avMp+GMV64+tpnA3+Z6F5MT0f96iPva"></script>
 
 <script>
@@ -167,6 +170,15 @@
   // parseado cuando corre esto. Por eso el arranque espera al DOM.
   if (guardada) document.addEventListener("DOMContentLoaded", () => start(guardada));
   else setup.style.display = "block";
+
+  // Service worker: guarda la app, el banco y las librerías para que el modo
+  // sin clave funcione sin conexión. Se registra al final de la carga para no
+  // competir con los scripts de la propia página.
+  if ("serviceWorker" in navigator && /^https?:$/.test(location.protocol)) {
+    window.addEventListener("load", () => {
+      navigator.serviceWorker.register("sw.js").catch((e) => console.warn("Sin service worker:", e));
+    });
+  }
 </script>
 
 <script type="text/plain" id="app-source">
@@ -309,7 +321,12 @@ function delBanco(def, vistos) {
   if (!sets.length) {
     throw new Error("Esta parte todavía no tiene ejercicios sin conexión. Prueba otra, o añade una clave con «cambiar conexión».");
   }
-  const huella = (s) => fp(s.text || s.script || s.context || (s.lines || [])[1] || (s.items || [])[0]?.script || (s.rounds || [])[0]?.prompt);
+  // Cada formato guarda su texto en un sitio distinto. El orden importa: la
+  // escena va antes que los prompts porque en s4 todos los sets comparten el
+  // mismo («Answer the three questions»), y en l1 lo único propio es la
+  // primera pregunta.
+  const huella = (s) => fp(s.text || s.script || s.scene || s.context || (s.lines || [])[1]
+    || (s.items || [])[0]?.script || (s.items || [])[0]?.text || (s.questions || [])[0]?.q || (s.rounds || [])[0]?.prompt);
   return pick(noVistos(sets, huella, vistos));
 }
 
@@ -914,7 +931,7 @@ function TaskRunner({ def, ctx, onDone, onErrors, onSeen }) {
       if (def.format === "order") setOrder(shuffle(d.lines.map((_, i) => i).slice(1)));
       const marks = [
         ...(d.questions || []).map((q) => fp(q.q)),
-        fp(d.text), fp(d.script), fp(d.context), fp((d.lines || [])[1]),
+        fp(d.text), fp(d.script), fp(d.scene), fp(d.context), fp((d.lines || [])[1]),
         ...(d.items || []).map((i) => fp(i.text || i.script)),
         ...(d.rounds || []).map((r) => fp(r.prompt)),
       ].filter(Boolean);
@@ -1016,7 +1033,8 @@ function TaskRunner({ def, ctx, onDone, onErrors, onSeen }) {
     return (
       <div>
         {data.intro && <p className="hint">{data.intro}</p>}
-        {data.script && <Player script={String(data.script).replace(/\b(Ben|Clara):/g, "$1 says,")} />}
+        {/* «Sam: …» se lee en voz alta como «Sam says, …», sea cual sea el nombre */}
+        {data.script && <Player script={String(data.script).replace(/\b([A-Z][a-z]+):/g, "$1 says,")} />}
         {items.map((it, i) => (
           <div key={i} className="matchRow">
             <span className="matchLabel">{it.label}</span>
