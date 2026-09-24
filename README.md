@@ -16,4 +16,6 @@ Council ni con el examen oficial.
 
 ## Licencia
 
-Código publicado bajo licencia MIT — ver [LICENSE](LICENSE).
+Todos los derechos reservados: uso personal permitido, redistribución y uso comercial
+no. Ver [LICENSE](LICENSE). Política de privacidad y condiciones en
+[privacidad.html](privacidad.html).

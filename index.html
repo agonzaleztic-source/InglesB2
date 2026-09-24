@@ -4,6 +4,12 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="theme-color" content="#E7ECE4">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Aptis B2">
 <!-- La app compila JSX en el propio navegador con Babel standalone y lo
      inyecta como <script> inline (ver más abajo): por eso script-src necesita
      'unsafe-inline'. Todo lo demás va cerrado a 'self' y a los sitios
@@ -74,6 +80,7 @@
     No uses esto en un ordenador compartido: quien lo use podría leer la clave.
     Si prefieres que la clave no esté en el navegador, aquí también puedes pegar la dirección de
     un Worker de Cloudflare — la guía está en <code>DESPLIEGUE.md</code>.<br><br>
+    <a href="privacidad.html">Privacidad y condiciones</a><br><br>
     Entrenador independiente y no oficial. «Aptis» es una marca del British Council, que no ha
     creado, revisado ni respalda esta aplicación.
   </small>
@@ -1269,7 +1276,7 @@ Máximo 4 correcciones.`
 
       {phase === "review" && (
         <div>
-          {!mic && <p className="hint">El navegador no me ha dejado usar el micrófono. Escribe abajo, más o menos, lo que has dicho y lo corrijo igual.</p>}
+          {!mic && <p className="hint">No he podido transcribir tu voz: o has denegado el micrófono, o este navegador no lo soporta (va bien en Chrome y Edge; en Safari e iOS no). Escribe abajo, más o menos, lo que has dicho y lo corrijo igual.</p>}
           {rounds.map((r, i) => (
             <div key={i} className="field">
               <p className="prompt dim">{r.prompt}</p>

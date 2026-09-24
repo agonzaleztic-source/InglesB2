@@ -9,6 +9,8 @@
  *   APP_PASS           (secreto, obligatorio: sin esto el Worker no atiende peticiones)
  *   ALLOWED_ORIGIN     (opcional, por defecto tu GitHub Pages)
  *   DAILY_LIMIT        (opcional, por defecto 60 peticiones por IP y día)
+ *   GLOBAL_DAILY_LIMIT (opcional, por defecto 1500 peticiones al día entre todos:
+ *                       tope de gasto total, pase lo que pase con las IP)
  *
  * Binding que hay que configurar en Cloudflare:
  *   RATE_LIMIT  (KV Namespace, obligatorio: sin esto no hay corte diario)
@@ -18,6 +20,7 @@ const DEFAULT_ORIGIN = "https://agonzaleztic-source.github.io";
 const MODEL = "claude-sonnet-5";
 const MAX_TOKENS = 1200;
 const DEFAULT_DAILY_LIMIT = 60;
+const DEFAULT_GLOBAL_LIMIT = 1500;
 
 export default {
   async fetch(request, env) {
@@ -62,6 +65,15 @@ export default {
     if (used >= limit) {
       return json({ error: "Se ha llegado al límite diario de peticiones desde tu conexión. Vuelve mañana." }, 429, cors);
     }
+    // Tope global: el gasto máximo diario queda acotado aunque haya muchas IP.
+    // Es una cuenta aproximada (KV no es atómico), suficiente como freno.
+    const globalKey = `rl:${day}:global`;
+    const globalLimit = Number(env.GLOBAL_DAILY_LIMIT) || DEFAULT_GLOBAL_LIMIT;
+    const globalUsed = Number(await env.RATE_LIMIT.get(globalKey)) || 0;
+    if (globalUsed >= globalLimit) {
+      return json({ error: "El servicio ha llegado a su límite diario. Vuelve mañana." }, 429, cors);
+    }
+    await env.RATE_LIMIT.put(globalKey, String(globalUsed + 1), { expirationTtl: 172800 });
     // Un día de margen sobre la expiración: aunque la fecha cambie a medianoche
     // en dos zonas horarias distintas, la clave vieja desaparece sola igual.
     await env.RATE_LIMIT.put(rateKey, String(used + 1), { expirationTtl: 172800 });

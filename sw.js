@@ -10,12 +10,18 @@
  * Al cambiar algo en vendor/ conviene subir VERSION para vaciar la caché vieja.
  */
 
-const VERSION = "2026-09-14";
+const VERSION = "2026-09-24";
 const CACHE = `aptis-b2-${VERSION}`;
 const SHELL = [
   "./",
   "index.html",
   "banco.js",
+  "manifest.webmanifest",
+  "privacidad.html",
+  "icons/icon-192.png",
+  "icons/icon-512.png",
+  "icons/icon-maskable-512.png",
+  "icons/apple-touch-icon.png",
   "vendor/react.production.min.js",
   "vendor/react-dom.production.min.js",
   "vendor/babel.min.js",

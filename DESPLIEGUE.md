@@ -78,6 +78,7 @@ propia clave — es el mismo proceso descrito aquí.
    | `ANTHROPIC_API_KEY` | la clave del paso 1 de la opción B                |
    | `APP_PASS`          | una contraseña que te inventes (obligatoria)      |
    | `DAILY_LIMIT`       | opcional: peticiones por IP y día (60 por defecto)|
+   | `GLOBAL_DAILY_LIMIT`| opcional: tope total al día entre todos (1500)    |
 
    `APP_PASS` ya no es opcional: sin ella el Worker rechaza toda petición,
    para que la URL no sirva de nada si se filtra sin la contraseña.
