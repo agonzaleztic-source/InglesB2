@@ -15,7 +15,8 @@
  *   ADMIN_SECRET       (secreto: protege /admin/*; sin él no hay altas de usuarios)
  *   APP_PASS           (secreto, opcional: contraseña única de uso personal,
  *                       con límite por IP y día; es el modo de la opción C)
- *   ALLOWED_ORIGIN     (opcional, por defecto tu GitHub Pages)
+ *   ALLOWED_ORIGIN     (opcional: origen de la app, o varios separados por comas;
+ *                       por defecto tu GitHub Pages)
  *   DAILY_LIMIT        (opcional, por defecto 60 peticiones por IP y día, solo APP_PASS)
  *   GLOBAL_DAILY_LIMIT (opcional, por defecto 1500 peticiones al día entre todos:
  *                       tope de gasto total, pase lo que pase con los usuarios)
@@ -42,9 +43,14 @@ const FORTY_DAYS = 3456000;
 
 export default {
   async fetch(request, env) {
-    const allowed = env.ALLOWED_ORIGIN || DEFAULT_ORIGIN;
+    // ALLOWED_ORIGIN admite varios orígenes separados por comas (sin barra
+    // final), para poder cambiar de alojamiento sin cortar a nadie.
+    const allowedList = (env.ALLOWED_ORIGIN || DEFAULT_ORIGIN).split(",").map((s) => s.trim()).filter(Boolean);
+    const reqOrigin = request.headers.get("Origin");
+    const allowed = allowedList.includes(reqOrigin) ? reqOrigin : allowedList[0];
     const cors = {
       "Access-Control-Allow-Origin": allowed,
+      "Vary": "Origin",
       "Access-Control-Allow-Methods": "POST, OPTIONS",
       "Access-Control-Allow-Headers": "Content-Type, x-app-pass",
       "Access-Control-Expose-Headers": "x-quota-limit, x-quota-used",
@@ -67,8 +73,8 @@ export default {
     if (path.startsWith("/admin/")) return admin(path, request, env, cors);
 
     // Sin cabecera Origin no es un navegador el que llama: fuera.
-    const origin = request.headers.get("Origin");
-    if (!origin || origin !== allowed) {
+    const origin = reqOrigin;
+    if (!origin || !allowedList.includes(origin)) {
       return json({ error: "Origen no autorizado" }, 403, cors);
     }
 
@@ -282,7 +288,7 @@ async function stripeSignatureOk(raw, header, secret) {
 // Envío con Resend (https://resend.com). Cambiar de proveedor es cambiar solo esta función.
 async function sendCodeEmail(env, to, token, workerUrl, returning) {
   if (!env.RESEND_API_KEY || !env.EMAIL_FROM) throw new Error("Faltan RESEND_API_KEY o EMAIL_FROM");
-  const appUrl = env.APP_URL || `${DEFAULT_ORIGIN}/InglesB2/`;
+  const appUrl = env.APP_URL || `${(env.ALLOWED_ORIGIN || DEFAULT_ORIGIN).split(",")[0].trim()}/`;
   const intro = returning ? "Tu suscripción está activa de nuevo. Este es tu nuevo código de acceso (el anterior ya no funciona):"
     : "Gracias por suscribirte. Este es tu código de acceso personal:";
   const body = `${intro}\n\n${token}\n\nCómo usarlo:\n1. Abre ${appUrl}\n2. En el campo de conexión pega esta dirección: ${workerUrl}\n3. En el campo de contraseña pega tu código.\n\nGuárdalo: no se puede volver a mostrar. Si lo pierdes, responde a este correo y te emitiremos uno nuevo.\n\nEntrenador independiente y no oficial; «Aptis» es una marca del British Council.`;
