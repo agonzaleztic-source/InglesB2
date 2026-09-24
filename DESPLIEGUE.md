@@ -80,8 +80,9 @@ propia clave — es el mismo proceso descrito aquí.
    | `DAILY_LIMIT`       | opcional: peticiones por IP y día (60 por defecto)|
    | `GLOBAL_DAILY_LIMIT`| opcional: tope total al día entre todos (1500)    |
 
-   `APP_PASS` ya no es opcional: sin ella el Worker rechaza toda petición,
-   para que la URL no sirva de nada si se filtra sin la contraseña.
+   Hace falta al menos uno de `APP_PASS` (contraseña única, uso personal) o
+   `ADMIN_SECRET` (cuentas de usuario, ver más abajo). Sin ninguno, el Worker
+   rechaza toda petición.
 6. Cloudflare te da una dirección tipo `https://aptis.tu-usuario.workers.dev`.
    Pégala en la app, en el campo de conexión; al detectar que es una URL
    aparece un segundo campo para la contraseña que pusiste en `APP_PASS`.
@@ -94,6 +95,30 @@ navegador.
 Si en vez de la dirección `*.workers.dev` le pones un dominio propio al
 Worker, añade ese dominio a `connect-src` en la etiqueta `<meta>` de CSP al
 principio de `index.html`: si no, el navegador bloqueará la petición.
+
+---
+
+## Cuentas de usuario y cupo mensual (para dar acceso a otras personas)
+
+Con el secreto `ADMIN_SECRET` el Worker gestiona usuarios. Cada uno recibe un
+código personal `apt_...` que pega en el campo de contraseña de la app, y tiene
+un cupo de correcciones al mes (300 por defecto, `DEFAULT_MONTHLY_QUOTA`). El
+KV solo guarda el hash del código y el cupo se cuenta por email.
+
+```sh
+# Alta: devuelve el código UNA sola vez
+curl -X POST https://TU-WORKER/admin/users/create \n  -H "x-admin-secret: $ADMIN_SECRET" -H "content-type: application/json" \n  -d '{"email":"alumno@correo.com","plan":"pro","monthly_quota":300}'
+
+# Baja / alta, o cambio de cupo (no toca su código)
+curl -X POST https://TU-WORKER/admin/users/update -H "x-admin-secret: $ADMIN_SECRET" \n  -H "content-type: application/json" -d '{"email":"alumno@correo.com","disabled":true}'
+
+# Código perdido o filtrado: invalida el viejo y emite uno nuevo
+curl -X POST https://TU-WORKER/admin/users/reset -H "x-admin-secret: $ADMIN_SECRET" \n  -H "content-type: application/json" -d '{"email":"alumno@correo.com"}'
+```
+
+El usuario puede consultar su cupo con un POST a `/me` (devuelve `plan`, `quota`
+y `used`). `GLOBAL_DAILY_LIMIT` sigue siendo el tope de gasto de todos juntos.
+Si una petición falla por un error del modelo (5xx), no se descuenta del cupo.
 
 ---
 
