@@ -140,10 +140,9 @@ export default {
     const payload = {
       model: MODEL,
       max_tokens: Math.min(Number(body.max_tokens) || 1000, MAX_TOKENS),
-      messages: body.messages.slice(0, 2).map((m) => ({
-        role: m.role === "assistant" ? "assistant" : "user",
-        content: String(m.content).slice(0, 12000),
-      })),
+      // Un único turno de usuario: la app nunca necesita historial, y así no puede
+      // construirse una petición que termine en un turno de assistant.
+      messages: [{ role: "user", content: String(body.messages[0].content).slice(0, 12000) }],
     };
 
     let upstream;

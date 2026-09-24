@@ -365,7 +365,7 @@ const TASKS = [
     build: (c) => `Genera 6 preguntas del componente Core (Grammar and Vocabulary) del Aptis General, nivel B2.
 3 de gramática (frase con hueco) y 3 de vocabulario (collocation, phrasal verb o palabra que se confunde). Todo EN INGLÉS, 4 opciones, una correcta, distractores que un hispanohablante elegiría. Contexto léxico: "${c.topic}".
 ${c.focus ? `Incluye 2 preguntas sobre: ${c.focus}.` : ""}
-${c.avoid ? `PROHIBIDO reutilizar estas frases ya vistas: ${c.avoid}` : ""}
+${c.avoid ? `El alumno ya ha visto estas frases; genera otras distintas: ${c.avoid}` : ""}
 "tag" = el punto exacto en español ("Tercer condicional", "Collocation con make"). "why" = una frase en español.
 Devuelve SOLO: {"intro":"","questions":[{"q":"","opts":["","","",""],"correct":0,"tag":"","why":""}]}`,
   },
@@ -902,7 +902,7 @@ function WhyMore({ q, right, chosen, deep }) {
 PREGUNTA: ${q}
 CORRECTA: ${right}
 ÉL ELIGIÓ: ${chosen || "nada"}
-Explícale la regla de fondo en español, máximo 3 frases, sin jerga. Di por qué su opción falla. Añade 2 ejemplos nuevos en inglés con traducción.
+Explícale la regla de fondo en español, en pocas frases y sin jerga. Di por qué su opción falla. Añade 2 ejemplos nuevos en inglés con traducción.
 Devuelve SOLO: {"rule":"","mistake":"","examples":[{"en":"","es":""},{"en":"","es":""}]}`
       ));
     } catch { setData({ rule: "No he podido generar la explicación.", mistake: "", examples: [] }); }
@@ -1133,7 +1133,7 @@ function WriteTask({ data, def, onDone }) {
       setFb(await generate(
         `Eres examinador oficial del Aptis General y corriges esta tarea de Writing (${def.name}) con los criterios reales: cumplimiento de la tarea, registro, cohesión, riqueza léxica y corrección. Penaliza salirse del número de palabras.
 ${body}
-Sé exigente y concreto. Máximo 5 correcciones: las que más le bajan el nivel.
+Sé exigente y concreto. Señala solo las correcciones que más le bajan el nivel.
 Devuelve SOLO: {"level":"A2|B1|B2|C","summary":"dos frases en español: qué funciona y qué le impide subir","corrections":[{"original":"","better":"","why":"en español"}],"upgrade":"una frase suya reescrita con lenguaje de B2 alto","next":"un consejo concreto en español"}`
       ));
     } catch (e) { setFb({ level: "?", summary: e.message || "No he podido corregirlo. Prueba otra vez.", corrections: [] }); }
@@ -1236,7 +1236,7 @@ function SpeakTask({ data, def, onDone }) {
 ${data.scene ? `ESCENA: ${data.scene}` : ""}
 ${body}
 Devuelve SOLO: {"level":"A2|B1|B2|C","summary":"dos frases en español","corrections":[{"original":"lo que dijo","better":"cómo se dice","why":"en español"}],"upgrade":"respuesta modelo EN INGLÉS de nivel B2, 60-80 palabras","next":"consejo concreto en español"}
-Máximo 4 correcciones.`
+Incluye solo las correcciones que más le bajan el nivel.`
       ));
     } catch (e) { setFb({ level: "?", summary: e.message || "No he podido evaluarlo. Prueba otra vez.", corrections: [] }); }
     setBusy(false);
