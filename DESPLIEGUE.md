@@ -122,6 +122,51 @@ Si una petición falla por un error del modelo (5xx), no se descuenta del cupo.
 
 ---
 
+## Cobrar con Stripe (altas automáticas)
+
+El Worker recibe los avisos de Stripe en `/webhooks/stripe` y hace solo lo que
+antes hacías con `curl`: al pagar crea la cuenta y envía el código por email;
+al renovarse la mantiene activa; al cancelar o no pagar la da de baja. Si el
+cliente se vuelve a suscribir recibe un código nuevo y conserva su cupo.
+
+1. En Stripe crea un producto con precio recurrente (mensual) y un *Payment Link*
+   o Checkout para él. Es el enlace que pondrás en la web para pagar.
+2. *Developers* → *Webhooks* → *Add endpoint*, con la dirección
+   `https://TU-WORKER/webhooks/stripe` y estos eventos:
+   `checkout.session.completed`, `customer.subscription.updated`,
+   `customer.subscription.deleted` e `invoice.paid`. Copia el *Signing secret*
+   (`whsec_...`).
+3. Crea una cuenta en <https://resend.com>, verifica tu dominio de envío y saca
+   una clave de API.
+4. En el Worker, añade los secretos y variables:
+
+   | Nombre                  | Valor                                                  |
+   | ----------------------- | ------------------------------------------------------ |
+   | `STRIPE_WEBHOOK_SECRET` | el `whsec_...` del paso 2                              |
+   | `RESEND_API_KEY`        | la clave del paso 3                                    |
+   | `EMAIL_FROM`            | remitente verificado, p. ej. `Aptis B2 <hola@tudominio.com>` |
+   | `APP_URL`               | opcional: dirección de la app que sale en el email     |
+
+5. Prueba con las tarjetas de test de Stripe en modo prueba antes de pasar a real.
+
+Detalles que conviene saber:
+
+- La firma del webhook se comprueba antes de mirar el contenido, con un margen
+  de 5 minutos: sin ella no se da de alta a nadie.
+- Si falla el envío del email, el Worker deshace el alta y responde 500 para que
+  Stripe lo reintente durante días. Un código que nadie ha recibido no sirve.
+- Cada evento se procesa una sola vez aunque Stripe lo reenvíe, y un evento más
+  antiguo que el último aplicado no puede reactivar a quien ya se dio de baja.
+- El cupo es el de `DEFAULT_MONTHLY_QUOTA`; cámbialo por usuario con
+  `/admin/users/update` si hace falta.
+- La cuenta se identifica por el email que se escribe al pagar.
+- Los códigos perdidos se reemiten con `/admin/users/reset`; ese endpoint
+  devuelve el código y tienes que enviárselo tú.
+- No hay portal de cliente: para que se den de baja solos, activa el *Customer
+  portal* de Stripe y enlázalo desde la web.
+
+---
+
 ## Lo que cuesta
 
 Esto solo aplica a las opciones B y C. El modelo es Claude Sonnet 5: 2 $ por millón de tokens de entrada y 10 $ por

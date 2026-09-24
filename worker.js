@@ -20,6 +20,9 @@
  *   GLOBAL_DAILY_LIMIT (opcional, por defecto 1500 peticiones al día entre todos:
  *                       tope de gasto total, pase lo que pase con los usuarios)
  *   DEFAULT_MONTHLY_QUOTA (opcional, por defecto 300 peticiones al mes por usuario)
+ *   STRIPE_WEBHOOK_SECRET (secreto: firma del webhook /webhooks/stripe, whsec_...)
+ *   RESEND_API_KEY, EMAIL_FROM (secreto y remitente para enviar el código por email)
+ *   APP_URL            (opcional: dirección de la app que se pone en el email)
  *
  * Binding que hay que configurar en Cloudflare:
  *   RATE_LIMIT  (KV Namespace, obligatorio: usuarios, cupos y límites)
@@ -58,8 +61,9 @@ export default {
 
     const path = new URL(request.url).pathname;
 
-    // La administración la llama un script o un webhook, no un navegador: no
-    // lleva Origin y se protege solo con el secreto.
+    // Los webhooks y la administración no los llama un navegador: no llevan
+    // Origin y se protegen con la firma de Stripe o con el secreto de admin.
+    if (path === "/webhooks/stripe") return stripeWebhook(request, env);
     if (path.startsWith("/admin/")) return admin(path, request, env, cors);
 
     // Sin cabecera Origin no es un navegador el que llama: fuera.
@@ -166,6 +170,130 @@ export default {
   },
 };
 
+/* ---------------- pagos: webhook de Stripe ---------------- */
+
+// Stripe llama aquí al pagar, renovar o cancelar. La firma (HMAC-SHA256 del
+// cuerpo con STRIPE_WEBHOOK_SECRET) es lo único que impide que cualquiera se
+// dé de alta gratis, así que se comprueba antes de leer nada del evento.
+async function stripeWebhook(request, env) {
+  if (!env.STRIPE_WEBHOOK_SECRET) return text("Falta STRIPE_WEBHOOK_SECRET", 500);
+  const raw = await request.text();
+  if (!(await stripeSignatureOk(raw, request.headers.get("stripe-signature"), env.STRIPE_WEBHOOK_SECRET))) {
+    return text("Firma no válida", 400);
+  }
+  let ev;
+  try { ev = JSON.parse(raw); } catch { return text("Cuerpo no válido", 400); }
+
+  // Stripe reenvía los eventos que no reciben como 2xx: sin esto, un reintento
+  // repetiría el alta o el email.
+  const seenKey = `evt:${ev.id}`;
+  if (await env.RATE_LIMIT.get(seenKey)) return text("ya procesado", 200);
+
+  try {
+    await handleStripeEvent(ev, env, new URL(request.url).origin);
+  } catch (e) {
+    // Un 500 hace que Stripe lo reintente durante varios días.
+    console.error("webhook Stripe:", ev.type, e && e.message);
+    return text("Error al procesar el evento", 500);
+  }
+  await env.RATE_LIMIT.put(seenKey, "1", { expirationTtl: 604800 });
+  return text("ok", 200);
+}
+
+async function handleStripeEvent(ev, env, workerUrl) {
+  const obj = (ev.data && ev.data.object) || {};
+
+  if (ev.type === "checkout.session.completed") {
+    if (obj.mode !== "subscription" || obj.payment_status === "unpaid") return;
+    const email = String((obj.customer_details && obj.customer_details.email) || obj.customer_email || "").trim().toLowerCase();
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) throw new Error("checkout sin email válido");
+    if (obj.customer) await env.RATE_LIMIT.put(`cust:${obj.customer}`, email);
+    await env.RATE_LIMIT.put(`sub:${email}`, String(ev.created || 0));
+    await provision(env, email, workerUrl);
+    return;
+  }
+
+  // Estado de la suscripción: renovación, impago o baja. Los eventos de Stripe
+  // pueden llegar desordenados, así que solo se aplica uno más reciente que el
+  // último aplicado.
+  let enabled;
+  if (ev.type === "customer.subscription.deleted") enabled = false;
+  else if (ev.type === "customer.subscription.updated") {
+    if (["active", "trialing"].includes(obj.status)) enabled = true;
+    else if (["canceled", "unpaid", "incomplete_expired"].includes(obj.status)) enabled = false;
+  } else if (ev.type === "invoice.paid") enabled = true;
+  if (enabled === undefined || !obj.customer) return;
+
+  const email = await env.RATE_LIMIT.get(`cust:${obj.customer}`);
+  if (!email) return;
+  const last = Number(await env.RATE_LIMIT.get(`sub:${email}`)) || 0;
+  if ((ev.created || 0) < last) return;
+
+  const hash = await env.RATE_LIMIT.get(`email:${email}`);
+  const rec = hash && await env.RATE_LIMIT.get(`user:${hash}`, "json");
+  if (!rec) return;
+  await env.RATE_LIMIT.put(`user:${hash}`, JSON.stringify({ ...rec, disabled: !enabled }));
+  await env.RATE_LIMIT.put(`sub:${email}`, String(ev.created || 0));
+}
+
+// Alta tras el pago (o reactivación si ya tenía cuenta): código nuevo por
+// email. Si el email falla se deshace todo y se devuelve error, para que el
+// reintento de Stripe lo repita: un código que nadie ha recibido no sirve.
+async function provision(env, email, workerUrl) {
+  const indexKey = `email:${email}`;
+  const oldHash = await env.RATE_LIMIT.get(indexKey);
+  const prev = oldHash ? (await env.RATE_LIMIT.get(`user:${oldHash}`, "json")) || {} : {};
+
+  const token = newToken();
+  const hash = await sha256(token);
+  if (oldHash) await env.RATE_LIMIT.delete(`user:${oldHash}`);
+  await putUser(env, hash, email, {}, { ...prev, disabled: false });
+  await env.RATE_LIMIT.put(indexKey, hash);
+
+  try {
+    await sendCodeEmail(env, email, token, workerUrl, !!oldHash);
+  } catch (e) {
+    await env.RATE_LIMIT.delete(`user:${hash}`);
+    if (oldHash) {
+      await env.RATE_LIMIT.put(`user:${oldHash}`, JSON.stringify(prev));
+      await env.RATE_LIMIT.put(indexKey, oldHash);
+    } else {
+      await env.RATE_LIMIT.delete(indexKey);
+    }
+    throw e;
+  }
+}
+
+async function stripeSignatureOk(raw, header, secret) {
+  if (!header) return false;
+  const parts = header.split(",").map((p) => p.trim().split("="));
+  const t = (parts.find((p) => p[0] === "t") || [])[1];
+  const sigs = parts.filter((p) => p[0] === "v1").map((p) => p[1]);
+  if (!t || !sigs.length) return false;
+  // Margen de 5 minutos: una firma capturada no vale para siempre.
+  if (Math.abs(Date.now() / 1000 - Number(t)) > 300) return false;
+  const key = await crypto.subtle.importKey("raw", new TextEncoder().encode(secret), { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
+  const mac = await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(`${t}.${raw}`));
+  const expected = [...new Uint8Array(mac)].map((x) => x.toString(16).padStart(2, "0")).join("");
+  for (const s of sigs) if (await safeEqual(s || "", expected)) return true;
+  return false;
+}
+
+// Envío con Resend (https://resend.com). Cambiar de proveedor es cambiar solo esta función.
+async function sendCodeEmail(env, to, token, workerUrl, returning) {
+  if (!env.RESEND_API_KEY || !env.EMAIL_FROM) throw new Error("Faltan RESEND_API_KEY o EMAIL_FROM");
+  const appUrl = env.APP_URL || `${DEFAULT_ORIGIN}/InglesB2/`;
+  const intro = returning ? "Tu suscripción está activa de nuevo. Este es tu nuevo código de acceso (el anterior ya no funciona):"
+    : "Gracias por suscribirte. Este es tu código de acceso personal:";
+  const body = `${intro}\n\n${token}\n\nCómo usarlo:\n1. Abre ${appUrl}\n2. En el campo de conexión pega esta dirección: ${workerUrl}\n3. En el campo de contraseña pega tu código.\n\nGuárdalo: no se puede volver a mostrar. Si lo pierdes, responde a este correo y te emitiremos uno nuevo.\n\nEntrenador independiente y no oficial; «Aptis» es una marca del British Council.`;
+  const res = await fetch("https://api.resend.com/emails", {
+    method: "POST",
+    headers: { authorization: `Bearer ${env.RESEND_API_KEY}`, "content-type": "application/json" },
+    body: JSON.stringify({ from: env.EMAIL_FROM, to: [to], subject: "Tu código de acceso a Aptis B2", text: body }),
+  });
+  if (!res.ok) throw new Error(`Resend respondió ${res.status}`);
+}
+
 /* ---------------- administración ---------------- */
 
 async function admin(path, request, env, cors) {
@@ -267,6 +395,10 @@ async function safeEqual(a, b) {
 
 function quotaHeaders(limit, used, cors) {
   return { ...cors, "x-quota-limit": String(limit), "x-quota-used": String(used) };
+}
+
+function text(body, status) {
+  return new Response(body, { status, headers: { "content-type": "text/plain; charset=utf-8" } });
 }
 
 function json(obj, status, cors) {
