@@ -36,4 +36,5 @@ Trabajas sin supervisión humana en tiempo real. Sigue estas reglas sin excepci�
 ## Verificación de este proyecto (InglesB2)
 
 - Rama base: `master`. Stack: estatico.
-- Este proyecto no tiene suite de tests. Antes de terminar: comprueba que el HTML/JS resultante es válido, que no rompes enlaces internos, y describe en el PR cómo has verificado el cambio manualmente.
+- Verificación obligatoria antes de dar por terminada la tarea (todos deben salir con código 0):
+  - `node --test tests/`
