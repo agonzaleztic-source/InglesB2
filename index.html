@@ -99,6 +99,7 @@
   integrity="sha384-gTGxhz21lVGYNMcdJOyq01Edg0jhn/c22nsx0kyqP0TxaV5WVdsSH1fSDUf5YJj1"></script>
 <script src="vendor/babel.min.js"
   integrity="sha384-AISI5AuDG6E8DeEiFMVB3rGQxhZt24OU0avMp+GMV64+tpnA3+Z6F5MT0f96iPva"></script>
+<script src="parse-json.js"></script>
 
 <script>
   const CFG_KEY = "aptis-conexion";
@@ -283,15 +284,6 @@ async function callClaude(prompt) {
   }
   const data = await res.json();
   return (data.content || []).map((b) => (b.type === "text" ? b.text : "")).join("");
-}
-
-function parseJSON(raw) {
-  const t = String(raw).trim().replace(/```json/gi, "").replace(/```/g, "").trim();
-  const starts = ["[", "{"].map((c) => t.indexOf(c)).filter((i) => i >= 0);
-  if (!starts.length) throw new Error("sin JSON");
-  const s = Math.min(...starts);
-  const e = Math.max(t.lastIndexOf("]"), t.lastIndexOf("}"));
-  return JSON.parse(t.slice(s, e + 1));
 }
 
 async function generate(prompt) {
