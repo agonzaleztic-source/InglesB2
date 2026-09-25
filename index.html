@@ -100,6 +100,7 @@
 <script src="vendor/babel.min.js"
   integrity="sha384-AISI5AuDG6E8DeEiFMVB3rGQxhZt24OU0avMp+GMV64+tpnA3+Z6F5MT0f96iPva"></script>
 <script src="parse-json.js"></script>
+<script src="logica.js"></script>
 
 <script>
   const CFG_KEY = "aptis-conexion";
@@ -205,12 +206,7 @@ const STORE = "aptis-general-b2";
 /* ---------------- utilidades ---------------- */
 const pick = (a) => a[Math.floor(Math.random() * a.length)];
 const shuffle = (a) => a.map((v) => [Math.random(), v]).sort((x, y) => x[0] - y[0]).map((x) => x[1]);
-const key = (d = new Date()) =>
-  `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-const back = (n) => { const d = new Date(); d.setDate(d.getDate() - n); return key(d); };
-const fp = (s) => String(s || "").toLowerCase().replace(/[^a-z0-9]/g, "").slice(0, 45);
-const level = (p) => (p >= 90 ? "C" : p >= 75 ? "B2" : p >= 55 ? "B1" : p >= 35 ? "A2" : "A1");
-const pctOf = (lv) => ({ C: 92, B2: 78, B1: 60, A2: 42 }[lv] ?? 50);
+/* key, back, fp, level, pctOf, noVistos y streakOf viven en logica.js */
 
 const TOPICS = [
   "commuting by train", "second-hand shopping", "learning an instrument as an adult",
@@ -297,12 +293,6 @@ async function generate(prompt) {
 /* ---------------- banco integrado (modo sin clave) ---------------- */
 const sinClave = () => (window.APTIS_CONFIG || {}).mode === "banco";
 
-/* Coge lo que aún no hayas visto; si ya lo has visto todo, vuelve a empezar. */
-const noVistos = (lista, huella, vistos) => {
-  const nuevos = lista.filter((x) => !vistos.includes(huella(x)));
-  return nuevos.length ? nuevos : lista;
-};
-
 function delBanco(def, vistos) {
   const B = window.BANK || {};
 
@@ -337,15 +327,6 @@ async function load() {
   catch { return blank(); }
 }
 async function save(s) { try { localStorage.setItem(STORE, JSON.stringify(s)); } catch (e) { console.warn(e); } }
-
-function streakOf(days) {
-  let n = 0;
-  if (!days[back(0)]?.done && !days[back(1)]?.done) return 0;
-  for (let i = days[back(0)]?.done ? 0 : 1; i < 400; i++) {
-    if (days[back(i)]?.done) n++; else break;
-  }
-  return n;
-}
 
 /* ================================================================
    Catálogo: las tareas reales del Aptis General
