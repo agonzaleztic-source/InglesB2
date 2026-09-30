@@ -46,3 +46,27 @@ test("JSON truncado lanza error", () => {
 test("salida vacía lanza error", () => {
   assert.throws(() => parseJSON(""));
 });
+
+test("texto tras el JSON con corchetes sueltos no rompe el resultado", () => {
+  const raw = 'Aquí tienes el JSON: {"ok":true}\nRecuerda revisar los corchetes [ ] antes de enviar.';
+  assert.deepEqual(parseJSON(raw), { ok: true });
+});
+
+test("string con llaves dentro no corta el objeto antes de tiempo", () => {
+  const raw = '{"code":"if (x) { return 1; }","n":2}';
+  assert.deepEqual(parseJSON(raw), { code: "if (x) { return 1; }", n: 2 });
+});
+
+test("comillas escapadas dentro de un string no confunden el parseo", () => {
+  const raw = '{"frase":"dijo \\"hola\\" y se fue"}';
+  assert.deepEqual(parseJSON(raw), { frase: 'dijo "hola" y se fue' });
+});
+
+test("array con texto y corchetes después no rompe el resultado", () => {
+  const raw = "Ejercicios: [1,2,3]\nUsa siempre [corchetes] al anotar.";
+  assert.deepEqual(parseJSON(raw), [1, 2, 3]);
+});
+
+test("JSON sin cerrar aunque haya un corchete de cierre suelto más adelante lanza error", () => {
+  assert.throws(() => parseJSON('{"a":1, "b": [1,2]\ny esto no cierra la llave'));
+});
