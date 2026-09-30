@@ -126,8 +126,20 @@ export default {
     try { body = await request.json(); }
     catch { return json({ error: "Cuerpo no válido" }, 400, cors); }
 
+    if (!body || typeof body !== "object") {
+      return json({ error: "Cuerpo no válido" }, 400, cors);
+    }
     if (!Array.isArray(body.messages) || !body.messages.length) {
       return json({ error: "Faltan los mensajes" }, 400, cors);
+    }
+    const firstMessage = body.messages[0];
+    if (
+      !firstMessage ||
+      typeof firstMessage !== "object" ||
+      typeof firstMessage.content !== "string" ||
+      !firstMessage.content.trim()
+    ) {
+      return json({ error: "Mensaje no válido" }, 400, cors);
     }
 
     // Se cuenta antes de llamar al modelo, para que las peticiones lentas no
@@ -142,7 +154,7 @@ export default {
       max_tokens: Math.min(Number(body.max_tokens) || 1000, MAX_TOKENS),
       // Un único turno de usuario: la app nunca necesita historial, y así no puede
       // construirse una petición que termine en un turno de assistant.
-      messages: [{ role: "user", content: String(body.messages[0].content).slice(0, 12000) }],
+      messages: [{ role: "user", content: firstMessage.content.slice(0, 12000) }],
     };
 
     let upstream;
