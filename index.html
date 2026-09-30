@@ -206,7 +206,7 @@ const STORE = "aptis-general-b2";
 /* ---------------- utilidades ---------------- */
 const pick = (a) => a[Math.floor(Math.random() * a.length)];
 const shuffle = (a) => a.map((v) => [Math.random(), v]).sort((x, y) => x[0] - y[0]).map((x) => x[1]);
-/* key, back, fp, level, pctOf, noVistos y streakOf viven en logica.js */
+/* key, back, fp, level, pctOf, noVistos, streakOf y normalizaProgreso viven en logica.js */
 
 const TOPICS = [
   "commuting by train", "second-hand shopping", "learning an instrument as an adult",
@@ -323,7 +323,7 @@ function delBanco(def, vistos) {
 const blank = () => ({ days: {}, skills: {}, errors: [], seen: [], usedTopics: [], lessons: {} });
 
 async function load() {
-  try { const r = localStorage.getItem(STORE); return r ? { ...blank(), ...JSON.parse(r) } : blank(); }
+  try { const r = localStorage.getItem(STORE); return r ? normalizaProgreso(JSON.parse(r)) : blank(); }
   catch { return blank(); }
 }
 async function save(s) { try { localStorage.setItem(STORE, JSON.stringify(s)); } catch (e) { console.warn(e); } }
@@ -1416,7 +1416,7 @@ function App() {
       try {
         const data = JSON.parse(reader.result);
         if (!data || typeof data !== "object" || Array.isArray(data)) throw new Error();
-        const merged = { ...blank(), ...data };
+        const merged = normalizaProgreso(data);
         setSt(merged);
         save(merged);
         setImportMsg({ ok: true, text: "Progreso importado." });

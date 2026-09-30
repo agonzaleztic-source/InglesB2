@@ -25,6 +25,26 @@ function streakOf(days, now = new Date()) {
   return n;
 }
 
+const esObjetoPlano = (v) => !!v && typeof v === "object" && !Array.isArray(v);
+
+/*
+ * Un progreso guardado o importado con forma incorrecta (p.ej. {"errors":null})
+ * rompía la app de por vida, porque se guarda tal cual y load() lo recarga roto
+ * en cada visita. Cada campo se acepta solo si tiene el tipo correcto; si no,
+ * se sustituye por su valor por defecto.
+ */
+function normalizaProgreso(data) {
+  const d = esObjetoPlano(data) ? data : {};
+  return {
+    days: esObjetoPlano(d.days) ? d.days : {},
+    skills: esObjetoPlano(d.skills) ? d.skills : {},
+    lessons: esObjetoPlano(d.lessons) ? d.lessons : {},
+    errors: Array.isArray(d.errors) ? d.errors : [],
+    seen: Array.isArray(d.seen) ? d.seen : [],
+    usedTopics: Array.isArray(d.usedTopics) ? d.usedTopics : [],
+  };
+}
+
 if (typeof module !== "undefined" && module.exports) {
-  module.exports = { key, back, fp, level, pctOf, noVistos, streakOf };
+  module.exports = { key, back, fp, level, pctOf, noVistos, streakOf, normalizaProgreso };
 }
