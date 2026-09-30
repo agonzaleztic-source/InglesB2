@@ -323,3 +323,88 @@ test("el payload enviado al modelo lleva un único mensaje de usuario y recorta 
     restoreFetch();
   }
 });
+
+test("un mensaje nulo responde 400 sin llamar al modelo ni descontar cupo", async () => {
+  const { env, kv } = makeEnv();
+  const token = await createUser(env, "mensaje-nulo@example.com", 5);
+  const { month } = currentDayMonth();
+
+  const calls = stubFetch(() => anthropicOk());
+  try {
+    const res = await worker.fetch(
+      req("/", {
+        headers: { Origin: ORIGIN, "x-app-pass": token },
+        body: { messages: [null] },
+      }),
+      env
+    );
+    assert.equal(res.status, 400);
+    assert.equal(calls.length, 0, "no debe llegar a llamar al modelo");
+    assert.equal(await kv.get(`use:${month}:mensaje-nulo@example.com`), null, "no se descuenta cupo");
+  } finally {
+    restoreFetch();
+  }
+});
+
+test("un mensaje con content numérico responde 400 sin llamar al modelo ni descontar cupo", async () => {
+  const { env, kv } = makeEnv();
+  const token = await createUser(env, "content-numerico@example.com", 5);
+  const { month } = currentDayMonth();
+
+  const calls = stubFetch(() => anthropicOk());
+  try {
+    const res = await worker.fetch(
+      req("/", {
+        headers: { Origin: ORIGIN, "x-app-pass": token },
+        body: { messages: [{ role: "user", content: 12345 }] },
+      }),
+      env
+    );
+    assert.equal(res.status, 400);
+    assert.equal(calls.length, 0);
+    assert.equal(await kv.get(`use:${month}:content-numerico@example.com`), null);
+  } finally {
+    restoreFetch();
+  }
+});
+
+test("un cuerpo JSON nulo responde 400 sin llamar al modelo", async () => {
+  const { env } = makeEnv();
+  const calls = stubFetch(() => anthropicOk());
+  try {
+    const res = await worker.fetch(
+      req("/", {
+        headers: { Origin: ORIGIN, "x-app-pass": "clave-personal" },
+        body: null,
+      }),
+      env
+    );
+    assert.equal(res.status, 400);
+    const data = await res.json();
+    assert.match(data.error, /Cuerpo no válido/);
+    assert.equal(calls.length, 0);
+  } finally {
+    restoreFetch();
+  }
+});
+
+test("un rl:...:global no cambia cuando el cuerpo es inválido", async () => {
+  const { env, kv } = makeEnv();
+  const { day } = currentDayMonth();
+
+  const calls = stubFetch(() => anthropicOk());
+  try {
+    const res = await worker.fetch(
+      req("/", {
+        headers: { Origin: ORIGIN, "x-app-pass": "clave-personal" },
+        body: { messages: [null] },
+      }),
+      env
+    );
+    assert.equal(res.status, 400);
+    assert.equal(calls.length, 0);
+    assert.equal(await kv.get(`rl:${day}:global`), null, "el tope global no debe moverse");
+  } finally {
+    restoreFetch();
+  }
+});
