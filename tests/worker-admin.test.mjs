@@ -211,3 +211,68 @@ test("/me con un usuario nuevo devuelve el cupo completo sin consumir nada", asy
   assert.equal(res.headers.get("x-quota-limit"), "300");
   assert.equal(res.headers.get("x-quota-used"), "0");
 });
+
+// quotaOf() en worker.js hace Math.floor(Number(b.monthly_quota)) y solo
+// cae al cupo por defecto si el resultado no es un entero finito >= 0.
+// Las siguientes casuísticas caracterizan ese comportamiento, incluida la
+// de monthly_quota: "" (cadena vacía), que Number() convierte en 0 válido
+// en vez de tratarlo como "no enviado".
+
+test("/admin/users/create con monthly_quota negativo cae al cupo por defecto", async () => {
+  const env = makeEnv();
+  const res = await admin("/admin/users/create", env, {
+    body: { email: "hugo@example.com", monthly_quota: -5 },
+  });
+  const data = await res.json();
+  assert.equal(data.quota, 300);
+});
+
+test("/admin/users/create con monthly_quota no numérico cae al cupo por defecto", async () => {
+  const env = makeEnv();
+  const res = await admin("/admin/users/create", env, {
+    body: { email: "ines@example.com", monthly_quota: "muchos" },
+  });
+  const data = await res.json();
+  assert.equal(data.quota, 300);
+});
+
+test("/admin/users/create con monthly_quota: '' (cadena vacía) deja el cupo en 0, no en el valor por defecto", async () => {
+  const env = makeEnv();
+  const res = await admin("/admin/users/create", env, {
+    body: { email: "javi@example.com", monthly_quota: "" },
+  });
+  const data = await res.json();
+  assert.equal(data.quota, 0, "Number('') es 0, así que quotaOf lo acepta como cupo válido");
+});
+
+test("/admin/users/update con monthly_quota: 0 deja el cupo en cero, distinto de no enviarlo", async () => {
+  const env = makeEnv();
+  await admin("/admin/users/create", env, { body: { email: "kira@example.com" } });
+  const res = await admin("/admin/users/update", env, {
+    body: { email: "kira@example.com", monthly_quota: 0 },
+  });
+  const data = await res.json();
+  assert.equal(data.quota, 0);
+});
+
+test("/admin/users/reset conserva el estado disabled de la cuenta", async () => {
+  const env = makeEnv();
+  const alta = await (await admin("/admin/users/create", env, { body: { email: "lia@example.com" } })).json();
+  await admin("/admin/users/update", env, { body: { email: "lia@example.com", disabled: true } });
+
+  const reset = await admin("/admin/users/reset", env, { body: { email: "lia@example.com" } });
+  assert.equal(reset.status, 200);
+  const { token: nuevo } = await reset.json();
+
+  const me = await worker.fetch(
+    req("/me", { headers: { Origin: ORIGIN, "x-app-pass": nuevo } }),
+    env
+  );
+  assert.equal(me.status, 401, "el reinicio no debe reactivar una cuenta deshabilitada");
+
+  const conViejo = await worker.fetch(
+    req("/me", { headers: { Origin: ORIGIN, "x-app-pass": alta.token } }),
+    env
+  );
+  assert.equal(conViejo.status, 401, "el código anterior sigue invalidado aunque la cuenta estuviera deshabilitada");
+});
