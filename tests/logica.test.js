@@ -1,6 +1,6 @@
 const { test } = require("node:test");
 const assert = require("node:assert/strict");
-const { fp, level, pctOf, noVistos, streakOf } = require("../logica.js");
+const { fp, level, pctOf, noVistos, streakOf, normalizaProgreso } = require("../logica.js");
 
 test("level: fronteras exactas entre tramos", () => {
   assert.equal(level(34), "A1");
@@ -82,4 +82,43 @@ test("streakOf: un hueco corta la racha aunque haya días sueltos detrás", () =
 test("streakOf: sin ningún día hecho da 0", () => {
   const now = new Date("2026-09-25T12:00:00");
   assert.equal(streakOf({}, now), 0);
+});
+
+test("normalizaProgreso: null o valores no-objeto dan un progreso en blanco", () => {
+  const blanco = { days: {}, skills: {}, lessons: {}, errors: [], seen: [], usedTopics: [] };
+  assert.deepEqual(normalizaProgreso(null), blanco);
+  assert.deepEqual(normalizaProgreso(undefined), blanco);
+  assert.deepEqual(normalizaProgreso("texto"), blanco);
+  assert.deepEqual(normalizaProgreso(42), blanco);
+  assert.deepEqual(normalizaProgreso([1, 2, 3]), blanco);
+});
+
+test("normalizaProgreso: campos con el tipo equivocado se sustituyen por su valor por defecto", () => {
+  const r = normalizaProgreso({
+    errors: null,
+    seen: "no es un array",
+    usedTopics: 5,
+    days: [1, 2],
+    skills: "x",
+    lessons: null,
+  });
+  assert.deepEqual(r, { days: {}, skills: {}, lessons: {}, errors: [], seen: [], usedTopics: [] });
+});
+
+test("normalizaProgreso: un progreso válido no se toca", () => {
+  const valido = {
+    days: { "2026-09-25": { done: true, blocks: { core: true } } },
+    skills: { reading: [{ d: "2026-09-25", pct: 80 }] },
+    lessons: { r1: { visto: true } },
+    errors: [{ tag: "Tercer condicional" }],
+    seen: ["abc", "def"],
+    usedTopics: ["commuting by train"],
+  };
+  assert.deepEqual(normalizaProgreso(valido), valido);
+});
+
+test("normalizaProgreso: campos ausentes se rellenan con el valor por defecto", () => {
+  assert.deepEqual(normalizaProgreso({ seen: ["a"] }), {
+    days: {}, skills: {}, lessons: {}, errors: [], seen: ["a"], usedTopics: [],
+  });
 });
