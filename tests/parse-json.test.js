@@ -70,3 +70,16 @@ test("array con texto y corchetes después no rompe el resultado", () => {
 test("JSON sin cerrar aunque haya un corchete de cierre suelto más adelante lanza error", () => {
   assert.throws(() => parseJSON('{"a":1, "b": [1,2]\ny esto no cierra la llave'));
 });
+
+test("un corchete de cierre que no empareja con la llave abierta no corta el JSON ahí", () => {
+  assert.throws(() => parseJSON('{"a":1]'), /JSON sin cerrar/);
+});
+
+test("una llave de cierre que no empareja con el corchete abierto no corta el JSON ahí", () => {
+  assert.throws(() => parseJSON('[1,2}'), /JSON sin cerrar/);
+});
+
+test("un cierre desemparejado dentro de una lista anidada tampoco corta el JSON ahí", () => {
+  const raw = "Aquí va el resultado: {\"a\":1,\"lista\":[1,2}\nFin.";
+  assert.throws(() => parseJSON(raw), /JSON sin cerrar/);
+});
