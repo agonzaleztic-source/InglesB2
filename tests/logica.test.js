@@ -1,6 +1,6 @@
 const { test } = require("node:test");
 const assert = require("node:assert/strict");
-const { fp, level, pctOf, noVistos, streakOf, normalizaProgreso } = require("../logica.js");
+const { fp, level, pctOf, noVistos, streakOf, normalizaProgreso, reintentable } = require("../logica.js");
 
 test("level: fronteras exactas entre tramos", () => {
   assert.equal(level(34), "A1");
@@ -121,4 +121,22 @@ test("normalizaProgreso: campos ausentes se rellenan con el valor por defecto", 
   assert.deepEqual(normalizaProgreso({ seen: ["a"] }), {
     days: {}, skills: {}, lessons: {}, errors: [], seen: ["a"], usedTopics: [],
   });
+});
+
+test("reintentable: un error marcado reintentable=false no se repite", () => {
+  const e = new Error("La clave no es válida.");
+  e.reintentable = false;
+  assert.equal(reintentable(e), false);
+});
+
+test("reintentable: errores de red o de parseo del JSON sí se repiten", () => {
+  assert.equal(reintentable(new Error("No hay conexión con el modelo. Revisa tu conexión a internet.")), true);
+  assert.equal(reintentable(new Error("sin JSON")), true);
+  assert.equal(reintentable(new Error("JSON sin cerrar")), true);
+  assert.equal(reintentable(new SyntaxError("Unexpected token o in JSON at position 1")), true);
+});
+
+test("reintentable: sin marcar explícitamente, se considera reintentable por defecto", () => {
+  assert.equal(reintentable(new Error("cualquier otro fallo")), true);
+  assert.equal(reintentable({}), true);
 });
