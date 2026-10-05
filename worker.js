@@ -320,6 +320,7 @@ async function admin(path, request, env, cors) {
 
   let b;
   try { b = await request.json(); } catch { return json({ error: "Cuerpo no válido" }, 400, cors); }
+  if (!b || typeof b !== "object") return json({ error: "Cuerpo no válido" }, 400, cors);
   const email = String(b.email || "").trim().toLowerCase();
   if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return json({ error: "Email no válido" }, 400, cors);
 
