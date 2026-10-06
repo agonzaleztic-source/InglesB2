@@ -1,6 +1,36 @@
 const { test } = require("node:test");
 const assert = require("node:assert/strict");
-const { fp, level, pctOf, noVistos, streakOf, normalizaProgreso, reintentable } = require("../logica.js");
+const { key, back, fp, level, pctOf, noVistos, streakOf, normalizaProgreso, reintentable } = require("../logica.js");
+
+test("key: rellena con cero mes y día de un solo dígito", () => {
+  assert.equal(key(new Date(2026, 0, 5)), "2026-01-05");
+  assert.equal(key(new Date(2026, 8, 9)), "2026-09-09");
+});
+
+test("key: no rellena cuando mes y día ya tienen dos dígitos", () => {
+  assert.equal(key(new Date(2025, 11, 31)), "2025-12-31");
+});
+
+test("back: 0 días devuelve la misma fecha que key()", () => {
+  const d = new Date(2026, 5, 15);
+  assert.equal(back(0, d), key(d));
+});
+
+test("back: cruza el año al retroceder desde el 1 de enero", () => {
+  assert.equal(back(1, new Date(2026, 0, 1)), "2025-12-31");
+});
+
+test("back: respeta el 29 de febrero en año bisiesto", () => {
+  assert.equal(back(1, new Date(2024, 2, 1)), "2024-02-29");
+});
+
+test("back: en año no bisiesto, retrocede de marzo a 28 de febrero", () => {
+  assert.equal(back(1, new Date(2025, 2, 1)), "2025-02-28");
+});
+
+test("back: retrocede varios meses de golpe", () => {
+  assert.equal(back(40, new Date(2026, 2, 10)), "2026-01-29");
+});
 
 test("level: fronteras exactas entre tramos", () => {
   assert.equal(level(34), "A1");
