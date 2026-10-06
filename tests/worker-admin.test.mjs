@@ -1,8 +1,7 @@
 // Caracteriza las rutas /admin/* (alta, edición y reinicio de usuarios) y
 // /me de worker.js, que tests/worker.test.mjs no cubre (solo usa
 // /admin/users/create como utilidad interna para montar otros casos). Mismo
-// patrón que tests/worker.test.mjs: KV en memoria, sin red real. No se
-// modifica worker.js.
+// patrón que tests/worker.test.mjs: KV en memoria, sin red real.
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import worker from "../worker.js";
@@ -73,6 +72,24 @@ test("/admin/* sin cabecera x-admin-secret responde 401", async () => {
   const env = makeEnv();
   const res = await admin("/admin/users/create", env, { secret: null });
   assert.equal(res.status, 401);
+});
+
+test("/admin/users/create con cuerpo JSON null responde 400 en vez de reventar", async () => {
+  const env = makeEnv();
+  const res = await admin("/admin/users/create", env, { body: null });
+  assert.equal(res.status, 400);
+});
+
+test("/admin/users/update con cuerpo JSON null responde 400 en vez de reventar", async () => {
+  const env = makeEnv();
+  const res = await admin("/admin/users/update", env, { body: null });
+  assert.equal(res.status, 400);
+});
+
+test("/admin/users/create con el cuerpo como array responde 400", async () => {
+  const env = makeEnv();
+  const res = await admin("/admin/users/create", env, { body: ["no-es-un-objeto"] });
+  assert.equal(res.status, 400);
 });
 
 test("/admin/users/create con email no válido responde 400", async () => {

@@ -45,6 +45,16 @@ function normalizaProgreso(data) {
   };
 }
 
+/*
+ * generate() en index.html solo debe reintentar una llamada al modelo si el
+ * fallo es de red o de parseo del JSON de la respuesta: un error de estado
+ * HTTP (clave inválida, límite de peticiones, cupo agotado, sin saldo...) es
+ * determinista y repetirlo no cambia el resultado. callClaude() marca esos
+ * errores con reintentable=false; todo lo demás (incluidos los de parseJSON,
+ * que no se tocan) se considera reintentable por defecto.
+ */
+const reintentable = (err) => err?.reintentable !== false;
+
 if (typeof module !== "undefined" && module.exports) {
-  module.exports = { key, back, fp, level, pctOf, noVistos, streakOf, normalizaProgreso };
+  module.exports = { key, back, fp, level, pctOf, noVistos, streakOf, normalizaProgreso, reintentable };
 }

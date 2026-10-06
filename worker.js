@@ -80,7 +80,9 @@ export default {
 
     const pass = request.headers.get("x-app-pass") || "";
     const user = await findUser(env, pass);
-    const personal = !user && !!env.APP_PASS && pass === env.APP_PASS;
+    // En tiempo constante, como el resto de secretos: no revelar por el tiempo
+    // de respuesta cuántos caracteres de la contraseña personal aciertan.
+    const personal = !user && !!env.APP_PASS && (await safeEqual(pass, env.APP_PASS));
     if (!user && !personal) {
       return json({ error: "Código de acceso incorrecto o dado de baja" }, 401, cors);
     }
@@ -173,7 +175,9 @@ export default {
     }
 
     // Si el fallo es del modelo y no del usuario, no le contamos la petición.
-    if (!upstream || upstream.status >= 500) {
+    // Un 429 de Anthropic es nuestro límite (de la cuenta, no del usuario), así
+    // que también se perdona.
+    if (!upstream || upstream.status >= 500 || upstream.status === 429) {
       await env.RATE_LIMIT.put(usedKey, String(used), { expirationTtl: ttl });
       return json({ error: "El modelo no responde ahora mismo. Vuelve a intentarlo en un momento." }, 502, cors);
     }
@@ -320,6 +324,7 @@ async function admin(path, request, env, cors) {
 
   let b;
   try { b = await request.json(); } catch { return json({ error: "Cuerpo no válido" }, 400, cors); }
+  if (!b || typeof b !== "object") return json({ error: "Cuerpo no válido" }, 400, cors);
   const email = String(b.email || "").trim().toLowerCase();
   if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return json({ error: "Email no válido" }, 400, cors);
 
