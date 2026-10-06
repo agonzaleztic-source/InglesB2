@@ -13,12 +13,17 @@ function parseJSON(raw) {
 }
 
 /*
- * Empareja corchetes/llaves contando profundidad y saltándose el contenido
- * de las cadenas (comillas escapadas incluidas), para no cortar en un ] o }
- * que aparezca dentro de un string o en texto explicativo después del JSON.
+ * Empareja corchetes/llaves con una pila del cierre esperado (no solo
+ * profundidad), saltándose el contenido de las cadenas (comillas escapadas
+ * incluidas), para no cortar en un ] o } que aparezca dentro de un string o
+ * en texto explicativo después del JSON. Un cierre que no corresponde al
+ * último abierto (p.ej. un "]" cuando lo pendiente es "}") se ignora en vez
+ * de contarse, para no devolver un trozo mal cortado que luego JSON.parse
+ * rompería con un SyntaxError críptico en vez del "JSON sin cerrar" propio.
  */
 function closingIndex(t, start) {
-  let depth = 0;
+  const cierre = { "{": "}", "[": "]" };
+  const pila = [];
   let inString = false;
   let escaped = false;
   for (let i = start; i < t.length; i++) {
@@ -30,10 +35,11 @@ function closingIndex(t, start) {
       continue;
     }
     if (c === '"') inString = true;
-    else if (c === "{" || c === "[") depth++;
+    else if (c === "{" || c === "[") pila.push(cierre[c]);
     else if (c === "}" || c === "]") {
-      depth--;
-      if (depth === 0) return i;
+      if (pila[pila.length - 1] !== c) continue;
+      pila.pop();
+      if (pila.length === 0) return i;
     }
   }
   return -1;
