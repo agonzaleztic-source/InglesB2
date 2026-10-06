@@ -265,6 +265,30 @@ test("un 5xx del modelo responde 502 y no descuenta cupo del usuario", async () 
   }
 });
 
+test("un 429 de Anthropic (límite nuestro) responde 502 y no descuenta cupo del usuario", async () => {
+  const { env, kv } = makeEnv();
+  const token = await createUser(env, "limite-anthropic@example.com", 5);
+  const { month } = currentDayMonth();
+
+  stubFetch(() => new Response("rate limited", { status: 429 }));
+  try {
+    const res = await worker.fetch(
+      req("/", {
+        headers: { Origin: ORIGIN, "x-app-pass": token },
+        body: { messages: [{ role: "user", content: "Hola" }] },
+      }),
+      env
+    );
+    assert.equal(res.status, 502);
+    const data = await res.json();
+    assert.match(data.error, /modelo no responde/);
+    // el contador vuelve a su valor original: no se descuenta la petición
+    assert.equal(await kv.get(`use:${month}:limite-anthropic@example.com`), "0");
+  } finally {
+    restoreFetch();
+  }
+});
+
 test("un fallo de red al llamar al modelo también responde 502 sin descontar cupo", async () => {
   const { env, kv } = makeEnv();
   const token = await createUser(env, "sin-red@example.com", 5);
