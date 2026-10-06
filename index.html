@@ -206,7 +206,7 @@ const STORE = "aptis-general-b2";
 /* ---------------- utilidades ---------------- */
 const pick = (a) => a[Math.floor(Math.random() * a.length)];
 const shuffle = (a) => a.map((v) => [Math.random(), v]).sort((x, y) => x[0] - y[0]).map((x) => x[1]);
-/* key, back, fp, level, pctOf, noVistos, streakOf y normalizaProgreso viven en logica.js */
+/* key, back, fp, level, pctOf, noVistos, streakOf, normalizaProgreso y reintentable viven en logica.js */
 
 const TOPICS = [
   "commuting by train", "second-hand shopping", "learning an instrument as an adult",
@@ -247,11 +247,22 @@ async function callClaude(prompt) {
     body.model = MODEL;
   }
 
+  // Errores de estado HTTP (clave inválida, límite, cupo agotado, sin saldo,
+  // 5xx...) son deterministas: repetir la petición no los va a arreglar. Se
+  // marcan con reintentable=false para que generate() no pierda un segundo
+  // intento en ellos; solo los de red o de parseo del JSON merecen reintento.
+  const noReintentar = (msg) => { const e = new Error(msg); e.reintentable = false; return e; };
+
   let res;
+  const ctrl = new AbortController();
+  const aviso = setTimeout(() => ctrl.abort(), 60000);
   try {
-    res = await fetch(url, { method: "POST", headers, body: JSON.stringify(body) });
-  } catch {
+    res = await fetch(url, { method: "POST", headers, body: JSON.stringify(body), signal: ctrl.signal });
+  } catch (err) {
+    if (err.name === "AbortError") throw new Error("El modelo tarda demasiado; vuelve a intentarlo.");
     throw new Error("No hay conexión con el modelo. Revisa tu conexión a internet.");
+  } finally {
+    clearTimeout(aviso);
   }
   if (!res.ok) {
     // El Worker devuelve sus propios mensajes en {error: "..."} (contraseña,
@@ -259,24 +270,24 @@ async function callClaude(prompt) {
     if (cfg.mode === "worker") {
       let workerMsg;
       try { workerMsg = (await res.clone().json()).error; } catch { /* no era JSON */ }
-      if (workerMsg) throw new Error(workerMsg);
+      if (workerMsg) throw noReintentar(workerMsg);
     }
     if (res.status === 401 || res.status === 403) {
-      throw new Error("La clave no es válida. Pulsa «cambiar conexión» abajo a la derecha y vuelve a pegarla.");
+      throw noReintentar("La clave no es válida. Pulsa «cambiar conexión» abajo a la derecha y vuelve a pegarla.");
     }
     if (res.status === 400) {
-      throw new Error("La API ha rechazado la petición. Si acabas de cambiar la clave, revísala.");
+      throw noReintentar("La API ha rechazado la petición. Si acabas de cambiar la clave, revísala.");
     }
     if (res.status === 429) {
-      throw new Error("Has llegado al límite de peticiones. Espera un minuto y vuelve a intentarlo.");
+      throw noReintentar("Has llegado al límite de peticiones. Espera un minuto y vuelve a intentarlo.");
     }
     if (res.status === 402) {
-      throw new Error("Tu cuenta de Anthropic no tiene saldo. Recárgalo en console.anthropic.com → Billing.");
+      throw noReintentar("Tu cuenta de Anthropic no tiene saldo. Recárgalo en console.anthropic.com → Billing.");
     }
     if (res.status >= 500) {
-      throw new Error("El modelo no responde ahora mismo. Vuelve a intentarlo en un momento.");
+      throw noReintentar("El modelo no responde ahora mismo. Vuelve a intentarlo en un momento.");
     }
-    throw new Error("Error " + res.status + " al llamar al modelo.");
+    throw noReintentar("Error " + res.status + " al llamar al modelo.");
   }
   const data = await res.json();
   return (data.content || []).map((b) => (b.type === "text" ? b.text : "")).join("");
@@ -285,7 +296,8 @@ async function callClaude(prompt) {
 async function generate(prompt) {
   let last;
   for (let i = 0; i < 2; i++) {
-    try { return parseJSON(await callClaude(prompt)); } catch (err) { last = err; }
+    try { return parseJSON(await callClaude(prompt)); }
+    catch (err) { last = err; if (!reintentable(err)) throw err; }
   }
   throw last;
 }
