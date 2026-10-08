@@ -62,8 +62,8 @@
   <label for="ep">Clave de la API o dirección del Worker</label>
   <input id="ep" type="password" placeholder="sk-ant-... o https://tu-worker.workers.dev" autocomplete="off" spellcheck="false">
   <div id="epPassWrap" style="display:none">
-    <label for="eppass">Contraseña del Worker</label>
-    <input id="eppass" type="password" placeholder="la que pusiste en APP_PASS" autocomplete="off" spellcheck="false">
+    <label for="eppass">Código de acceso o contraseña del Worker</label>
+    <input id="eppass" type="password" placeholder="apt_... o la contraseña de APP_PASS" autocomplete="off" spellcheck="false">
   </div>
   <p id="epErr" class="err"></p>
   <button id="go">Guardar y empezar</button>
@@ -175,10 +175,33 @@
   try { guardada = valida(JSON.parse(localStorage.getItem(CFG_KEY))); } catch { guardada = null; }
   if (!guardada) localStorage.removeItem(CFG_KEY);
 
+  // El email de alta incluye un enlace con #worker=<url del Worker> para que
+  // el suscriptor no tenga que copiarla a mano. Se lee una sola vez y se
+  // borra de la barra de direcciones: no debe quedar en el historial ni
+  // sobrevivir a una recarga.
+  function workerDeHash() {
+    const m = /^#worker=(.*)$/.exec(location.hash);
+    if (!m) return null;
+    history.replaceState(null, "", location.pathname + location.search);
+    let url;
+    try { url = decodeURIComponent(m[1]); } catch { return null; }
+    return /^https:\/\//i.test(url) ? url : null;
+  }
+  const workerPrecargado = workerDeHash();
+
   // El código de la app vive en un <script> más abajo, que todavía no está
   // parseado cuando corre esto. Por eso el arranque espera al DOM.
   if (guardada) document.addEventListener("DOMContentLoaded", () => start(guardada));
-  else setup.style.display = "block";
+  else {
+    setup.style.display = "block";
+    if (workerPrecargado) {
+      document.addEventListener("DOMContentLoaded", () => {
+        document.getElementById("ep").value = workerPrecargado;
+        passWrap.style.display = "block";
+        document.getElementById("eppass").focus();
+      });
+    }
+  }
 
   // Service worker: guarda la app, el banco y las librerías para que el modo
   // sin clave funcione sin conexión. Se registra al final de la carga para no
