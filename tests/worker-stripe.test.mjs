@@ -124,6 +124,25 @@ test("checkout.session.completed da de alta y envía el código por email", asyn
   } finally { restoreFetch(); }
 });
 
+test("el email de alta incluye el enlace con #worker= y el código solo aparece en su propia línea", async () => {
+  const env = makeEnv();
+  const calls = stubResend();
+  try {
+    const res = await send(env, checkoutEvent());
+    assert.equal(res.status, 200);
+    const sent = JSON.parse(calls[0].init.body);
+    const texto = sent.text;
+    assert.ok(texto.includes(`#worker=${encodeURIComponent(BASE)}`), "debe incluir el enlace con el Worker precargado");
+
+    const lineas = texto.split("\n");
+    const lineasConCodigo = lineas.filter((l) => /^apt_/.test(l.trim()));
+    assert.equal(lineasConCodigo.length, 1, "el código debe aparecer en una sola línea propia");
+    const codigo = lineasConCodigo[0].trim();
+    const fueraDeSuLinea = lineas.filter((l) => l.includes(codigo) && l.trim() !== codigo);
+    assert.equal(fueraDeSuLinea.length, 0, "el código no debe aparecer fuera de su línea");
+  } finally { restoreFetch(); }
+});
+
 test("checkout.session.completed sin email válido no da de alta y responde 500", async () => {
   const env = makeEnv();
   const calls = stubResend();
