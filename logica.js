@@ -55,6 +55,25 @@ function normalizaProgreso(data) {
  */
 const reintentable = (err) => err?.reintentable !== false;
 
+/*
+ * El Worker expone el cupo mensual en las cabeceras x-quota-limit y
+ * x-quota-used de cada respuesta a un suscriptor con código. callClaude()
+ * en index.html las lee con esta función y le pasa get=header=>valor
+ * (p.ej. res.headers.get). Si faltan o no son números válidos no hay cupo
+ * que mostrar: null, no un objeto a medias.
+ */
+function cupoDeCabeceras(get) {
+  const l = get("x-quota-limit");
+  const u = get("x-quota-used");
+  if (l == null || u == null) return null;
+  const limite = Number(l);
+  const usados = Number(u);
+  if (!Number.isFinite(limite) || !Number.isFinite(usados) || limite < 0 || usados < 0) return null;
+  return { limite, usados, quedan: Math.max(0, limite - usados) };
+}
+
 if (typeof module !== "undefined" && module.exports) {
-  module.exports = { key, back, fp, level, pctOf, noVistos, streakOf, normalizaProgreso, reintentable };
+  module.exports = {
+    key, back, fp, level, pctOf, noVistos, streakOf, normalizaProgreso, reintentable, cupoDeCabeceras,
+  };
 }
