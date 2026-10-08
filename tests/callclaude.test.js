@@ -19,7 +19,7 @@ function extraerLinea(regex, nombre) {
 }
 
 const modelSrc = extraerLinea(/const MODEL = "[^"]+";/, "MODEL");
-const callClaudeSrc = extraerLinea(/async function callClaude\(prompt\) \{\n[\s\S]*?\n\}/, "callClaude");
+const callClaudeSrc = extraerLinea(/async function callClaude\(prompt\) \{\r?\n[\s\S]*?\r?\n\}/, "callClaude");
 
 function cargarCallClaude({ fetchImpl, cfg = {}, abortLento = false } = {}) {
   const sandbox = {
