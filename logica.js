@@ -55,6 +55,22 @@ function normalizaProgreso(data) {
  */
 const reintentable = (err) => err?.reintentable !== false;
 
+/*
+ * Antes de guardar una conexión a un Worker, index.html hace un POST a
+ * /me (no gasta cupo) para comprobarla. Esta función decide, a partir de
+ * la respuesta, qué mostrar: null si hay que guardar y seguir, o el texto
+ * de error si hay que avisar y no guardar. El Worker manda su propio
+ * motivo en {error}; si no hay cuerpo JSON reconocible, se usa un mensaje
+ * genérico con el código de estado.
+ */
+function mensajeDeComprobacion(status, cuerpo) {
+  if (status === 200) return null;
+  if (cuerpo && typeof cuerpo.error === "string" && cuerpo.error) return cuerpo.error;
+  return `No se pudo comprobar el código de acceso (error ${status}).`;
+}
+
 if (typeof module !== "undefined" && module.exports) {
-  module.exports = { key, back, fp, level, pctOf, noVistos, streakOf, normalizaProgreso, reintentable };
+  module.exports = {
+    key, back, fp, level, pctOf, noVistos, streakOf, normalizaProgreso, reintentable, mensajeDeComprobacion,
+  };
 }
