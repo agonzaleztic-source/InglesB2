@@ -1,0 +1,20 @@
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Instalar dependencias (solo si hay package-lock.json)
+        if: hashFiles('package-lock.json') != ''
+        run: npm ci
+      - name: Tests
+        run: node --test tests/*.test.js tests/*.test.mjs
