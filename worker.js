@@ -304,9 +304,10 @@ async function stripeSignatureOk(raw, header, secret) {
 async function sendCodeEmail(env, to, token, workerUrl, returning) {
   if (!env.RESEND_API_KEY || !env.EMAIL_FROM) throw new Error("Faltan RESEND_API_KEY o EMAIL_FROM");
   const appUrl = env.APP_URL || `${(env.ALLOWED_ORIGIN || DEFAULT_ORIGIN).split(",")[0].trim()}/`;
+  const link = `${appUrl}#worker=${encodeURIComponent(workerUrl)}`;
   const intro = returning ? "Tu suscripción está activa de nuevo. Este es tu nuevo código de acceso (el anterior ya no funciona):"
     : "Gracias por suscribirte. Este es tu código de acceso personal:";
-  const body = `${intro}\n\n${token}\n\nCómo usarlo:\n1. Abre ${appUrl}\n2. En el campo de conexión pega esta dirección: ${workerUrl}\n3. En el campo de contraseña pega tu código.\n\nGuárdalo: no se puede volver a mostrar. Si lo pierdes, responde a este correo y te emitiremos uno nuevo.\n\nEntrenador independiente y no oficial; «Aptis» es una marca del British Council.`;
+  const body = `${intro}\n\n${token}\n\nCómo usarlo:\n1. Abre este enlace: ${link}\n2. Pega tu código de acceso donde te lo pida.\n\nGuárdalo: no se puede volver a mostrar. Si lo pierdes, responde a este correo y te emitiremos uno nuevo.\n\nEntrenador independiente y no oficial; «Aptis» es una marca del British Council.`;
   const res = await fetch("https://api.resend.com/emails", {
     method: "POST",
     headers: { authorization: `Bearer ${env.RESEND_API_KEY}`, "content-type": "application/json" },
