@@ -125,7 +125,11 @@
     passWrap.style.display = /^https?:\/\//i.test(e.target.value.trim()) ? "block" : "none";
   });
 
-  document.getElementById("go").addEventListener("click", () => {
+  const goBtn = document.getElementById("go");
+  // Si la comprobación de abajo no consigue hablar con el Worker (sin red o
+  // no responde en 10s), un segundo clic con el mismo valor guarda igual.
+  let saltarComprobacion = false;
+  goBtn.addEventListener("click", async () => {
     const input = document.getElementById("ep");
     const errBox = document.getElementById("epErr");
     const v = input.value.trim();
@@ -144,6 +148,41 @@
       input.focus();
       return;
     }
+
+    // Antes de guardar un Worker, se comprueba con /me (no gasta cupo) que el
+    // código de acceso y el origen son correctos, para avisar aquí y no tras
+    // entrar en la app.
+    if (cfg.mode === "worker" && !saltarComprobacion) {
+      goBtn.disabled = true;
+      const base = cfg.endpoint.replace(/\/+$/, "");
+      const ctrl = new AbortController();
+      const aviso = setTimeout(() => ctrl.abort(), 10000);
+      try {
+        const res = await fetch(base + "/me", {
+          method: "POST",
+          headers: { "x-app-pass": cfg.pass || "" },
+          signal: ctrl.signal,
+        });
+        let cuerpo = null;
+        try { cuerpo = await res.json(); } catch { /* no era JSON */ }
+        const msg = mensajeDeComprobacion(res.status, cuerpo);
+        if (msg) {
+          errBox.textContent = msg;
+          goBtn.disabled = false;
+          return;
+        }
+      } catch {
+        errBox.textContent = "No se pudo comprobar la conexión (sin red o el Worker no responde). Pulsa «Guardar y empezar» otra vez para guardar sin comprobar.";
+        saltarComprobacion = true;
+        goBtn.disabled = false;
+        return;
+      } finally {
+        clearTimeout(aviso);
+      }
+      goBtn.disabled = false;
+    }
+    saltarComprobacion = false;
+
     localStorage.setItem(CFG_KEY, JSON.stringify(cfg));
     start(cfg);
   });
