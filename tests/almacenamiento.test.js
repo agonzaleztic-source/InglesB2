@@ -3,7 +3,7 @@
 // conexión sin explicación: setItem/removeItem no estaban protegidos. Ahora
 // se envuelven en try/catch y, si fallan, se avisa una vez y se arranca
 // igual con la configuración en memoria. No se puede requerir index.html
-// (mezcla JSX en el mismo <script>), así que se extrae su código fuente como
+// (es una página, no un módulo), así que se extrae su código fuente como
 // texto —igual que tests/delbanco.test.js hace con delBanco()— y se ejecuta
 // con vm. No se modifica index.html.
 const { test } = require("node:test");
@@ -14,15 +14,17 @@ const vm = require("node:vm");
 
 const ROOT = path.join(__dirname, "..");
 const html = fs.readFileSync(path.join(ROOT, "index.html"), "utf8");
+// save() y STORE son código de la app: viven en src/app.jsx, no en index.html.
+const app = fs.readFileSync(path.join(ROOT, "src", "app.jsx"), "utf8");
 
-function extraer(regex, nombre) {
-  const m = html.match(regex);
-  assert.ok(m, `no se encontró ${nombre} en index.html`);
+function extraer(regex, nombre, texto = html, fichero = "index.html") {
+  const m = texto.match(regex);
+  assert.ok(m, `no se encontró ${nombre} en ${fichero}`);
   return m[0];
 }
 
 // El script de arranque completo, sin start(cfg): esa función crea el <script>
-// de la app con Babel y no hace falta para probar cómo se guarda/borra la
+// de la app (app.js) y no hace falta para probar cómo se guarda/borra la
 // conexión. Al quitarla, la llamada a start(...) que queda en el código
 // resuelve contra el start que inyecta el sandbox de cada test.
 const scriptCompleto = extraer(/<script>\r?\n  const CFG_KEY[\s\S]*?\r?\n<\/script>/, "script de arranque");
@@ -148,8 +150,8 @@ test("arranque: una conexión guardada con formato inválido se descarta y, si r
   assert.equal(elementos.avisoAlmacenamiento.vecesMostrado, 1);
 });
 
-const storeSrc = extraer(/const STORE = "[^"]+";/, "STORE");
-const saveSrc = extraer(/async function save\(s\) \{\r?\n[\s\S]*?\r?\n\}/, "save(s)");
+const storeSrc = extraer(/const STORE = "[^"]+";/, "STORE", app, "src/app.jsx");
+const saveSrc = extraer(/async function save\(s\) \{\r?\n[\s\S]*?\r?\n\}/, "save(s)", app, "src/app.jsx");
 
 function cargarSave({ localStorageImpl, avisoSpy = () => {} }) {
   const sandbox = { localStorage: localStorageImpl, console, avisoAlmacenamiento: avisoSpy };

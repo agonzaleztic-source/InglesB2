@@ -7,6 +7,19 @@ Para ponerla en marcha (con o sin clave de la API), ver [DESPLIEGUE.md](DESPLIEG
 El modo gratuito, sin clave, funciona también sin conexión una vez abierta la
 app por primera vez.
 
+## Desarrollo
+
+El código de la app está en `src/app.jsx` y se compila a `app.js` (que se sube
+al repositorio, porque GitHub Pages no tiene paso de build):
+
+```sh
+npm install      # la primera vez
+npm run build    # tras cada cambio en src/app.jsx
+npm test
+```
+
+Más detalle en [DESPLIEGUE.md](DESPLIEGUE.md#cambiar-el-código-de-la-app).
+
 ## Aviso de marca
 
 Este proyecto es un entrenador independiente y no oficial. **"Aptis" es una

@@ -1,6 +1,6 @@
 // Caracteriza valida(cfg) (index.html), la función que valida/normaliza la
 // conexión guardada en localStorage al arrancar la app. No se puede requerir
-// index.html (mezcla JSX en el mismo archivo), así que se extrae su código
+// index.html (es una página, no un módulo), así que se extrae su código
 // fuente como texto —igual que tests/delbanco.test.js hace con delBanco()—
 // y se ejecuta con vm. No se modifica index.html.
 const { test } = require("node:test");

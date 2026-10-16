@@ -215,9 +215,26 @@ la caché, en la pantalla de inicio de la app están los botones **Exportar
 progreso** (descarga un JSON) e **Importar progreso** (lo restaura; sustituye lo
 que hubiera en ese dispositivo).
 
+## Cambiar el código de la app
+
+El código de la app está en `src/app.jsx` (React con JSX). El navegador no
+ejecuta JSX, así que se compila con [esbuild](https://esbuild.github.io/) a
+`app.js`, que es lo que carga `index.html`. `app.js` se sube al repositorio
+igual que el resto: GitHub Pages sirve la raíz de `master` tal cual, sin paso
+de build.
+
+```sh
+npm install      # la primera vez: instala esbuild (solo para desarrollo)
+npm run build    # tras cada cambio en src/app.jsx: regenera app.js
+npm test         # los tests fallan si app.js no corresponde a src/app.jsx
+```
+
+Sube también la constante `VERSION` de `sw.js` para que quien ya tiene la app
+reciba el `app.js` nuevo.
+
 ## Actualizar las librerías
 
-React y Babel no se cargan de un CDN sino de `vendor/`, con su hash de
+React no se carga de un CDN sino de `vendor/`, con su hash de
 integridad en `index.html`. Si algún día subes de versión, hay que hacer tres
 cosas: sustituir los ficheros de `vendor/`, recalcular los hashes
 (`openssl dgst -sha384 -binary fichero.js | openssl base64 -A`) y cambiar la

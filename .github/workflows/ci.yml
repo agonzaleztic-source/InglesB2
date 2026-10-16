@@ -13,8 +13,9 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 24
-      - name: Instalar dependencias (solo si hay package-lock.json)
-        if: hashFiles('package-lock.json') != ''
+      # esbuild hace falta para comprobar que app.js es la compilación
+      # actual de src/app.jsx (tests/build.test.mjs).
+      - name: Instalar dependencias
         run: npm ci
       - name: Tests
         run: node --test tests/*.test.js tests/*.test.mjs

@@ -4,8 +4,8 @@
 // (ver tests/comprobacion.test.js), lo que le hace perder el foco sin que
 // nadie navegando con teclado o lector de pantalla sepa a dónde fue. Ahora
 // el aviso lleva role="alert" y, al mostrar un error, recupera el foco en
-// #epErr. No se puede requerir index.html (mezcla JSX en el mismo
-// <script>), así que se extrae el click de #go como texto —igual que
+// #epErr. No se puede requerir index.html (es una página,
+// no un módulo), así que se extrae el click de #go como texto —igual que
 // tests/valida-cfg.test.js hace con valida()— y se ejecuta con vm. No se
 // modifica index.html.
 const { test } = require("node:test");
