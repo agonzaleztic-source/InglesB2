@@ -230,10 +230,9 @@ test("/me con un usuario nuevo devuelve el cupo completo sin consumir nada", asy
 });
 
 // quotaOf() en worker.js hace Math.floor(Number(b.monthly_quota)) y solo
-// cae al cupo por defecto si el resultado no es un entero finito >= 0.
-// Las siguientes casuísticas caracterizan ese comportamiento, incluida la
-// de monthly_quota: "" (cadena vacía), que Number() convierte en 0 válido
-// en vez de tratarlo como "no enviado".
+// acepta enteros finitos >= 0. Un monthly_quota vacío ("", null o solo
+// espacios) cuenta como "no enviado": Number("") es 0, y antes eso dejaba
+// sin servicio a un cliente por un formulario de administración en blanco.
 
 test("/admin/users/create con monthly_quota negativo cae al cupo por defecto", async () => {
   const env = makeEnv();
@@ -253,14 +252,26 @@ test("/admin/users/create con monthly_quota no numérico cae al cupo por defecto
   assert.equal(data.quota, 300);
 });
 
-test("/admin/users/create con monthly_quota: '' (cadena vacía) deja el cupo en 0, no en el valor por defecto", async () => {
-  const env = makeEnv();
-  const res = await admin("/admin/users/create", env, {
-    body: { email: "javi@example.com", monthly_quota: "" },
+for (const vacio of ["", "   ", null]) {
+  test(`/admin/users/create con monthly_quota: ${JSON.stringify(vacio)} usa el cupo por defecto`, async () => {
+    const env = makeEnv();
+    const res = await admin("/admin/users/create", env, {
+      body: { email: "javi@example.com", monthly_quota: vacio },
+    });
+    const data = await res.json();
+    assert.equal(data.quota, 300);
   });
-  const data = await res.json();
-  assert.equal(data.quota, 0, "Number('') es 0, así que quotaOf lo acepta como cupo válido");
-});
+
+  test(`/admin/users/update con monthly_quota: ${JSON.stringify(vacio)} conserva el cupo que tenía`, async () => {
+    const env = makeEnv();
+    await admin("/admin/users/create", env, { body: { email: "lola@example.com", monthly_quota: 50 } });
+    const res = await admin("/admin/users/update", env, {
+      body: { email: "lola@example.com", monthly_quota: vacio },
+    });
+    const data = await res.json();
+    assert.equal(data.quota, 50);
+  });
+}
 
 test("/admin/users/update con monthly_quota: 0 deja el cupo en cero, distinto de no enviarlo", async () => {
   const env = makeEnv();
