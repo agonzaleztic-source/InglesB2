@@ -62,6 +62,14 @@ peticiones gastarían tu saldo de la API y pasarían por tu cuenta de Anthropic.
 Si alguien más quiere usar la app, que despliegue su propio Worker con su
 propia clave — es el mismo proceso descrito aquí.
 
+**Atajo con `wrangler`:** el repo trae `wrangler.toml` con el Worker de
+producción (`ingles-b2-proxy`, KV `RATE_LIMIT` y `ALLOWED_ORIGIN`). Tras
+`npx wrangler login`, cada cambio en `worker.js` se publica con
+`npx wrangler deploy` desde la raíz, y los secretos se ponen con
+`npx wrangler secret put ANTHROPIC_API_KEY` (y `ADMIN_SECRET`, etc.).
+Si despliegas tu propio Worker, cambia en ese fichero el nombre y el `id` del KV
+(`npx wrangler kv namespace create <nombre>`). Los pasos manuales siguen abajo.
+
 1. Entra en <https://dash.cloudflare.com> y crea una cuenta si no la tienes.
 2. *Workers & Pages* → *Create* → *Start with Hello World* → *Deploy*.
 3. Abre el editor del Worker, borra el contenido y pega entero `worker.js`.

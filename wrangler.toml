@@ -1,0 +1,16 @@
+# Despliegue del proxy: `npx wrangler deploy` desde la raíz del repo.
+# Secretos (no van aquí): ANTHROPIC_API_KEY, ADMIN_SECRET y, para cobrar,
+# STRIPE_WEBHOOK_SECRET, RESEND_API_KEY y EMAIL_FROM -> `npx wrangler secret put <NOMBRE>`.
+
+name = "ingles-b2-proxy"
+main = "worker.js"
+compatibility_date = "2026-10-01"
+workers_dev = true
+
+[vars]
+ALLOWED_ORIGIN = "https://agonzaleztic-source.github.io,http://localhost:3110"
+APP_URL = "https://agonzaleztic-source.github.io/InglesB2/"
+
+[[kv_namespaces]]
+binding = "RATE_LIMIT"
+id = "8af89ecd296247b68fbfeed44b473afa"
