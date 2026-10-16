@@ -151,7 +151,7 @@ function delBanco(def, vistos) {
 }
 
 /* ---------------- almacenamiento ---------------- */
-const blank = () => ({ days: {}, skills: {}, errors: [], seen: [], usedTopics: [], lessons: {} });
+const blank = () => ({ days: {}, skills: {}, errors: [], seen: [], usedTopics: [], lessons: {}, simulacros: [] });
 
 async function load() {
   try { const r = localStorage.getItem(STORE); return r ? normalizaProgreso(JSON.parse(r)) : blank(); }
@@ -921,6 +921,17 @@ function TaskRunner({ def, ctx, onDone, onErrors, onSeen }) {
 }
 
 /* ---------------- Writing ---------------- */
+/* La corrección del modelo, compartida por la práctica suelta y el simulacro. */
+function corrigeWriting(def, fields, vals) {
+  const body = fields.map((f, i) => `CONSIGNA: ${f.prompt} (${f.words})\nRESPUESTA: ${vals[i] || ""}`).join("\n\n");
+  return generate(
+    `Eres examinador oficial del Aptis General y corriges esta tarea de Writing (${def.name}) con los criterios reales: cumplimiento de la tarea, registro, cohesión, riqueza léxica y corrección. Penaliza salirse del número de palabras.
+${body}
+Sé exigente y concreto. Señala solo las correcciones que más le bajan el nivel.
+Devuelve SOLO: {"level":"A2|B1|B2|C","summary":"dos frases en español: qué funciona y qué le impide subir","corrections":[{"original":"","better":"","why":"en español"}],"upgrade":"una frase suya reescrita con lenguaje de B2 alto","next":"un consejo concreto en español"}`
+  );
+}
+
 function WriteTask({ data, def, onDone }) {
   const [vals, setVals] = useState({});
   const [busy, setBusy] = useState(false);
@@ -935,14 +946,8 @@ function WriteTask({ data, def, onDone }) {
       return;
     }
     setBusy(true);
-    const body = fields.map((f, i) => `CONSIGNA: ${f.prompt} (${f.words})\nRESPUESTA: ${vals[i] || ""}`).join("\n\n");
     try {
-      setFb(await generate(
-        `Eres examinador oficial del Aptis General y corriges esta tarea de Writing (${def.name}) con los criterios reales: cumplimiento de la tarea, registro, cohesión, riqueza léxica y corrección. Penaliza salirse del número de palabras.
-${body}
-Sé exigente y concreto. Señala solo las correcciones que más le bajan el nivel.
-Devuelve SOLO: {"level":"A2|B1|B2|C","summary":"dos frases en español: qué funciona y qué le impide subir","corrections":[{"original":"","better":"","why":"en español"}],"upgrade":"una frase suya reescrita con lenguaje de B2 alto","next":"un consejo concreto en español"}`
-      ));
+      setFb(await corrigeWriting(def, fields, vals));
     } catch (e) { setFb({ level: "?", summary: e.message || "No he podido corregirlo. Prueba otra vez.", corrections: [] }); }
     setBusy(false);
   };
@@ -972,7 +977,20 @@ Devuelve SOLO: {"level":"A2|B1|B2|C","summary":"dos frases en español: qué fun
 }
 
 /* ---------------- Speaking ---------------- */
-function SpeakTask({ data, def, onDone }) {
+function corrigeSpeaking(def, data, texts) {
+  const body = (data.rounds || []).map((r, i) => `PREGUNTA: ${r.prompt}\nDIJO: ${texts[i] || ""}`).join("\n\n");
+  return generate(
+    `Eres examinador de Speaking del Aptis General y evalúas ${def.name}. Esto es una TRANSCRIPCIÓN automática: ignora la puntuación y los errores de transcripción, juzga contenido, gramática hablada, léxico y desarrollo de las ideas.
+${data.scene ? `ESCENA: ${data.scene}` : ""}
+${body}
+Devuelve SOLO: {"level":"A2|B1|B2|C","summary":"dos frases en español","corrections":[{"original":"lo que dijo","better":"cómo se dice","why":"en español"}],"upgrade":"respuesta modelo EN INGLÉS de nivel B2, 60-80 palabras","next":"consejo concreto en español"}
+Incluye solo las correcciones que más le bajan el nivel.`
+  );
+}
+
+/* onRespuesta: en el simulacro no se corrige al momento; al terminar la parte
+   se entregan las transcripciones y se corrigen todas en el resultado. */
+function SpeakTask({ data, def, onDone, onRespuesta }) {
   const [phase, setPhase] = useState("brief");
   const [round, setRound] = useState(0);
   const [left, setLeft] = useState(0);
@@ -1036,15 +1054,8 @@ function SpeakTask({ data, def, onDone }) {
       return;
     }
     setBusy(true);
-    const body = rounds.map((r, i) => `PREGUNTA: ${r.prompt}\nDIJO: ${texts[i] || ""}`).join("\n\n");
     try {
-      setFb(await generate(
-        `Eres examinador de Speaking del Aptis General y evalúas ${def.name}. Esto es una TRANSCRIPCIÓN automática: ignora la puntuación y los errores de transcripción, juzga contenido, gramática hablada, léxico y desarrollo de las ideas.
-${data.scene ? `ESCENA: ${data.scene}` : ""}
-${body}
-Devuelve SOLO: {"level":"A2|B1|B2|C","summary":"dos frases en español","corrections":[{"original":"lo que dijo","better":"cómo se dice","why":"en español"}],"upgrade":"respuesta modelo EN INGLÉS de nivel B2, 60-80 palabras","next":"consejo concreto en español"}
-Incluye solo las correcciones que más le bajan el nivel.`
-      ));
+      setFb(await corrigeSpeaking(def, data, texts));
     } catch (e) { setFb({ level: "?", summary: e.message || "No he podido evaluarlo. Prueba otra vez.", corrections: [] }); }
     setBusy(false);
   };
@@ -1097,9 +1108,11 @@ Incluye solo las correcciones que más le bajan el nivel.`
               {data.useful.map((u, i) => <p key={i}>{u}</p>)}
             </div>
           )}
-          <button className="btn" disabled={busy || texts.join(" ").trim().split(/\s+/).filter(Boolean).length < 15} onClick={grade}>
-            {busy ? "Evaluando…" : "Evaluar mi respuesta"}
-          </button>
+          {onRespuesta
+            ? <button className="btn" onClick={() => onRespuesta(rounds.map((_, i) => texts[i] || ""))}>Guardar mi respuesta</button>
+            : <button className="btn" disabled={busy || texts.join(" ").trim().split(/\s+/).filter(Boolean).length < 15} onClick={grade}>
+                {busy ? "Evaluando…" : "Evaluar mi respuesta"}
+              </button>}
         </div>
       )}
     </div>
@@ -1133,6 +1146,582 @@ function Feedback({ fb, onDone, modelLabel }) {
       {fb.upgrade && <div className="upgrade"><span className="tag">{modelLabel || "Sube de registro así"}</span><p>{fb.upgrade}</p></div>}
       {fb.next && <p className="next">{fb.next}</p>}
       <button className="btn" onClick={onDone}>Continuar</button>
+    </div>
+  );
+}
+
+/* ================================================================
+   Simulacro cronometrado
+   La lógica (qué entra, tiempos, puntuación, niveles) está en simulacro.js
+   (global SIM) y se prueba en tests/simulacro.test.js. El contenido sale
+   siempre del banco, también con clave: así el simulacro no espera al modelo
+   ni gasta llamadas en generar 50 preguntas; el modelo solo corrige el
+   Writing y el Speaking al final.
+   ================================================================ */
+const SIM_STORE = "aptis-simulacro";
+
+function loadSim() {
+  try {
+    const e = JSON.parse(localStorage.getItem(SIM_STORE));
+    return SIM.estadoValido(e) ? SIM.compruebaTiempo(e) : null;
+  } catch { return null; }
+}
+function saveSim(e) {
+  try {
+    if (e) localStorage.setItem(SIM_STORE, JSON.stringify(e));
+    else localStorage.removeItem(SIM_STORE);
+  } catch (err) { console.warn(err); avisoAlmacenamiento(); }
+}
+const hayModelo = () => !sinClave();
+const totalMins = (skills) => skills.reduce((a, k) => a + SIM.ESTRUCTURA[k].mins, 0);
+const durTxt = (m) => (m >= 60 ? `${Math.floor(m / 60)} h ${m % 60 ? `${m % 60} min` : ""}`.trim() : `${m} min`);
+const nivelTxt = (lv) => (lv ? SIM.NOMBRE_NIVEL[lv] : "—");
+
+/* Rúbrica para la autoevaluación sin modelo. Descriptores propios, resumidos
+   a partir de lo que mide el MCER; no son los del examen. */
+const RUBRICA = {
+  writing: [
+    ["A1", "Palabras o frases sueltas; cuesta entender qué quieres decir."],
+    ["A2", "Se entiende lo básico con frases sencillas; errores frecuentes y poco control del registro."],
+    ["B1", "Cumples la tarea con frases enlazadas y vocabulario corriente; los errores no impiden entender."],
+    ["B2", "Cubres todos los puntos, ajustas el registro, enlazas ideas con variedad y cometes pocos errores."],
+    ["C", "Texto natural y preciso, vocabulario rico, casi sin errores y registro siempre adecuado."],
+  ],
+  speaking: [
+    ["A1", "Palabras sueltas, muchas pausas; no llegas a responder la pregunta."],
+    ["A2", "Respondes con frases cortas y sencillas; te quedas callado antes de tiempo."],
+    ["B1", "Respondes y das algún motivo; hablas con pausas pero se te sigue sin esfuerzo."],
+    ["B2", "Desarrollas cada respuesta con motivos y ejemplos, usas conectores y llenas el tiempo con fluidez."],
+    ["C", "Hablas con soltura y precisión, matizas y apenas cometes errores."],
+  ],
+};
+
+/* Una parte de Core, Reading o Listening, en modo examen: se responde sin ver
+   la solución. resp/onResp guardan la respuesta en el estado del simulacro. */
+function SimObjetiva({ parte, resp, onResp }) {
+  const d = parte.data;
+  const fmt = SIM.FORMATO[parte.id];
+  const r = resp || {};
+  // Con función: dos respuestas seguidas antes de repintar no se pisan.
+  const set = (i, v) => onResp((prev) => ({ ...(prev || {}), [i]: v }));
+
+  if (fmt === "mcq") return (
+    <div>
+      {d.intro && <p className="hint">{d.intro}</p>}
+      {d.script && <Player script={d.script} />}
+      {(d.questions || []).map((q, i) => (
+        <div key={i} className="qblock">
+          {q.script && <Player script={q.script} label={`audio ${i + 1}`} />}
+          <p className="qtext"><span className="qnum">{i + 1}</span>{q.q}</p>
+          <div className="opts">
+            {q.opts.map((o, j) => (
+              <button key={j} aria-pressed={r[i] === j} onClick={() => set(i, j)}
+                className={"opt" + (r[i] === j ? " picked" : "")}>
+                <span className="dot" />{o}
+              </button>
+            ))}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+
+  if (fmt === "fill") {
+    const withBank = Array.isArray(d.bank);
+    const n = SIM.itemsDeParte(parte);
+    const trozos = String(d.text).split(/\[\d\]/);
+    return (
+      <div>
+        {d.intro && <p className="hint">{d.intro}</p>}
+        {withBank && <div className="bank">{d.bank.map((w, i) => <span key={i} className="chip">{w}</span>)}</div>}
+        <p className="passage">
+          {trozos.map((t, i) => (
+            <span key={i}>{t}
+              {i < n && (
+                <select className="selInline" aria-label={`Hueco ${i + 1}`} value={r[i] ?? ""}
+                  onChange={(e) => set(i, e.target.value === "" ? undefined : Number(e.target.value))}>
+                  <option value="">____</option>
+                  {(withBank ? d.bank : d.gaps[i].opts).map((o, j) => <option key={j} value={j}>{o}</option>)}
+                </select>
+              )}
+            </span>
+          ))}
+        </p>
+      </div>
+    );
+  }
+
+  if (fmt === "order") {
+    const orden = Array.isArray(resp) ? resp : parte.orden;
+    const move = (i, dlt) => {
+      const j = i + dlt;
+      if (j < 0 || j >= orden.length) return;
+      const next = [...orden];
+      [next[i], next[j]] = [next[j], next[i]];
+      onResp(next);
+    };
+    return (
+      <div>
+        {d.intro && <p className="hint">{d.intro} La primera frase ya está colocada.</p>}
+        <div className="seqRow fixed"><span className="seqText">{d.lines[0]}</span></div>
+        {orden.map((orig, i) => (
+          <div key={orig} className="seqRow">
+            <span className="seqText">{d.lines[orig]}</span>
+            <span className="seqBtns">
+              <button onClick={() => move(i, -1)} disabled={i === 0} aria-label={`Subir la frase ${i + 2}`}>↑</button>
+              <button onClick={() => move(i, 1)} disabled={i === orden.length - 1} aria-label={`Bajar la frase ${i + 2}`}>↓</button>
+            </span>
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  if (fmt === "match") return (
+    <div>
+      {d.intro && <p className="hint">{d.intro}</p>}
+      {d.script && <Player script={String(d.script).replace(/\b([A-Z][a-z]+):/g, "$1 says,")} />}
+      {(d.items || []).map((it, i) => (
+        <div key={i} className="matchRow">
+          <span className="matchLabel">{it.label}</span>
+          {it.script && <Player script={it.script} label={it.label} />}
+          {it.text && <p className={d.script ? "matchStatement" : "passage"}>{it.text}</p>}
+          <select className="sel" aria-label={`Respuesta para ${it.label}`} value={r[i] ?? ""}
+            onChange={(e) => set(i, e.target.value === "" ? undefined : Number(e.target.value))}>
+            <option value="">— elige —</option>
+            {d.options.map((o, j) => <option key={j} value={j}>{o}</option>)}
+          </select>
+        </div>
+      ))}
+    </div>
+  );
+  return null;
+}
+
+function SimEscritura({ parte, resp, onResp }) {
+  const d = parte.data;
+  const r = resp || {};
+  return (
+    <div>
+      {d.intro && <p className="hint">{d.intro}</p>}
+      {d.context && <p className="passage">{d.context}</p>}
+      {(d.fields || []).map((f, i) => (
+        <div key={i} className="field">
+          <label className="prompt" htmlFor={`sim-${parte.id}-${i}`}>{f.prompt}</label>
+          <textarea id={`sim-${parte.id}-${i}`} className={"ta " + (parte.id === "w1" ? "tiny" : parte.id === "w4" && i === 1 ? "" : "small")}
+            value={r[i] || ""} placeholder="Write in English…"
+            onChange={(e) => { const v = e.target.value; onResp((prev) => ({ ...(prev || {}), [i]: v })); }} />
+          <div className="wc">{SIM.palabras(r[i])} palabras · piden {f.words}</div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function SimHabla({ parte, resp, onResp }) {
+  if (Array.isArray(resp)) {
+    const n = resp.reduce((a, t) => a + SIM.palabras(t), 0);
+    return (
+      <div>
+        <p className="hint">Respuesta guardada ({n} {n === 1 ? "palabra transcrita" : "palabras transcritas"}).</p>
+        <button className="btn ghost small" onClick={() => onResp(null)}>Repetir esta parte</button>
+      </div>
+    );
+  }
+  return <SpeakTask data={parte.data} def={BY_ID[parte.id]} onRespuesta={onResp} />;
+}
+
+function SimParte({ parte, resp, onResp }) {
+  const def = BY_ID[parte.id];
+  const fmt = SIM.FORMATO[parte.id];
+  return (
+    <div className="simParte">
+      <h3 className="simParteTitle">{def.name}</h3>
+      {fmt === "write" ? <SimEscritura parte={parte} resp={resp} onResp={onResp} />
+        : fmt === "speak" ? <SimHabla parte={parte} resp={resp} onResp={onResp} />
+          : <SimObjetiva parte={parte} resp={resp} onResp={onResp} />}
+    </div>
+  );
+}
+
+/* Writing y Speaking sin modelo: el alumno compara con la respuesta modelo y
+   la lista de comprobación y elige el descriptor que mejor le describe. */
+function Autoevaluacion({ sec, resps, onGuardar, onCancelar }) {
+  const [niveles, setNiveles] = useState(sec.partes.map(() => null));
+  const faltan = sec.partes.some((p, i) => !SIM.parteVacia(resps[i]) && !niveles[i]);
+  return (
+    <div>
+      <p className="hint">
+        Para cada parte, compara lo que has hecho con la respuesta modelo y la lista, y elige con sinceridad el
+        descriptor que mejor te describe. Las partes que dejaste en blanco cuentan 0.
+      </p>
+      {sec.partes.map((p, i) => {
+        const d = p.data;
+        const vacia = SIM.parteVacia(resps[i]);
+        /* Cada consigna con lo tuyo y la respuesta modelo al lado. */
+        const consignas = (sec.skill === "writing" ? d.fields : d.rounds) || [];
+        const modelos = d.model || [];
+        const tuyo = (j) => String((resps[i] || {})[j] || "").trim();
+        return (
+          <div key={i} className="simParte">
+            <h3 className="simParteTitle">{BY_ID[p.id].name}</h3>
+            {vacia ? <p className="hint">En blanco: 0 puntos.</p> : (<>
+              {d.scene && <p className="passage">{d.scene}</p>}
+              {consignas.map((c, j) => (
+                <div key={j} className="upgrade">
+                  <p className="prompt dim" style={{ margin: 0 }}>{c.prompt}</p>
+                  <span className="tag">Lo tuyo</span><p style={{ whiteSpace: "pre-wrap" }}>{tuyo(j) || "—"}</p>
+                  {modelos.length === consignas.length && (<>
+                    <span className="tag">Respuesta modelo</span><p style={{ whiteSpace: "pre-wrap" }}>{modelos[j]}</p>
+                  </>)}
+                </div>
+              ))}
+              {modelos.length !== consignas.length && modelos.map((m, j) => (
+                <div key={j} className="upgrade"><span className="tag">Respuesta modelo {modelos.length > 1 ? j + 1 : ""}</span>
+                  <p style={{ whiteSpace: "pre-wrap" }}>{m}</p></div>
+              ))}
+              {d.check && <div className="checklist"><span className="tag">Compara tu texto con esto</span>{d.check.map((c, j) => <p key={j}>{c}</p>)}</div>}
+              <fieldset className="rubrica">
+                <legend>¿Qué descriptor encaja mejor con tu respuesta?</legend>
+                {RUBRICA[sec.skill].map(([lv, txt]) => (
+                  <label key={lv} className={"rubricaOpt" + (niveles[i] === lv ? " picked" : "")}>
+                    <input type="radio" name={`rub-${sec.skill}-${i}`} checked={niveles[i] === lv}
+                      onChange={() => setNiveles((n) => { const x = [...n]; x[i] = lv; return x; })} />
+                    <strong>{SIM.NOMBRE_NIVEL[lv]}</strong> {txt}
+                  </label>
+                ))}
+              </fieldset>
+            </>)}
+          </div>
+        );
+      })}
+      <div className="row">
+        <button className="btn" disabled={faltan} onClick={() => onGuardar(niveles)}>Guardar autoevaluación</button>
+        <button className="btn ghost" onClick={onCancelar}>Volver</button>
+      </div>
+    </div>
+  );
+}
+
+const FUENTE_TXT = {
+  auto: "corrección automática",
+  modelo: "corregido por el modelo",
+  autoevaluacion: "autoevaluación con la rúbrica",
+  sin: "sin puntuar",
+  pendiente: "pendiente de puntuar",
+};
+
+function SimResultado({ sim, setSim, onCerrar }) {
+  const [auto, setAuto] = useState(null);
+  const [corrigiendo, setCorrigiendo] = useState({});
+  const lanzadas = useRef({});
+  const { destrezas, total } = SIM.resultadoDe(sim);
+
+  const setCalif = (si, c) => setSim((e) => { const calif = [...e.calif]; calif[si] = c; return { ...e, calif }; });
+
+  /* Corrige con el modelo las partes de Writing o Speaking de la sección si,
+     con la misma corrección que la práctica suelta. Las partes vacías no se
+     envían: valen 0. */
+  const corrige = async (si) => {
+    const sec = sim.secciones[si];
+    const resps = sim.resp[si] || [];
+    setCorrigiendo((c) => ({ ...c, [si]: true }));
+    const niveles = [];
+    const detalle = [];
+    let fallo = null;
+    for (let i = 0; i < sec.partes.length; i++) {
+      const p = sec.partes[i];
+      if (SIM.parteVacia(resps[i])) { niveles.push(null); detalle.push(null); continue; }
+      try {
+        const fb = sec.skill === "writing"
+          ? await corrigeWriting(BY_ID[p.id], p.data.fields || [], resps[i] || {})
+          : await corrigeSpeaking(BY_ID[p.id], p.data, resps[i] || []);
+        const lv = SIM.puntosDeNivel(sec.skill, fb?.level) != null ? fb.level : null;
+        if (!lv) fallo = fallo || "El modelo no ha devuelto un nivel reconocible.";
+        niveles.push(lv);
+        detalle.push({ level: fb?.level || "?", summary: fb?.summary || "" });
+      } catch (e) {
+        fallo = fallo || e.message || "No he podido corregirlo.";
+        niveles.push(null); detalle.push(null);
+      }
+    }
+    setCalif(si, { fuente: "modelo", niveles, detalle, error: fallo });
+    setCorrigiendo((c) => ({ ...c, [si]: false }));
+  };
+
+  /* Con modelo, la corrección arranca sola al llegar al resultado. */
+  useEffect(() => {
+    if (!hayModelo()) return;
+    sim.secciones.forEach((s, si) => {
+      if (SIM.esProductiva(s.skill) && !sim.calif[si] && !lanzadas.current[si]) {
+        lanzadas.current[si] = true;
+        corrige(si);
+      }
+    });
+  }, []);
+
+  if (auto != null) {
+    const sec = sim.secciones[auto];
+    return (
+      <div className="stage">
+        <h2>Autoevaluación · {SIM.ESTRUCTURA[sec.skill].nombre}</h2>
+        <Autoevaluacion sec={sec} resps={sim.resp[auto] || []} onCancelar={() => setAuto(null)}
+          onGuardar={(niveles) => { setCalif(auto, { fuente: "autoevaluacion", niveles }); setAuto(null); }} />
+      </div>
+    );
+  }
+
+  return (
+    <div className="stage">
+      <h2>Resultado del simulacro</h2>
+      <p className="simAviso" role="note">
+        <strong>Es una estimación, no la nota oficial.</strong> Las fronteras entre niveles son una aproximación de
+        esta app: el British Council no publica una tabla fija y la ajusta en cada versión del examen.
+      </p>
+      <div className="simTotal">
+        <span className="simTotalLabel">Total{destrezas.core && sim.secciones.length > 1 ? " (sin el Core)" : ""}</span>
+        <strong>{total.puntos == null ? "—" : `${total.puntos} / ${total.max}`}</strong>
+        <span>nivel estimado: <strong>{nivelTxt(total.nivel)}</strong>{total.incompleto ? " · faltan destrezas por puntuar" : ""}</span>
+      </div>
+      <div className="bars">
+        {sim.secciones.map((s, si) => {
+          const r = destrezas[s.skill];
+          const c = sim.calif[si];
+          return (
+            <div key={s.skill} className="simRes" style={skStyle(s.skill)}>
+              <div className="barRow">
+                <span className="barLabel"><span className="barDot" />{SIM.ESTRUCTURA[s.skill].nombre}</span>
+                <div className="bar"><span className="fill" style={{ width: `${((r.puntos || 0) / 50) * 100}%` }} /></div>
+                <span className="barVal">{r.puntos == null ? "—" : <><strong>{r.puntos}</strong>/50 · {nivelTxt(r.nivel)}</>}</span>
+              </div>
+              <p className="simResNote">
+                {r.total != null ? `${r.aciertos} de ${r.total} aciertos · ` : ""}{FUENTE_TXT[r.fuente]}
+                {s.motivo === "tiempo" ? " · se acabó el tiempo" : ""}
+                {s.skill === "core" ? " · en el examen real no da nivel por sí solo" : ""}
+              </p>
+              {SIM.esProductiva(s.skill) && (
+                corrigiendo[si] ? <Loading text="Corrigiendo con el modelo…" />
+                  : (!c || c.error || c.fuente === "sin") && (
+                    <div className="simProd">
+                      {c?.error && <p className="hint">{c.error}</p>}
+                      {!hayModelo() && !c && (
+                        <p className="hint">Sin clave no hay quien corrija esta destreza. Puedes autoevaluarte con la
+                          respuesta modelo y una rúbrica, o dejarla sin puntuar: no se inventa ninguna nota.</p>
+                      )}
+                      <div className="row">
+                        {hayModelo()
+                          ? <button className="btn small" onClick={() => corrige(si)}>Corregir con el modelo</button>
+                          : <button className="btn small" onClick={() => setAuto(si)}>Autoevaluarme con la rúbrica</button>}
+                        {c?.fuente !== "sin" && <button className="btn ghost small" onClick={() => setCalif(si, { fuente: "sin" })}>Dejar sin puntuar</button>}
+                      </div>
+                    </div>
+                  ))}
+              {c?.detalle?.some(Boolean) && (
+                <details className="details">
+                  <summary>Qué ha dicho el corrector</summary>
+                  {c.detalle.map((x, i) => x && (
+                    <p key={i} className="hint"><strong>{BY_ID[s.partes[i].id].name}: {x.level}.</strong> {x.summary}</p>
+                  ))}
+                </details>
+              )}
+            </div>
+          );
+        })}
+      </div>
+      <p className="hint" style={{ marginTop: 18 }}>
+        Las destrezas objetivas se puntúan como proporción de aciertos sobre 50. Writing y Speaking pasan el nivel de
+        cada parte al centro de su franja (la parte 4 del Writing pesa el doble). Queda guardado en tu historial.
+      </p>
+      <button className="btn" onClick={onCerrar}>Cerrar el simulacro</button>
+    </div>
+  );
+}
+
+function Simulacro({ historial, onGuarda }) {
+  const [sim, setSimRaw] = useState(loadSim);
+  const [aviso, setAviso] = useState("");
+  const [ahora, setAhora] = useState(Date.now());
+  const [confirmar, setConfirmar] = useState(null);
+  const [error, setError] = useState(null);
+  const restAnterior = useRef(null);
+  const cabecera = useRef(null);
+  const simRef = useRef(sim);
+  simRef.current = sim;
+
+  const setSim = useCallback((fn) => setSimRaw((prev) => {
+    const next = typeof fn === "function" ? fn(prev) : fn;
+    saveSim(next);
+    return next;
+  }), []);
+
+  /* El reloj: cada segundo se mira la hora de fin guardada. Al cruzar 10, 5 y
+     1 minuto se avisa por la región aria-live; al llegar a cero, la sección
+     se cierra sola. */
+  const enMarcha = sim && sim.fase === "examen" && sim.secciones[sim.actual]?.fin;
+  useEffect(() => {
+    if (!enMarcha) { restAnterior.current = null; return; }
+    const tic = () => {
+      const t = Date.now();
+      const e = simRef.current;
+      setAhora(t);
+      if (!e || e.fase !== "examen") return;
+      const rest = SIM.segundosRestantes(e, t);
+      const msg = SIM.avisoTiempo(restAnterior.current, rest);
+      if (msg) setAviso(msg);
+      restAnterior.current = rest;
+      if (SIM.compruebaTiempo(e, t) !== e) {
+        setAviso(`Se acabó el tiempo de ${SIM.ESTRUCTURA[e.secciones[e.actual].skill].nombre}. La sección se ha cerrado.`);
+        setSim((x) => (x ? SIM.compruebaTiempo(x, t) : x));
+      }
+    };
+    tic();
+    const id = setInterval(tic, 1000);
+    return () => clearInterval(id);
+  }, [enMarcha]);
+
+  /* Al llegar al resultado (y cada vez que cambia la nota de Writing o
+     Speaking) se guarda en el historial del progreso. */
+  const califJSON = sim ? JSON.stringify(sim.calif) : "";
+  useEffect(() => {
+    if (sim && sim.fase === "resultado") onGuarda(SIM.entradaHistorial(sim, key()));
+  }, [sim?.fase, califJSON]);
+
+  /* Al cambiar de sección, el foco va al título para que se sepa dónde se está. */
+  useEffect(() => { cabecera.current?.focus(); }, [sim?.actual, sim?.fase, !!sim?.secciones[sim?.actual]?.fin]);
+
+  const empezar = (modo) => {
+    try { setError(null); setSim(SIM.preparaSimulacro(window.BANK || {}, modo)); }
+    catch (e) { setError(e.message); }
+  };
+  const abandonar = () => { setSim(null); setConfirmar(null); setAviso(""); };
+  const setResp = (si, pi) => (v) => setSim((e) => {
+    const resp = e.resp.map((r) => [...r]);
+    resp[si][pi] = typeof v === "function" ? v(resp[si][pi]) : v;
+    return { ...e, resp };
+  });
+
+  /* ---------- elegir simulacro ---------- */
+  if (!sim) return (
+    <section>
+      <p className="hint">
+        Un examen de prueba con los tiempos del Aptis General. El reloj de cada sección corre aunque cierres la pestaña;
+        al agotarse, la sección se cierra y pasas a la siguiente. Al final ves tu puntuación de 0 a 50 por destreza y un
+        nivel MCER estimado.
+      </p>
+      {error && <p className="hint" role="alert" style={{ color: "var(--bad)" }}>{error}</p>}
+      <div className="blocks">
+        <button className="blockRow isNext simCompleto" onClick={() => empezar("completo")}>
+          <span className="mark" />
+          <span className="blockName">
+            <span className="nextTag">Examen completo</span>
+            <strong>Core, Reading, Listening, Writing y Speaking</strong>
+            <em>Las cinco secciones seguidas, con una pausa entre una y otra.</em>
+          </span>
+          <span className="blockMins">{durTxt(totalMins(SIM.ORDEN))}</span>
+        </button>
+      </div>
+      <h3 className="areaTitle">O una sola destreza</h3>
+      <div className="blocks">
+        {SIM.ORDEN.map((k) => (
+          <button key={k} className="blockRow" style={skStyle(k)} onClick={() => empezar(k)}>
+            <span className="mark" />
+            <span className="blockName">Simulacro de {SIM.ESTRUCTURA[k].nombre}
+              <em>{SIM.ESTRUCTURA[k].partes.map((p) => BY_ID[p.id].name.split(" · ")[0]).filter((x, i, a) => a.indexOf(x) === i).join(", ")}</em>
+            </span>
+            <span className="blockMins">{SIM.ESTRUCTURA[k].mins} min</span>
+          </button>
+        ))}
+      </div>
+      {!hayModelo() && (
+        <p className="rotaNote">
+          Sin clave, Core, Reading y Listening se corrigen solos. Writing y Speaking los puedes autoevaluar con la
+          respuesta modelo y una rúbrica, o dejarlos sin puntuar.
+        </p>
+      )}
+      {historial.length > 0 && (<>
+        <h3 className="areaTitle">Tus simulacros</h3>
+        <div className="tags">
+          {historial.map((h) => (
+            <div key={h.id} className="tagRow">
+              <span className="tagName">{h.fecha} · {h.modo === "completo" ? "Completo" : SIM.ESTRUCTURA[h.modo]?.nombre || h.modo}
+                <span className="simHistSk">
+                  {Object.entries(h.destrezas).map(([k, d]) => `${SIM.ESTRUCTURA[k]?.nombre || k} ${d.puntos == null ? "—" : d.puntos}`).join(" · ")}
+                </span>
+              </span>
+              <span className="tagN">{h.total?.puntos == null ? "sin total" : `${h.total.puntos}/${h.total.max} · ${nivelTxt(h.total.nivel)}`}</span>
+            </div>
+          ))}
+        </div>
+        <p className="hint" style={{ marginTop: 12 }}>Niveles estimados, no oficiales.</p>
+      </>)}
+    </section>
+  );
+
+  /* ---------- resultado ---------- */
+  if (sim.fase === "resultado") return (
+    <SimResultado sim={sim} setSim={setSim} onCerrar={abandonar} />
+  );
+
+  /* ---------- examen ---------- */
+  const si = sim.actual;
+  const sec = sim.secciones[si];
+  const info = SIM.ESTRUCTURA[sec.skill];
+  const previa = si > 0 ? sim.secciones[si - 1] : null;
+  const rest = SIM.segundosRestantes(sim, ahora);
+  const botonAbandonar = confirmar === "abandonar" ? (
+    <div className="simConfirm" role="group" aria-label="Confirmar abandono">
+      <p>¿Abandonar el simulacro? No se guardará ningún resultado.</p>
+      <div className="row">
+        <button className="btn small" onClick={abandonar}>Sí, abandonar</button>
+        <button className="btn ghost small" onClick={() => setConfirmar(null)}>Seguir con el simulacro</button>
+      </div>
+    </div>
+  ) : <button className="linkBtn" onClick={() => setConfirmar("abandonar")}>Abandonar el simulacro</button>;
+
+  return (
+    <div className="stage" style={skStyle(sec.skill)}>
+      <p className="srOnly" aria-live="polite" role="status">{aviso}</p>
+      {!sec.fin ? (
+        <div>
+          {previa && (
+            <p className="doneMsg">
+              {previa.motivo === "tiempo" ? `Se acabó el tiempo de ${SIM.ESTRUCTURA[previa.skill].nombre}.` : `${SIM.ESTRUCTURA[previa.skill].nombre} terminado.`}
+              {" "}Lo que respondiste queda guardado.
+            </p>
+          )}
+          <p className="simPaso">Sección {si + 1} de {sim.secciones.length}</p>
+          <h2 ref={cabecera} tabIndex={-1}>{info.nombre}</h2>
+          <p className="realNote">{durTxt(sec.mins)} · {sec.partes.length} {sec.partes.length === 1 ? "parte" : "partes"}. {COMPONENT_INFO[sec.skill]?.facts && `En el examen real: ${COMPONENT_INFO[sec.skill].facts}.`}</p>
+          <p className="hint">
+            El reloj empieza al pulsar el botón y no se para aunque salgas. Si se acaba, la sección se cierra con lo que
+            tengas respondido.{SIM.esProductiva(sec.skill) && sec.skill === "speaking" ? " Cada pregunta tiene además su propio tiempo, como en el examen." : ""}
+          </p>
+          <button className="btn" onClick={() => setSim((e) => SIM.iniciaSeccion(e))}>Empezar {info.nombre}</button>
+          <div style={{ marginTop: 22 }}>{botonAbandonar}</div>
+        </div>
+      ) : (
+        <div>
+          <div className="simBar">
+            <span className="simBarName">{info.nombre} · sección {si + 1} de {sim.secciones.length}</span>
+            <span className={"simReloj" + (rest != null && rest <= 60 ? " urge" : "")} role="timer"
+              aria-label={`Tiempo restante: ${SIM.reloj(rest ?? 0)}`}>{SIM.reloj(rest ?? 0)}</span>
+          </div>
+          <h2 ref={cabecera} tabIndex={-1} className="srOnly">{info.nombre}</h2>
+          {sec.partes.map((p, pi) => (
+            <SimParte key={`${si}-${pi}`} parte={p} resp={sim.resp[si][pi]} onResp={setResp(si, pi)} />
+          ))}
+          {confirmar === "terminar" ? (
+            <div className="simConfirm" role="group" aria-label="Confirmar fin de sección">
+              <p>¿Terminar {info.nombre}? Ya no podrás volver a esta sección; lo que no hayas respondido cuenta como fallo.</p>
+              <div className="row">
+                <button className="btn small" onClick={() => { setConfirmar(null); setSim((e) => SIM.cierraSeccion(e, "usuario")); }}>Sí, terminar la sección</button>
+                <button className="btn ghost small" onClick={() => setConfirmar(null)}>Seguir respondiendo</button>
+              </div>
+            </div>
+          ) : <button className="btn" onClick={() => setConfirmar("terminar")}>Terminar la sección</button>}
+          <div style={{ marginTop: 22 }}>{botonAbandonar}</div>
+        </div>
+      )}
     </div>
   );
 }
@@ -1328,6 +1917,7 @@ function App() {
   );
 
   const streak = streakOf(st.days);
+  const simEnCurso = view === "hoy" && !running && !!loadSim();
   const weakFirst = (list) => {
     const weak = (s) => errorTags.some(([t]) => t.toLowerCase().includes(s.t.split(" ")[0].toLowerCase())) ? 0 : 1;
     return [...list].sort((a, b) => weak(a) - weak(b));
@@ -1358,7 +1948,7 @@ function App() {
       </header>
 
       <nav className="nav">
-        {[["hoy", "Hoy"], ["teoria", "Teoría"], ["aprender", "Temario"], ["libre", "Por partes"], ["fallos", "Mis fallos"], ["progreso", "Progreso"]].map(([k, l]) => (
+        {[["hoy", "Hoy"], ["simulacro", "Simulacro"], ["teoria", "Teoría"], ["aprender", "Temario"], ["libre", "Por partes"], ["fallos", "Mis fallos"], ["progreso", "Progreso"]].map(([k, l]) => (
           <button key={k} className={view === k ? "on" : ""}
             onClick={() => { setView(k); setRunning(null); setLesson(null); }}>{l}</button>
         ))}
@@ -1396,8 +1986,20 @@ function App() {
             El plan rota: en cuatro días habrás tocado las cuatro partes de cada destreza.
             Si hoy no tienes tiempo para todo, haz la gramática y una destreza más.
           </p>
+          <button className="simCta" onClick={() => { setView("simulacro"); setRunning(null); }}>
+            <strong>{simEnCurso ? "Tienes un simulacro a medias" : "Simulacro de examen"}</strong>
+            <span>{simEnCurso
+              ? "Continúa donde lo dejaste: el reloj de la sección sigue corriendo."
+              : "Cronometrado como el Aptis real, completo o por destrezas, con puntuación de 0 a 50 y nivel estimado."}</span>
+          </button>
         </section>
       ))}
+
+      {/* ---------------- SIMULACRO ---------------- */}
+      {view === "simulacro" && (
+        <Simulacro historial={st.simulacros}
+          onGuarda={(entrada) => update((s) => { s.simulacros = SIM.anadeAlHistorial(s.simulacros, entrada); return s; })} />
+      )}
 
       {/* ---------------- TEORÍA ---------------- */}
       {view === "teoria" && (running ? runTask(running) : (
@@ -1858,6 +2460,49 @@ const css = `
 .theoryCard{margin-bottom:20px;}
 .theoryCardTitle{font-size:14.5px; font-weight:600; margin:0 0 8px;}
 .theoryCard .btn.small{margin-top:0;}
+
+/* ---------- simulacro ---------- */
+.srOnly{position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0;}
+.simCta{display:block; width:100%; text-align:left; cursor:pointer; margin-top:20px; font-family:var(--sans); color:var(--paper);
+  background:var(--accent); border:none; border-radius:11px; padding:16px 18px;}
+.simCta strong{display:block; font-size:16px; font-weight:800; letter-spacing:-.01em;}
+.simCta span{display:block; font-size:13px; line-height:1.5; margin-top:4px; opacity:.88;}
+.simCta:hover{filter:brightness(1.08);}
+.simCta:focus-visible{outline:2px solid var(--ink); outline-offset:2px;}
+.simPaso{font-size:12px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:var(--sk, var(--muted)); margin:0;}
+.stage h2:focus{outline:none;}
+.simBar{position:sticky; top:0; z-index:5; display:flex; justify-content:space-between; align-items:center; gap:12px;
+  background:var(--paper); border-bottom:2px solid var(--sk, var(--line)); padding:10px 0; margin-bottom:8px;}
+.simBarName{font-size:13.5px; font-weight:600; color:var(--ink2);}
+.simReloj{font-size:26px; font-weight:800; letter-spacing:-.02em; font-variant-numeric:tabular-nums;}
+.simReloj.urge{color:var(--bad);}
+.simParte{padding:18px 0 6px; border-top:1px solid var(--line); margin-top:10px;}
+.simParte:first-of-type{border-top:none;}
+.simParteTitle{font-size:16px; font-weight:800; letter-spacing:-.01em; margin:0 0 12px;}
+.simParte label.prompt{display:block;}
+.simConfirm{background:var(--card); border:1px solid var(--line); border-radius:9px; padding:14px 16px; margin-top:18px;}
+.simConfirm p{margin:0 0 10px; font-size:14px; line-height:1.55;}
+.simAviso{font-size:13.5px; line-height:1.6; background:rgba(169,121,17,.1); border-left:3px solid var(--ochre);
+  border-radius:0 8px 8px 0; padding:11px 14px; margin:0 0 18px;}
+.simTotal{display:flex; flex-wrap:wrap; align-items:baseline; gap:6px 14px; background:var(--card); border:1px solid var(--line);
+  border-radius:11px; padding:16px 18px; margin-bottom:14px;}
+.simTotalLabel{font-size:13px; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:.05em;}
+.simTotal > strong{font-size:28px; font-weight:800; letter-spacing:-.03em;}
+.simTotal span{font-size:13.5px; color:var(--muted);}
+.simTotal span strong{color:var(--ink);}
+.simRes{padding:4px 0 10px; border-bottom:1px solid var(--line);}
+.simRes:last-child{border-bottom:none;}
+.simResNote{font-size:12.5px; color:var(--muted); margin:0 0 4px;}
+.simProd{margin-top:8px;}
+.simProd .hint{margin-bottom:10px;}
+.simHistSk{display:block; font-weight:400; font-size:12.5px; color:var(--muted); margin-top:3px;}
+.simParte .checklist{background:var(--card); border:1px solid var(--line); border-radius:8px; padding:14px 17px; margin:0 0 16px;}
+.simParte .checklist p{margin:8px 0 0; font-size:14px; line-height:1.6;}
+.rubrica{border:1px solid var(--line); border-radius:9px; padding:12px 14px; margin:0 0 10px;}
+.rubrica legend{font-size:13.5px; font-weight:600; padding:0 6px;}
+.rubricaOpt{display:block; font-size:14px; line-height:1.55; padding:8px 10px; border-radius:7px; cursor:pointer;}
+.rubricaOpt input{margin-right:8px;}
+.rubricaOpt.picked{background:var(--accentSoft);}
 
 .loading{display:flex; align-items:center; gap:11px; font-size:14px; color:var(--muted); padding:26px 0;}
 .pulse{width:8px; height:8px; border-radius:50%; background:var(--accent); animation:p 1.2s ease-in-out infinite;}

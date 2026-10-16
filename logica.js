@@ -42,7 +42,23 @@ function normalizaProgreso(data) {
     errors: Array.isArray(d.errors) ? d.errors : [],
     seen: Array.isArray(d.seen) ? d.seen : [],
     usedTopics: Array.isArray(d.usedTopics) ? d.usedTopics : [],
+    simulacros: Array.isArray(d.simulacros) ? d.simulacros.filter(simulacroValido) : [],
   };
+}
+
+/*
+ * Una entrada del historial de simulacros (ver simulacro.js, entradaHistorial).
+ * Los progresos anteriores no tienen el campo y quedan con la lista vacía; una
+ * entrada con forma rara se descarta sin tirar las demás. Las puntuaciones
+ * pueden ser null (Writing o Speaking sin puntuar), nunca otra cosa que no
+ * sea un número entre 0 y 50.
+ */
+const PUNTOS_OK = (p) => p === null || (typeof p === "number" && Number.isFinite(p) && p >= 0 && p <= 50);
+function simulacroValido(e) {
+  if (!esObjetoPlano(e) || typeof e.id !== "string" || typeof e.fecha !== "string" || typeof e.modo !== "string") return false;
+  if (!esObjetoPlano(e.destrezas) || !Object.keys(e.destrezas).length) return false;
+  if (!Object.values(e.destrezas).every((d) => esObjetoPlano(d) && PUNTOS_OK(d.puntos))) return false;
+  return esObjetoPlano(e.total) && (e.total.puntos === null || (typeof e.total.puntos === "number" && Number.isFinite(e.total.puntos)));
 }
 
 /*
@@ -100,7 +116,7 @@ function debeAvisarNuevaVersion(habiaControlador, estado) {
 
 if (typeof module !== "undefined" && module.exports) {
   module.exports = {
-    key, back, fp, level, pctOf, noVistos, streakOf, normalizaProgreso, reintentable, mensajeDeComprobacion,
+    key, back, fp, level, pctOf, noVistos, streakOf, normalizaProgreso, simulacroValido, reintentable, mensajeDeComprobacion,
     cupoDeCabeceras, debeAvisarNuevaVersion,
   };
 }
