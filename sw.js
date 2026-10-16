@@ -10,7 +10,7 @@
  * Al cambiar algo en vendor/ conviene subir VERSION para vaciar la caché vieja.
  */
 
-const VERSION = "2026-10-13-2";
+const VERSION = "2026-10-16-2";
 const CACHE = `aptis-b2-${VERSION}`;
 const SHELL = [
   "./",
