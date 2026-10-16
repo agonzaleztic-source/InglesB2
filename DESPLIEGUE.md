@@ -170,6 +170,9 @@ Detalles que conviene saber:
 - La cuenta se identifica por el email que se escribe al pagar.
 - Los códigos perdidos se reemiten con `/admin/users/reset`; ese endpoint
   devuelve el código y tienes que enviárselo tú.
+- Las condiciones de contratación (borrador) están en `condiciones.html`: rellena
+  sus marcadores `[...]` y, en el Payment Link, exige aceptar las condiciones y
+  la casilla de acceso inmediato antes de cobrar.
 - No hay portal de cliente: para que se den de baja solos, activa el *Customer
   portal* de Stripe y enlázalo desde la web.
 

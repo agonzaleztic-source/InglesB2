@@ -59,7 +59,7 @@ function localesDe(html) {
   return locales.filter((u) => !/^(https?:)?\/\//.test(u));
 }
 
-for (const pagina of ["index.html", "privacidad.html"]) {
+for (const pagina of ["index.html", "privacidad.html", "condiciones.html"]) {
   test(`los <script src> y <link href> locales de ${pagina} están en SHELL y PUBLICOS`, () => {
     for (const ref of localesDe(leer(pagina))) {
       assert.ok(SHELL.includes(ref), `${ref} (${pagina}) no está en SHELL`);

@@ -30,5 +30,6 @@ Council ni con el examen oficial.
 ## Licencia
 
 Todos los derechos reservados: uso personal permitido, redistribución y uso comercial
-no. Ver [LICENSE](LICENSE). Política de privacidad y condiciones en
-[privacidad.html](privacidad.html).
+no. Ver [LICENSE](LICENSE). Política de privacidad en
+[privacidad.html](privacidad.html); condiciones de contratación y aviso legal en
+[condiciones.html](condiciones.html) (borradores pendientes de revisión profesional).

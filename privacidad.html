@@ -4,9 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="theme-color" content="#E7ECE4">
-<meta name="description" content="Privacidad y condiciones del entrenador diario y gratuito para el examen Aptis General B2, con modo sin conexión. Proyecto independiente y no oficial.">
+<meta name="description" content="Política de privacidad del entrenador diario para el examen Aptis General B2: qué datos se tratan en el modo gratuito y en la suscripción, con quién y durante cuánto tiempo. Proyecto independiente y no oficial.">
 <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; base-uri 'none'; form-action 'none'; frame-ancestors 'none';">
-<title>Privacidad y condiciones · Aptis B2</title>
+<title>Política de privacidad · Aptis B2</title>
 <style>
   html,body{margin:0;background:#E7ECE4;}
   main{max-width:640px;margin:0 auto;padding:40px 20px 60px;font-family:system-ui,sans-serif;color:#15302A;line-height:1.7;font-size:15px;}
@@ -15,25 +15,58 @@
   p,li{color:#3F544C;}
   a{color:#15302A;}
   .meta{font-size:13px;color:#63756D;}
+  .borrador{border:2px dashed #9A3B1E;background:#F6E9E1;color:#5E2412;padding:12px 16px;border-radius:8px;font-size:14px;}
+  .borrador strong{color:#5E2412;}
+  .ph{background:#FFF1B8;padding:0 3px;border-radius:3px;font-weight:600;color:#15302A;}
+  table{border-collapse:collapse;width:100%;font-size:14px;}
+  th,td{border-top:1px solid #C9D3C6;padding:6px 6px;text-align:left;vertical-align:top;color:#3F544C;}
 </style>
 </head>
 <body>
 <main>
-<p><a href="./">← Volver a la app</a></p>
-<h1>Privacidad y condiciones</h1>
-<p class="meta">Última actualización: 24 de septiembre de 2026.</p>
+<p><a href="./">← Volver a la app</a> · <a href="condiciones.html">Condiciones de contratación y aviso legal</a></p>
+<h1>Política de privacidad</h1>
+<p class="meta">Última actualización: 16 de octubre de 2026.</p>
+
+<p class="borrador" role="note"><strong>BORRADOR pendiente de revisión profesional.</strong> Este texto aún no es definitivo: debe revisarlo un abogado o asesor antes de empezar a cobrar. Los huecos marcados <span class="ph">[ASÍ]</span> están por rellenar.</p>
 
 <h2>Quién es el responsable</h2>
-<p>Alejandro González Sánchez, autor de esta aplicación. Contacto: agonzaleztic@gmail.com.</p>
+<p>El responsable del tratamiento es <span class="ph">[NOMBRE Y APELLIDOS]</span>, con NIF <span class="ph">[NIF]</span> y domicilio en <span class="ph">[DOMICILIO]</span>, que actúa como profesional autónomo. Contacto para cualquier asunto de privacidad: <span class="ph">[EMAIL DE CONTACTO]</span>. Sus datos completos están en las <a href="condiciones.html">condiciones de contratación y aviso legal</a>.</p>
 
-<h2>Qué datos se guardan y dónde</h2>
-<p>La app no tiene cuentas ni servidor propio. Tu progreso, tus ajustes y, si la usas, tu clave de la API se guardan <strong>solo en el almacenamiento local de tu navegador</strong> (<code>localStorage</code>) y en la caché del service worker. No los recibo ni puedo verlos. Puedes exportarlos, importarlos o borrarlos desde la propia app o vaciando los datos del sitio en tu navegador.</p>
+<h2>Resumen</h2>
+<ul>
+  <li><strong>Modo gratuito:</strong> no hay cuenta y no recibo ningún dato tuyo; todo se queda en tu navegador.</li>
+  <li><strong>Suscripción:</strong> guardo tu email, tu plan, tu cupo y cuántas correcciones has usado, para darte el servicio. El pago lo gestiona Stripe y yo nunca veo los datos de tu tarjeta.</li>
+  <li>Puedes ejercer tus derechos escribiendo a <span class="ph">[EMAIL DE CONTACTO]</span> y reclamar ante la AEPD.</li>
+</ul>
+
+<h2>Datos en tu navegador</h2>
+<p>Tu progreso, tus ajustes y, si la usas, tu clave de la API o tu código de acceso se guardan <strong>solo en el almacenamiento local de tu navegador</strong> (<code>localStorage</code>) y en la caché del service worker. No los recibo ni puedo verlos. Puedes exportarlos, importarlos o borrarlos desde la propia app o vaciando los datos del sitio en tu navegador.</p>
 
 <h2>Modo gratuito</h2>
 <p>Funciona con ejercicios incluidos en la app. No se envía nada a ningún servicio: ni tus respuestas ni tu voz salen de tu dispositivo por parte de la app.</p>
 
-<h2>Modo con clave (Anthropic)</h2>
-<p>Si activas la corrección con IA, el texto que escribes (o la transcripción de lo que dices) y el ejercicio correspondiente se <strong>envían a Anthropic</strong> para que genere la corrección o el ejercicio, bien directamente desde tu navegador con tu clave, bien a través de un Worker de Cloudflare si tu conexión usa uno. Anthropic trata esos datos según sus propias condiciones y política de privacidad (<a href="https://www.anthropic.com/legal/privacy" rel="noopener" target="_blank">anthropic.com/legal/privacy</a>). Si usas un Worker, Cloudflare procesa la petición y guarda, para limitar el uso, un contador diario asociado a tu dirección IP durante un máximo de dos días. No escribas datos personales sensibles en tus respuestas.</p>
+<h2>Suscripción de pago</h2>
+<p>Al suscribirte se tratan estos datos:</p>
+<ul>
+  <li><strong>Pago (Stripe).</strong> El cobro lo hace Stripe Payments Europe, Ltd. en su propia página de pago. Los datos de tu tarjeta o medio de pago <strong>no pasan por la app ni por mi servidor</strong>: los trata Stripe directamente. Stripe me comunica tu email, tu identificador de cliente en Stripe y el estado de la suscripción (pagada, renovada, impagada o cancelada), y conserva las facturas y pagos según sus obligaciones legales (<a href="https://stripe.com/es/privacy" rel="noopener" target="_blank">stripe.com/es/privacy</a>).</li>
+  <li><strong>Email con tu código (Resend).</strong> Tras el pago, tu email y tu código de acceso se envían a Resend (Resend, Inc.), que entrega el mensaje con el código <code>apt_…</code>. Resend actúa como encargado del tratamiento (<a href="https://resend.com/legal/privacy-policy" rel="noopener" target="_blank">resend.com/legal/privacy-policy</a>).</li>
+  <li><strong>Tu cuenta (Cloudflare).</strong> El servidor de la app es un Worker de Cloudflare, que guarda en su almacén de datos (KV):
+    <table>
+      <tr><th>Dato</th><th>Para qué</th><th>Cuánto tiempo</th></tr>
+      <tr><td>Tu email, plan, cupo mensual, si la cuenta está activa y la fecha de alta</td><td>Identificarte y aplicar tu cupo</td><td>Mientras dure la suscripción y, tras la baja, <span class="ph">[PLAZO DE CONSERVACIÓN TRAS LA BAJA]</span></td></tr>
+      <tr><td>Una huella (hash SHA-256) de tu código de acceso, nunca el código</td><td>Comprobar el código sin poder recuperarlo</td><td>Igual que la cuenta</td></tr>
+      <tr><td>Tu identificador de cliente de Stripe y la fecha del último aviso de Stripe</td><td>Aplicar renovaciones, impagos y bajas en orden</td><td>Igual que la cuenta</td></tr>
+      <tr><td>Cuántas correcciones has usado en el mes</td><td>Controlar el cupo mensual</td><td>Unos 40 días; se borra solo</td></tr>
+      <tr><td>El identificador de cada aviso de Stripe ya procesado</td><td>No procesar dos veces el mismo pago</td><td>7 días; se borra solo</td></tr>
+    </table>
+  </li>
+  <li><strong>Correcciones con IA (Anthropic).</strong> Cuando pides una corrección o un ejercicio, el Worker reenvía a Anthropic el texto que escribes (o la transcripción de lo que dices) y el ejercicio correspondiente. No se envían tu email ni tu código. Ver el apartado siguiente.</li>
+</ul>
+<p>Cloudflare, Stripe, Resend y Anthropic pueden tratar datos fuera del Espacio Económico Europeo (en particular en Estados Unidos). Esas transferencias se amparan en el Marco de Privacidad de Datos UE-EE. UU. o en las cláusulas contractuales tipo de la Comisión Europea que cada proveedor ofrece. <span class="ph">[REVISAR: confirmar el mecanismo de cada proveedor y firmar sus acuerdos de encargo del tratamiento (DPA)]</span></p>
+
+<h2>Corrección con IA (Anthropic)</h2>
+<p>Si activas la corrección con IA, el texto que escribes (o la transcripción de lo que dices) y el ejercicio correspondiente se <strong>envían a Anthropic</strong> para que genere la corrección o el ejercicio, bien directamente desde tu navegador con tu clave, bien a través del Worker de Cloudflare. Anthropic trata esos datos según sus propias condiciones y política de privacidad (<a href="https://www.anthropic.com/legal/privacy" rel="noopener" target="_blank">anthropic.com/legal/privacy</a>). Si usas un Worker sin suscripción, Cloudflare guarda, para limitar el uso, un contador diario asociado a tu dirección IP durante un máximo de dos días. No escribas datos personales sensibles en tus respuestas.</p>
 
 <h2>Reconocimiento de voz</h2>
 <p>En Chrome y Edge, la transcripción del Speaking la realiza el propio navegador, que puede enviar el audio a los servidores de su fabricante (Google o Microsoft) según su política. La app solo recibe el texto resultante.</p>
@@ -41,19 +74,35 @@
 <h2>Fuentes tipográficas</h2>
 <p>Se cargan desde Google Fonts, lo que puede transmitir tu dirección IP a Google.</p>
 
+<h2>Base jurídica</h2>
+<ul>
+  <li><strong>Ejecución del contrato</strong> (art. 6.1.b del RGPD): tratar tu email, tu cuenta, tu cupo y el estado del pago es necesario para prestarte la suscripción que has contratado, enviarte el código y aplicar altas, renovaciones y bajas.</li>
+  <li><strong>Obligación legal</strong> (art. 6.1.c del RGPD): conservar facturas y datos de las operaciones durante los plazos que exige la normativa fiscal y mercantil.</li>
+  <li><strong>Interés legítimo</strong> (art. 6.1.f del RGPD): los contadores por dirección IP que evitan abusos del servicio.</li>
+</ul>
+<p>No uso tus datos para publicidad, no hago perfiles y no los vendo ni cedo a terceros fuera de los proveedores citados.</p>
+
+<h2>Plazos de conservación</h2>
+<ul>
+  <li>Datos de la cuenta: mientras la suscripción esté activa y, tras la baja, <span class="ph">[PLAZO DE CONSERVACIÓN TRAS LA BAJA]</span> para atender posibles reclamaciones; después se borran.</li>
+  <li>Facturas y datos de los pagos: los plazos legales (con carácter general, cuatro años por la normativa tributaria y seis por el Código de Comercio). <span class="ph">[REVISAR con asesor fiscal]</span></li>
+  <li>Contadores de uso: se borran solos a los 2 días (por IP) o unos 40 días (cupo mensual).</li>
+  <li>Datos en tu navegador: hasta que los borres tú.</li>
+</ul>
+
 <h2>Tus derechos</h2>
-<p>Como no conservo datos tuyos, no hay nada que rectificar o suprimir por mi parte; puedes borrar tus datos locales cuando quieras. Para cualquier duda o reclamación sobre protección de datos puedes escribirme, y tienes derecho a acudir a la Agencia Española de Protección de Datos (aepd.es).</p>
+<p>Puedes pedir el <strong>acceso</strong> a tus datos, su <strong>rectificación</strong> o <strong>supresión</strong>, la <strong>limitación</strong> del tratamiento, la <strong>portabilidad</strong> y oponerte al tratamiento, escribiendo a <span class="ph">[EMAIL DE CONTACTO]</span> desde el email de tu cuenta. Responderé en el plazo máximo de un mes. Borrar la cuenta implica perder el acceso a la suscripción. Los datos de tu navegador puedes borrarlos tú cuando quieras.</p>
+<p>Si crees que no he atendido bien tu solicitud, puedes presentar una reclamación ante la <strong>Agencia Española de Protección de Datos</strong> (C/ Jorge Juan 6, 28001 Madrid, <a href="https://www.aepd.es" rel="noopener" target="_blank">aepd.es</a>).</p>
+
+<h2>Pago, renovación y desistimiento</h2>
+<p>El precio, la renovación mensual, cómo darse de baja, el cupo de correcciones y el derecho de desistimiento de 14 días (y su renuncia expresa cuando pides acceso inmediato) están en las <a href="condiciones.html">condiciones de contratación y aviso legal</a>.</p>
 
 <h2>Condiciones de uso</h2>
 <ul>
   <li>La app es un entrenador independiente y no oficial. «Aptis» es una marca del British Council, que no la respalda. Que la app te dé un nivel no garantiza el resultado en el examen real.</li>
   <li>Las correcciones de la IA pueden contener errores; úsalas como guía.</li>
-  <li>Uso personal y no comercial. El código y los contenidos son de su autor con todos los derechos reservados (ver <code>LICENSE</code>).</li>
-  <li>El software se ofrece tal cual, sin garantías.</li>
+  <li>El código y los contenidos son de su autor con todos los derechos reservados (ver <code>LICENSE</code>). El resto de condiciones, en <a href="condiciones.html">condiciones de contratación y aviso legal</a>.</li>
 </ul>
-
-<h2>Cuando exista una versión de pago</h2>
-<p class="meta">Pendiente de redactar antes de cobrar: precio, forma de pago, renovación, y el derecho de desistimiento de 14 días (o la renuncia expresa a él cuando el consumidor pida acceso inmediato al contenido digital). Esta sección debe revisarla un profesional antes de publicarse.</p>
 </main>
 </body>
 </html>

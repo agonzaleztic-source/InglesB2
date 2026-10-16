@@ -15,6 +15,7 @@ const PROYECTO = "inglesb2";
 const DESTINO = "_publicar";
 const PUBLICOS = [
   "index.html", "app.js", "banco.js", "parse-json.js", "logica.js", "simulacro.js", "sw.js", "manifest.webmanifest", "privacidad.html",
+  "condiciones.html",
   "icons", "vendor",
 ];
 
