@@ -349,7 +349,7 @@ async function admin(path, request, env, cors) {
     // Cambiar plan, cupo o dar de baja/alta sin tocar su código.
     const next = { ...rec };
     if (b.plan) next.plan = String(b.plan).slice(0, 20);
-    if (b.monthly_quota !== undefined) next.quota = quotaOf(b, env);
+    if (cupoEnviado(b)) next.quota = quotaOf(b, env);
     if (b.disabled !== undefined) next.disabled = !!b.disabled;
     await env.RATE_LIMIT.put(`user:${existing}`, JSON.stringify(next));
     return json({ email, plan: next.plan, quota: next.quota, disabled: !!next.disabled }, 200, cors);
@@ -372,15 +372,19 @@ async function putUser(env, hash, email, b, prev) {
   await env.RATE_LIMIT.put(`user:${hash}`, JSON.stringify({
     email,
     plan: String(b.plan || prev.plan || "pro").slice(0, 20),
-    quota: b.monthly_quota !== undefined ? quotaOf(b, env) : (prev.quota ?? quotaOf({}, env)),
+    quota: cupoEnviado(b) ? quotaOf(b, env) : (prev.quota ?? quotaOf({}, env)),
     disabled: !!prev.disabled,
     created: prev.created || new Date().toISOString(),
   }));
 }
 
+// "", null o solo espacios cuentan como no enviado: Number("") es 0, y un
+// campo en blanco no debe dejar a nadie sin cupo.
+const cupoEnviado = (b) => b.monthly_quota != null && String(b.monthly_quota).trim() !== "";
+
 const quotaOf = (b, env) => {
   const n = Math.floor(Number(b.monthly_quota));
-  return b.monthly_quota !== undefined && Number.isFinite(n) && n >= 0
+  return cupoEnviado(b) && Number.isFinite(n) && n >= 0
     ? n : (Number(env.DEFAULT_MONTHLY_QUOTA) || DEFAULT_MONTHLY_QUOTA);
 };
 
