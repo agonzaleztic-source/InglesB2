@@ -90,7 +90,7 @@
     <label for="eppass">Código de acceso o contraseña del Worker</label>
     <input id="eppass" type="password" placeholder="apt_... o la contraseña de APP_PASS" autocomplete="off" spellcheck="false">
   </div>
-  <p id="epErr" class="err"></p>
+  <p id="epErr" class="err" role="alert" tabindex="-1"></p>
   <button id="go">Guardar y empezar</button>
   <button id="free" class="ghost">Empezar gratis, sin clave</button>
   <p class="freeNote">Sin clave funcionan los ejercicios que ya vienen dentro de la app, con su
@@ -207,12 +207,18 @@
         if (msg) {
           errBox.textContent = msg;
           goBtn.disabled = false;
+          // El botón pasa por disabled mientras se comprueba la conexión, así
+          // que pierde el foco: quien navega con teclado o lector de pantalla
+          // se queda sin saber dónde está. Lo devolvemos al propio aviso, que
+          // además ya se anuncia solo por el role="alert".
+          errBox.focus();
           return;
         }
       } catch {
         errBox.textContent = "No se pudo comprobar la conexión (sin red o el Worker no responde). Pulsa «Guardar y empezar» otra vez para guardar sin comprobar.";
         saltarComprobacion = true;
         goBtn.disabled = false;
+        errBox.focus();
         return;
       } finally {
         clearTimeout(aviso);
