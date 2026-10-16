@@ -86,9 +86,21 @@ function cupoDeCabeceras(get) {
   return { limite, usados, quedan: Math.max(0, limite - usados) };
 }
 
+/*
+ * sw.js hace skipWaiting() sin esperar, así que una versión nueva se activa
+ * sola en segundo plano: no hay que confirmar nada, solo avisar de que ya
+ * está lista. index.html escucha el "statechange" del worker que se está
+ * instalando y llama a esta función con el estado y si, al cargar la
+ * página, ya había un controlador (es decir, si no es la primera visita).
+ * En la primera instalación no hay nada que actualizar.
+ */
+function debeAvisarNuevaVersion(habiaControlador, estado) {
+  return !!habiaControlador && estado === "installed";
+}
+
 if (typeof module !== "undefined" && module.exports) {
   module.exports = {
     key, back, fp, level, pctOf, noVistos, streakOf, normalizaProgreso, reintentable, mensajeDeComprobacion,
-    cupoDeCabeceras,
+    cupoDeCabeceras, debeAvisarNuevaVersion,
   };
 }

@@ -50,12 +50,22 @@
   @media (max-width:520px){
     #reset[style*="block"]{position:static;display:block !important;margin:0 auto 34px;}
   }
+  #avisoActualizacion{position:fixed;left:0;right:0;top:0;z-index:999;display:none;
+    background:#15302A;color:#E7ECE4;font-family:system-ui,sans-serif;font-size:13px;
+    line-height:1.5;padding:10px 16px;text-align:center;}
+  #avisoActualizacion button{margin-left:10px;padding:4px 10px;font-size:12.5px;font-weight:600;
+    background:#E7ECE4;color:#15302A;border:none;border-radius:6px;cursor:pointer;}
   #avisoAlmacenamiento{position:fixed;left:0;right:0;top:0;z-index:999;display:none;
     background:#3B2A12;color:#FDEFD9;font-family:system-ui,sans-serif;font-size:13px;
     line-height:1.5;padding:10px 16px;text-align:center;}
 </style>
 </head>
 <body>
+
+<div id="avisoActualizacion" role="status">
+  Hay una versión nueva de la app.
+  <button id="actualizarBtn" type="button">Actualizar</button>
+</div>
 
 <div id="avisoAlmacenamiento" role="status" style="display:none">
   Este navegador no deja guardar datos: tu progreso se perderá al cerrar la pestaña. Exporta el progreso antes de salir.
@@ -265,9 +275,34 @@
   // Service worker: guarda la app, el banco y las librerías para que el modo
   // sin clave funcione sin conexión. Se registra al final de la carga para no
   // competir con los scripts de la propia página.
+  //
+  // sw.js activa la versión nueva sola, en segundo plano (self.skipWaiting());
+  // aquí solo avisamos de que ya está lista, con updatefound/statechange (en
+  // cuanto el worker nuevo termina de instalarse) y controllerchange (en
+  // cuanto toma el control). debeAvisarNuevaVersion (logica.js) decide si
+  // toca avisar: en la primera visita no hay nada que actualizar.
+  function avisoActualizacionMostrar() {
+    const el = document.getElementById("avisoActualizacion");
+    if (el) el.style.display = "block";
+  }
+  const actualizarBtn = document.getElementById("actualizarBtn");
+  if (actualizarBtn) actualizarBtn.addEventListener("click", () => location.reload());
+
   if ("serviceWorker" in navigator && /^https?:$/.test(location.protocol)) {
     window.addEventListener("load", () => {
-      navigator.serviceWorker.register("sw.js").catch((e) => console.warn("Sin service worker:", e));
+      const habiaControlador = !!navigator.serviceWorker.controller;
+      navigator.serviceWorker.register("sw.js").then((reg) => {
+        reg.addEventListener("updatefound", () => {
+          const nuevo = reg.installing;
+          if (!nuevo) return;
+          nuevo.addEventListener("statechange", () => {
+            if (debeAvisarNuevaVersion(habiaControlador, nuevo.state)) avisoActualizacionMostrar();
+          });
+        });
+      }).catch((e) => console.warn("Sin service worker:", e));
+      navigator.serviceWorker.addEventListener("controllerchange", () => {
+        if (habiaControlador) avisoActualizacionMostrar();
+      });
     });
   }
 </script>
