@@ -3,7 +3,7 @@
 // siguiente carga, y nadie se lo dice. Comprueba que index.html avisa con una
 // franja fija y un botón «Actualizar», solo cuando ya había una versión
 // anterior (no en la primera instalación). No se puede requerir index.html
-// (mezcla JSX en el mismo fichero), así que el registro del service worker se
+// (es una página, no un módulo), así que el registro del service worker se
 // extrae como texto —igual que tests/valida-cfg.test.js hace con valida()— y
 // se ejecuta con vm contra un navigator.serviceWorker simulado.
 const { test } = require("node:test");

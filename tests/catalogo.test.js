@@ -5,14 +5,14 @@ const path = require("node:path");
 const vm = require("node:vm");
 
 // Caracterización de datos: el catálogo TASKS y la lista TOPICS de
-// index.html (leídos como texto, sin ejecutar el JSX) frente a las claves
+// src/app.jsx (leídos como texto, sin ejecutar el JSX) frente a las claves
 // reales de banco.js y los formatos que de verdad consume el render.
 
-const html = fs.readFileSync(path.join(__dirname, "..", "index.html"), "utf8");
+const fuente = fs.readFileSync(path.join(__dirname, "..", "src", "app.jsx"), "utf8");
 
 function extraerTasks() {
-  const m = html.match(/const TASKS = \[([\s\S]*?)\n\];/);
-  assert.ok(m, "no se encontró el array TASKS en index.html");
+  const m = fuente.match(/const TASKS = \[([\s\S]*?)\n\];/);
+  assert.ok(m, "no se encontró el array TASKS en src/app.jsx");
   const bloques = [...m[1].matchAll(
     /\{\s*id: "([^"]+)", skill: "([^"]+)", name: "([^"]+)",\s*\n\s*real: "((?:[^"\\]|\\.)*)", format: "([^"]+)", mins: (\d+),/g
   )];
@@ -22,8 +22,8 @@ function extraerTasks() {
 }
 
 function extraerTopics() {
-  const m = html.match(/const TOPICS = \[([\s\S]*?)\];/);
-  assert.ok(m, "no se encontró el array TOPICS en index.html");
+  const m = fuente.match(/const TOPICS = \[([\s\S]*?)\];/);
+  assert.ok(m, "no se encontró el array TOPICS en src/app.jsx");
   return [...m[1].matchAll(/"((?:[^"\\]|\\.)*)"/g)].map((x) => x[1]);
 }
 
@@ -61,7 +61,7 @@ test("TASKS: skill es una destreza válida", () => {
   }
 });
 
-test("TASKS: format es uno de los que de verdad renderiza index.html", () => {
+test("TASKS: format es uno de los que de verdad renderiza src/app.jsx", () => {
   for (const t of TASKS) {
     assert.ok(FORMATOS_VALIDOS.has(t.format), `${t.id}: format desconocido "${t.format}"`);
   }

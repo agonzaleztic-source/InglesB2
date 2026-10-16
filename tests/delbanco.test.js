@@ -1,9 +1,9 @@
-// Caracteriza delBanco() (index.html), la función que elige ejercicios en
-// modo sin clave. No se puede requerir index.html (mezcla JSX en el mismo
-// <script>), así que se extrae su código fuente como texto —igual que
+// Caracteriza delBanco() (src/app.jsx), la función que elige ejercicios en
+// modo sin clave. No se puede requerir src/app.jsx (tiene JSX), así que se
+// extrae su código fuente como texto —igual que
 // tests/publicacion.test.js hace con sw.js/publicar.mjs— y se ejecuta con
-// vm junto a shuffle/pick (también en index.html) y noVistos/fp reales de
-// logica.js. No se modifica index.html.
+// vm junto a shuffle/pick (también en src/app.jsx) y noVistos/fp reales de
+// logica.js. No se modifica src/app.jsx.
 const { test } = require("node:test");
 const assert = require("node:assert/strict");
 const fs = require("node:fs");
@@ -11,12 +11,12 @@ const path = require("node:path");
 const vm = require("node:vm");
 
 const ROOT = path.join(__dirname, "..");
-const html = fs.readFileSync(path.join(ROOT, "index.html"), "utf8");
+const fuente = fs.readFileSync(path.join(ROOT, "src", "app.jsx"), "utf8");
 const { noVistos, fp } = require(path.join(ROOT, "logica.js"));
 
 function extraerLinea(regex, nombre) {
-  const m = html.match(regex);
-  assert.ok(m, `no se encontró ${nombre} en index.html`);
+  const m = fuente.match(regex);
+  assert.ok(m, `no se encontró ${nombre} en src/app.jsx`);
   return m[0];
 }
 

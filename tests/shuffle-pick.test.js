@@ -1,8 +1,8 @@
-// Caracteriza shuffle() y pick() (index.html), los dos ayudantes de azar que
+// Caracteriza shuffle() y pick() (src/app.jsx), los dos ayudantes de azar que
 // usa delBanco() para no repetir ejercicios en modo sin clave. No se puede
-// requerir index.html (mezcla JSX en el mismo <script>), así que se extrae
+// requerir src/app.jsx (tiene JSX), así que se extrae
 // su código fuente como texto —igual que tests/delbanco.test.js— y se
-// ejecuta con vm. No se modifica index.html.
+// ejecuta con vm. No se modifica src/app.jsx.
 const { test } = require("node:test");
 const assert = require("node:assert/strict");
 const fs = require("node:fs");
@@ -10,11 +10,11 @@ const path = require("node:path");
 const vm = require("node:vm");
 
 const ROOT = path.join(__dirname, "..");
-const html = fs.readFileSync(path.join(ROOT, "index.html"), "utf8");
+const fuente = fs.readFileSync(path.join(ROOT, "src", "app.jsx"), "utf8");
 
 function extraerLinea(regex, nombre) {
-  const m = html.match(regex);
-  assert.ok(m, `no se encontró ${nombre} en index.html`);
+  const m = fuente.match(regex);
+  assert.ok(m, `no se encontró ${nombre} en src/app.jsx`);
   return m[0];
 }
 

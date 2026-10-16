@@ -1,8 +1,8 @@
-// Caracteriza callClaude() (index.html): el mapeo de cada fallo de red o de
+// Caracteriza callClaude() (src/app.jsx): el mapeo de cada fallo de red o de
 // estado HTTP a un mensaje de error y a si merece reintento (reintentable).
-// No se puede requerir index.html (mezcla JSX en el mismo <script>), así que
+// No se puede requerir src/app.jsx (tiene JSX), así que
 // se extrae su código fuente como texto —igual que tests/delbanco.test.js—
-// y se ejecuta con vm junto a un fetch simulado. No se modifica index.html.
+// y se ejecuta con vm junto a un fetch simulado. No se modifica src/app.jsx.
 const { test } = require("node:test");
 const assert = require("node:assert/strict");
 const fs = require("node:fs");
@@ -10,11 +10,11 @@ const path = require("node:path");
 const vm = require("node:vm");
 
 const ROOT = path.join(__dirname, "..");
-const html = fs.readFileSync(path.join(ROOT, "index.html"), "utf8");
+const fuente = fs.readFileSync(path.join(ROOT, "src", "app.jsx"), "utf8");
 
 function extraerLinea(regex, nombre) {
-  const m = html.match(regex);
-  assert.ok(m, `no se encontró ${nombre} en index.html`);
+  const m = fuente.match(regex);
+  assert.ok(m, `no se encontró ${nombre} en src/app.jsx`);
   return m[0];
 }
 

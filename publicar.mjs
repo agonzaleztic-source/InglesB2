@@ -6,7 +6,7 @@
  * Uso:  node publicar.mjs            (primera vez: hace falta `npx wrangler login`)
  *       node publicar.mjs --solo-copiar   (solo prepara _publicar/, sin subir)
  *
- * Al cambiar algo de vendor/ o del banco, sube VERSION en sw.js antes.
+ * Al cambiar app.js (npm run build), vendor/ o el banco, sube VERSION en sw.js antes.
  */
 import { cpSync, rmSync, mkdirSync, writeFileSync } from "node:fs";
 import { spawnSync } from "node:child_process";
@@ -14,7 +14,7 @@ import { spawnSync } from "node:child_process";
 const PROYECTO = "inglesb2";
 const DESTINO = "_publicar";
 const PUBLICOS = [
-  "index.html", "banco.js", "parse-json.js", "logica.js", "sw.js", "manifest.webmanifest", "privacidad.html",
+  "index.html", "app.js", "banco.js", "parse-json.js", "logica.js", "sw.js", "manifest.webmanifest", "privacidad.html",
   "icons", "vendor",
 ];
 

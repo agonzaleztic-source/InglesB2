@@ -7,14 +7,16 @@
  *
  * Estrategia: se responde primero desde la caché y se pide la versión nueva en
  * segundo plano, así que una actualización se ve en la siguiente carga.
- * Al cambiar algo en vendor/ conviene subir VERSION para vaciar la caché vieja.
+ * Al cambiar app.js (npm run build) o algo en vendor/ conviene subir VERSION
+ * para vaciar la caché vieja.
  */
 
-const VERSION = "2026-10-16-3";
+const VERSION = "2026-10-16-4";
 const CACHE = `aptis-b2-${VERSION}`;
 const SHELL = [
   "./",
   "index.html",
+  "app.js",
   "banco.js",
   "parse-json.js",
   "logica.js",
@@ -26,7 +28,6 @@ const SHELL = [
   "icons/apple-touch-icon.png",
   "vendor/react.production.min.js",
   "vendor/react-dom.production.min.js",
-  "vendor/babel.min.js",
 ];
 
 self.addEventListener("install", (event) => {
