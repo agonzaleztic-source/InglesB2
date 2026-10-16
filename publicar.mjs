@@ -14,7 +14,7 @@ import { spawnSync } from "node:child_process";
 const PROYECTO = "inglesb2";
 const DESTINO = "_publicar";
 const PUBLICOS = [
-  "index.html", "app.js", "banco.js", "parse-json.js", "logica.js", "sw.js", "manifest.webmanifest", "privacidad.html",
+  "index.html", "app.js", "banco.js", "parse-json.js", "logica.js", "simulacro.js", "sw.js", "manifest.webmanifest", "privacidad.html",
   "icons", "vendor",
 ];
 

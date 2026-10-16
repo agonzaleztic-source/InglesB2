@@ -115,7 +115,7 @@ test("streakOf: sin ningún día hecho da 0", () => {
 });
 
 test("normalizaProgreso: null o valores no-objeto dan un progreso en blanco", () => {
-  const blanco = { days: {}, skills: {}, lessons: {}, errors: [], seen: [], usedTopics: [] };
+  const blanco = { days: {}, skills: {}, lessons: {}, errors: [], seen: [], usedTopics: [], simulacros: [] };
   assert.deepEqual(normalizaProgreso(null), blanco);
   assert.deepEqual(normalizaProgreso(undefined), blanco);
   assert.deepEqual(normalizaProgreso("texto"), blanco);
@@ -132,7 +132,7 @@ test("normalizaProgreso: campos con el tipo equivocado se sustituyen por su valo
     skills: "x",
     lessons: null,
   });
-  assert.deepEqual(r, { days: {}, skills: {}, lessons: {}, errors: [], seen: [], usedTopics: [] });
+  assert.deepEqual(r, { days: {}, skills: {}, lessons: {}, errors: [], seen: [], usedTopics: [], simulacros: [] });
 });
 
 test("normalizaProgreso: un progreso válido no se toca", () => {
@@ -143,13 +143,16 @@ test("normalizaProgreso: un progreso válido no se toca", () => {
     errors: [{ tag: "Tercer condicional" }],
     seen: ["abc", "def"],
     usedTopics: ["commuting by train"],
+    simulacros: [{ id: "sim-1", fecha: "2026-10-16", modo: "reading",
+      destrezas: { reading: { puntos: 40, nivel: "B2", fuente: "auto", aciertos: 16, total: 20 } },
+      total: { puntos: 40, max: 50, nivel: "B2", incompleto: false } }],
   };
   assert.deepEqual(normalizaProgreso(valido), valido);
 });
 
 test("normalizaProgreso: campos ausentes se rellenan con el valor por defecto", () => {
   assert.deepEqual(normalizaProgreso({ seen: ["a"] }), {
-    days: {}, skills: {}, lessons: {}, errors: [], seen: ["a"], usedTopics: [],
+    days: {}, skills: {}, lessons: {}, errors: [], seen: ["a"], usedTopics: [], simulacros: [],
   });
 });
 

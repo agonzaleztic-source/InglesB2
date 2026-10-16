@@ -1,5 +1,5 @@
 // GENERADO con `npm run build` desde src/app.jsx: no editar a mano.
-// sha256 de src/app.jsx: 4f57385bb7c8f330810ef3d4290166a5f8cbd61f2027f5ba4c01d71dfa234c80
+// sha256 de src/app.jsx: fe1e38e5bf890522fd24a426b0c83283e2b2851a5e4f2982df1a67884b9370c3
 const { useState, useEffect, useRef, useCallback } = React;
 const MODEL = "claude-sonnet-5";
 const STORE = "aptis-general-b2";
@@ -156,7 +156,7 @@ function delBanco(def, vistos) {
   const huella = (s) => fp(s.text || s.script || s.scene || s.context || (s.lines || [])[1] || (s.items || [])[0]?.script || (s.items || [])[0]?.text || (s.questions || [])[0]?.q || (s.rounds || [])[0]?.prompt);
   return pick(noVistos(sets, huella, vistos));
 }
-const blank = () => ({ days: {}, skills: {}, errors: [], seen: [], usedTopics: [], lessons: {} });
+const blank = () => ({ days: {}, skills: {}, errors: [], seen: [], usedTopics: [], lessons: {}, simulacros: [] });
 async function load() {
   try {
     const r = localStorage.getItem(STORE);
@@ -845,6 +845,16 @@ function TaskRunner({ def, ctx, onDone, onErrors, onSeen }) {
   if (def.format === "speak") return /* @__PURE__ */ React.createElement(SpeakTask, { data, def, onDone });
   return null;
 }
+function corrigeWriting(def, fields, vals) {
+  const body = fields.map((f, i) => `CONSIGNA: ${f.prompt} (${f.words})
+RESPUESTA: ${vals[i] || ""}`).join("\n\n");
+  return generate(
+    `Eres examinador oficial del Aptis General y corriges esta tarea de Writing (${def.name}) con los criterios reales: cumplimiento de la tarea, registro, cohesión, riqueza léxica y corrección. Penaliza salirse del número de palabras.
+${body}
+Sé exigente y concreto. Señala solo las correcciones que más le bajan el nivel.
+Devuelve SOLO: {"level":"A2|B1|B2|C","summary":"dos frases en español: qué funciona y qué le impide subir","corrections":[{"original":"","better":"","why":"en español"}],"upgrade":"una frase suya reescrita con lenguaje de B2 alto","next":"un consejo concreto en español"}`
+  );
+}
 function WriteTask({ data, def, onDone }) {
   const [vals, setVals] = useState({});
   const [busy, setBusy] = useState(false);
@@ -862,15 +872,8 @@ function WriteTask({ data, def, onDone }) {
       return;
     }
     setBusy(true);
-    const body = fields.map((f, i) => `CONSIGNA: ${f.prompt} (${f.words})
-RESPUESTA: ${vals[i] || ""}`).join("\n\n");
     try {
-      setFb(await generate(
-        `Eres examinador oficial del Aptis General y corriges esta tarea de Writing (${def.name}) con los criterios reales: cumplimiento de la tarea, registro, cohesión, riqueza léxica y corrección. Penaliza salirse del número de palabras.
-${body}
-Sé exigente y concreto. Señala solo las correcciones que más le bajan el nivel.
-Devuelve SOLO: {"level":"A2|B1|B2|C","summary":"dos frases en español: qué funciona y qué le impide subir","corrections":[{"original":"","better":"","why":"en español"}],"upgrade":"una frase suya reescrita con lenguaje de B2 alto","next":"un consejo concreto en español"}`
-      ));
+      setFb(await corrigeWriting(def, fields, vals));
     } catch (e) {
       setFb({ level: "?", summary: e.message || "No he podido corregirlo. Prueba otra vez.", corrections: [] });
     }
@@ -892,7 +895,18 @@ Devuelve SOLO: {"level":"A2|B1|B2|C","summary":"dos frases en español: qué fun
     ), /* @__PURE__ */ React.createElement("div", { className: "wc" }, w, " palabras · piden ", f.words));
   }), /* @__PURE__ */ React.createElement("button", { className: "btn", disabled: !enough || busy, onClick: grade }, busy ? "Corrigiendo…" : "Corregir mi texto"));
 }
-function SpeakTask({ data, def, onDone }) {
+function corrigeSpeaking(def, data, texts) {
+  const body = (data.rounds || []).map((r, i) => `PREGUNTA: ${r.prompt}
+DIJO: ${texts[i] || ""}`).join("\n\n");
+  return generate(
+    `Eres examinador de Speaking del Aptis General y evalúas ${def.name}. Esto es una TRANSCRIPCIÓN automática: ignora la puntuación y los errores de transcripción, juzga contenido, gramática hablada, léxico y desarrollo de las ideas.
+${data.scene ? `ESCENA: ${data.scene}` : ""}
+${body}
+Devuelve SOLO: {"level":"A2|B1|B2|C","summary":"dos frases en español","corrections":[{"original":"lo que dijo","better":"cómo se dice","why":"en español"}],"upgrade":"respuesta modelo EN INGLÉS de nivel B2, 60-80 palabras","next":"consejo concreto en español"}
+Incluye solo las correcciones que más le bajan el nivel.`
+  );
+}
+function SpeakTask({ data, def, onDone, onRespuesta }) {
   const [phase, setPhase] = useState("brief");
   const [round, setRound] = useState(0);
   const [left, setLeft] = useState(0);
@@ -983,16 +997,8 @@ function SpeakTask({ data, def, onDone }) {
       return;
     }
     setBusy(true);
-    const body = rounds.map((r, i) => `PREGUNTA: ${r.prompt}
-DIJO: ${texts[i] || ""}`).join("\n\n");
     try {
-      setFb(await generate(
-        `Eres examinador de Speaking del Aptis General y evalúas ${def.name}. Esto es una TRANSCRIPCIÓN automática: ignora la puntuación y los errores de transcripción, juzga contenido, gramática hablada, léxico y desarrollo de las ideas.
-${data.scene ? `ESCENA: ${data.scene}` : ""}
-${body}
-Devuelve SOLO: {"level":"A2|B1|B2|C","summary":"dos frases en español","corrections":[{"original":"lo que dijo","better":"cómo se dice","why":"en español"}],"upgrade":"respuesta modelo EN INGLÉS de nivel B2, 60-80 palabras","next":"consejo concreto en español"}
-Incluye solo las correcciones que más le bajan el nivel.`
-      ));
+      setFb(await corrigeSpeaking(def, data, texts));
     } catch (e) {
       setFb({ level: "?", summary: e.message || "No he podido evaluarlo. Prueba otra vez.", corrections: [] });
     }
@@ -1012,10 +1018,318 @@ Incluye solo las correcciones que más le bajan el nivel.`
         return n;
       })
     }
-  ))), data.useful && /* @__PURE__ */ React.createElement("div", { className: "upgrade" }, /* @__PURE__ */ React.createElement("span", { className: "tag" }, "Te habrían servido"), data.useful.map((u, i) => /* @__PURE__ */ React.createElement("p", { key: i }, u))), /* @__PURE__ */ React.createElement("button", { className: "btn", disabled: busy || texts.join(" ").trim().split(/\s+/).filter(Boolean).length < 15, onClick: grade }, busy ? "Evaluando…" : "Evaluar mi respuesta")));
+  ))), data.useful && /* @__PURE__ */ React.createElement("div", { className: "upgrade" }, /* @__PURE__ */ React.createElement("span", { className: "tag" }, "Te habrían servido"), data.useful.map((u, i) => /* @__PURE__ */ React.createElement("p", { key: i }, u))), onRespuesta ? /* @__PURE__ */ React.createElement("button", { className: "btn", onClick: () => onRespuesta(rounds.map((_, i) => texts[i] || "")) }, "Guardar mi respuesta") : /* @__PURE__ */ React.createElement("button", { className: "btn", disabled: busy || texts.join(" ").trim().split(/\s+/).filter(Boolean).length < 15, onClick: grade }, busy ? "Evaluando…" : "Evaluar mi respuesta")));
 }
 function Feedback({ fb, onDone, modelLabel }) {
   return /* @__PURE__ */ React.createElement("div", null, fb.level !== "—" && /* @__PURE__ */ React.createElement("div", { className: "fbLevel" }, /* @__PURE__ */ React.createElement("strong", null, fb.level), /* @__PURE__ */ React.createElement("span", null, "nivel de esta respuesta")), /* @__PURE__ */ React.createElement("p", { className: "fbSummary" }, fb.summary), fb.checklist && /* @__PURE__ */ React.createElement("div", { className: "checklist" }, /* @__PURE__ */ React.createElement("span", { className: "tag" }, "Compara tu texto con esto"), fb.checklist.map((c, i) => /* @__PURE__ */ React.createElement("p", { key: i }, c))), fb.models?.map((m, i) => /* @__PURE__ */ React.createElement("div", { key: i, className: "upgrade" }, /* @__PURE__ */ React.createElement("span", { className: "tag" }, "Respuesta modelo ", fb.models.length > 1 ? i + 1 : ""), /* @__PURE__ */ React.createElement("p", { style: { whiteSpace: "pre-wrap" } }, m))), fb.corrections?.map((c, i) => /* @__PURE__ */ React.createElement("div", { key: i, className: "corr" }, /* @__PURE__ */ React.createElement("p", { className: "corrBad" }, c.original), /* @__PURE__ */ React.createElement("p", { className: "corrGood" }, c.better), /* @__PURE__ */ React.createElement("p", { className: "corrWhy" }, c.why))), fb.upgrade && /* @__PURE__ */ React.createElement("div", { className: "upgrade" }, /* @__PURE__ */ React.createElement("span", { className: "tag" }, modelLabel || "Sube de registro así"), /* @__PURE__ */ React.createElement("p", null, fb.upgrade)), fb.next && /* @__PURE__ */ React.createElement("p", { className: "next" }, fb.next), /* @__PURE__ */ React.createElement("button", { className: "btn", onClick: onDone }, "Continuar"));
+}
+const SIM_STORE = "aptis-simulacro";
+function loadSim() {
+  try {
+    const e = JSON.parse(localStorage.getItem(SIM_STORE));
+    return SIM.estadoValido(e) ? SIM.compruebaTiempo(e) : null;
+  } catch {
+    return null;
+  }
+}
+function saveSim(e) {
+  try {
+    if (e) localStorage.setItem(SIM_STORE, JSON.stringify(e));
+    else localStorage.removeItem(SIM_STORE);
+  } catch (err) {
+    console.warn(err);
+    avisoAlmacenamiento();
+  }
+}
+const hayModelo = () => !sinClave();
+const totalMins = (skills) => skills.reduce((a, k) => a + SIM.ESTRUCTURA[k].mins, 0);
+const durTxt = (m) => m >= 60 ? `${Math.floor(m / 60)} h ${m % 60 ? `${m % 60} min` : ""}`.trim() : `${m} min`;
+const nivelTxt = (lv) => lv ? SIM.NOMBRE_NIVEL[lv] : "—";
+const RUBRICA = {
+  writing: [
+    ["A1", "Palabras o frases sueltas; cuesta entender qué quieres decir."],
+    ["A2", "Se entiende lo básico con frases sencillas; errores frecuentes y poco control del registro."],
+    ["B1", "Cumples la tarea con frases enlazadas y vocabulario corriente; los errores no impiden entender."],
+    ["B2", "Cubres todos los puntos, ajustas el registro, enlazas ideas con variedad y cometes pocos errores."],
+    ["C", "Texto natural y preciso, vocabulario rico, casi sin errores y registro siempre adecuado."]
+  ],
+  speaking: [
+    ["A1", "Palabras sueltas, muchas pausas; no llegas a responder la pregunta."],
+    ["A2", "Respondes con frases cortas y sencillas; te quedas callado antes de tiempo."],
+    ["B1", "Respondes y das algún motivo; hablas con pausas pero se te sigue sin esfuerzo."],
+    ["B2", "Desarrollas cada respuesta con motivos y ejemplos, usas conectores y llenas el tiempo con fluidez."],
+    ["C", "Hablas con soltura y precisión, matizas y apenas cometes errores."]
+  ]
+};
+function SimObjetiva({ parte, resp, onResp }) {
+  const d = parte.data;
+  const fmt = SIM.FORMATO[parte.id];
+  const r = resp || {};
+  const set = (i, v) => onResp((prev) => ({ ...prev || {}, [i]: v }));
+  if (fmt === "mcq") return /* @__PURE__ */ React.createElement("div", null, d.intro && /* @__PURE__ */ React.createElement("p", { className: "hint" }, d.intro), d.script && /* @__PURE__ */ React.createElement(Player, { script: d.script }), (d.questions || []).map((q, i) => /* @__PURE__ */ React.createElement("div", { key: i, className: "qblock" }, q.script && /* @__PURE__ */ React.createElement(Player, { script: q.script, label: `audio ${i + 1}` }), /* @__PURE__ */ React.createElement("p", { className: "qtext" }, /* @__PURE__ */ React.createElement("span", { className: "qnum" }, i + 1), q.q), /* @__PURE__ */ React.createElement("div", { className: "opts" }, q.opts.map((o, j) => /* @__PURE__ */ React.createElement(
+    "button",
+    {
+      key: j,
+      "aria-pressed": r[i] === j,
+      onClick: () => set(i, j),
+      className: "opt" + (r[i] === j ? " picked" : "")
+    },
+    /* @__PURE__ */ React.createElement("span", { className: "dot" }),
+    o
+  ))))));
+  if (fmt === "fill") {
+    const withBank = Array.isArray(d.bank);
+    const n = SIM.itemsDeParte(parte);
+    const trozos = String(d.text).split(/\[\d\]/);
+    return /* @__PURE__ */ React.createElement("div", null, d.intro && /* @__PURE__ */ React.createElement("p", { className: "hint" }, d.intro), withBank && /* @__PURE__ */ React.createElement("div", { className: "bank" }, d.bank.map((w, i) => /* @__PURE__ */ React.createElement("span", { key: i, className: "chip" }, w))), /* @__PURE__ */ React.createElement("p", { className: "passage" }, trozos.map((t, i) => /* @__PURE__ */ React.createElement("span", { key: i }, t, i < n && /* @__PURE__ */ React.createElement(
+      "select",
+      {
+        className: "selInline",
+        "aria-label": `Hueco ${i + 1}`,
+        value: r[i] ?? "",
+        onChange: (e) => set(i, e.target.value === "" ? void 0 : Number(e.target.value))
+      },
+      /* @__PURE__ */ React.createElement("option", { value: "" }, "____"),
+      (withBank ? d.bank : d.gaps[i].opts).map((o, j) => /* @__PURE__ */ React.createElement("option", { key: j, value: j }, o))
+    )))));
+  }
+  if (fmt === "order") {
+    const orden = Array.isArray(resp) ? resp : parte.orden;
+    const move = (i, dlt) => {
+      const j = i + dlt;
+      if (j < 0 || j >= orden.length) return;
+      const next = [...orden];
+      [next[i], next[j]] = [next[j], next[i]];
+      onResp(next);
+    };
+    return /* @__PURE__ */ React.createElement("div", null, d.intro && /* @__PURE__ */ React.createElement("p", { className: "hint" }, d.intro, " La primera frase ya está colocada."), /* @__PURE__ */ React.createElement("div", { className: "seqRow fixed" }, /* @__PURE__ */ React.createElement("span", { className: "seqText" }, d.lines[0])), orden.map((orig, i) => /* @__PURE__ */ React.createElement("div", { key: orig, className: "seqRow" }, /* @__PURE__ */ React.createElement("span", { className: "seqText" }, d.lines[orig]), /* @__PURE__ */ React.createElement("span", { className: "seqBtns" }, /* @__PURE__ */ React.createElement("button", { onClick: () => move(i, -1), disabled: i === 0, "aria-label": `Subir la frase ${i + 2}` }, "↑"), /* @__PURE__ */ React.createElement("button", { onClick: () => move(i, 1), disabled: i === orden.length - 1, "aria-label": `Bajar la frase ${i + 2}` }, "↓")))));
+  }
+  if (fmt === "match") return /* @__PURE__ */ React.createElement("div", null, d.intro && /* @__PURE__ */ React.createElement("p", { className: "hint" }, d.intro), d.script && /* @__PURE__ */ React.createElement(Player, { script: String(d.script).replace(/\b([A-Z][a-z]+):/g, "$1 says,") }), (d.items || []).map((it, i) => /* @__PURE__ */ React.createElement("div", { key: i, className: "matchRow" }, /* @__PURE__ */ React.createElement("span", { className: "matchLabel" }, it.label), it.script && /* @__PURE__ */ React.createElement(Player, { script: it.script, label: it.label }), it.text && /* @__PURE__ */ React.createElement("p", { className: d.script ? "matchStatement" : "passage" }, it.text), /* @__PURE__ */ React.createElement(
+    "select",
+    {
+      className: "sel",
+      "aria-label": `Respuesta para ${it.label}`,
+      value: r[i] ?? "",
+      onChange: (e) => set(i, e.target.value === "" ? void 0 : Number(e.target.value))
+    },
+    /* @__PURE__ */ React.createElement("option", { value: "" }, "— elige —"),
+    d.options.map((o, j) => /* @__PURE__ */ React.createElement("option", { key: j, value: j }, o))
+  ))));
+  return null;
+}
+function SimEscritura({ parte, resp, onResp }) {
+  const d = parte.data;
+  const r = resp || {};
+  return /* @__PURE__ */ React.createElement("div", null, d.intro && /* @__PURE__ */ React.createElement("p", { className: "hint" }, d.intro), d.context && /* @__PURE__ */ React.createElement("p", { className: "passage" }, d.context), (d.fields || []).map((f, i) => /* @__PURE__ */ React.createElement("div", { key: i, className: "field" }, /* @__PURE__ */ React.createElement("label", { className: "prompt", htmlFor: `sim-${parte.id}-${i}` }, f.prompt), /* @__PURE__ */ React.createElement(
+    "textarea",
+    {
+      id: `sim-${parte.id}-${i}`,
+      className: "ta " + (parte.id === "w1" ? "tiny" : parte.id === "w4" && i === 1 ? "" : "small"),
+      value: r[i] || "",
+      placeholder: "Write in English…",
+      onChange: (e) => {
+        const v = e.target.value;
+        onResp((prev) => ({ ...prev || {}, [i]: v }));
+      }
+    }
+  ), /* @__PURE__ */ React.createElement("div", { className: "wc" }, SIM.palabras(r[i]), " palabras · piden ", f.words))));
+}
+function SimHabla({ parte, resp, onResp }) {
+  if (Array.isArray(resp)) {
+    const n = resp.reduce((a, t) => a + SIM.palabras(t), 0);
+    return /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("p", { className: "hint" }, "Respuesta guardada (", n, " ", n === 1 ? "palabra transcrita" : "palabras transcritas", ")."), /* @__PURE__ */ React.createElement("button", { className: "btn ghost small", onClick: () => onResp(null) }, "Repetir esta parte"));
+  }
+  return /* @__PURE__ */ React.createElement(SpeakTask, { data: parte.data, def: BY_ID[parte.id], onRespuesta: onResp });
+}
+function SimParte({ parte, resp, onResp }) {
+  const def = BY_ID[parte.id];
+  const fmt = SIM.FORMATO[parte.id];
+  return /* @__PURE__ */ React.createElement("div", { className: "simParte" }, /* @__PURE__ */ React.createElement("h3", { className: "simParteTitle" }, def.name), fmt === "write" ? /* @__PURE__ */ React.createElement(SimEscritura, { parte, resp, onResp }) : fmt === "speak" ? /* @__PURE__ */ React.createElement(SimHabla, { parte, resp, onResp }) : /* @__PURE__ */ React.createElement(SimObjetiva, { parte, resp, onResp }));
+}
+function Autoevaluacion({ sec, resps, onGuardar, onCancelar }) {
+  const [niveles, setNiveles] = useState(sec.partes.map(() => null));
+  const faltan = sec.partes.some((p, i) => !SIM.parteVacia(resps[i]) && !niveles[i]);
+  return /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("p", { className: "hint" }, "Para cada parte, compara lo que has hecho con la respuesta modelo y la lista, y elige con sinceridad el descriptor que mejor te describe. Las partes que dejaste en blanco cuentan 0."), sec.partes.map((p, i) => {
+    const d = p.data;
+    const vacia = SIM.parteVacia(resps[i]);
+    const consignas = (sec.skill === "writing" ? d.fields : d.rounds) || [];
+    const modelos = d.model || [];
+    const tuyo = (j) => String((resps[i] || {})[j] || "").trim();
+    return /* @__PURE__ */ React.createElement("div", { key: i, className: "simParte" }, /* @__PURE__ */ React.createElement("h3", { className: "simParteTitle" }, BY_ID[p.id].name), vacia ? /* @__PURE__ */ React.createElement("p", { className: "hint" }, "En blanco: 0 puntos.") : /* @__PURE__ */ React.createElement(React.Fragment, null, d.scene && /* @__PURE__ */ React.createElement("p", { className: "passage" }, d.scene), consignas.map((c, j) => /* @__PURE__ */ React.createElement("div", { key: j, className: "upgrade" }, /* @__PURE__ */ React.createElement("p", { className: "prompt dim", style: { margin: 0 } }, c.prompt), /* @__PURE__ */ React.createElement("span", { className: "tag" }, "Lo tuyo"), /* @__PURE__ */ React.createElement("p", { style: { whiteSpace: "pre-wrap" } }, tuyo(j) || "—"), modelos.length === consignas.length && /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement("span", { className: "tag" }, "Respuesta modelo"), /* @__PURE__ */ React.createElement("p", { style: { whiteSpace: "pre-wrap" } }, modelos[j])))), modelos.length !== consignas.length && modelos.map((m, j) => /* @__PURE__ */ React.createElement("div", { key: j, className: "upgrade" }, /* @__PURE__ */ React.createElement("span", { className: "tag" }, "Respuesta modelo ", modelos.length > 1 ? j + 1 : ""), /* @__PURE__ */ React.createElement("p", { style: { whiteSpace: "pre-wrap" } }, m))), d.check && /* @__PURE__ */ React.createElement("div", { className: "checklist" }, /* @__PURE__ */ React.createElement("span", { className: "tag" }, "Compara tu texto con esto"), d.check.map((c, j) => /* @__PURE__ */ React.createElement("p", { key: j }, c))), /* @__PURE__ */ React.createElement("fieldset", { className: "rubrica" }, /* @__PURE__ */ React.createElement("legend", null, "¿Qué descriptor encaja mejor con tu respuesta?"), RUBRICA[sec.skill].map(([lv, txt]) => /* @__PURE__ */ React.createElement("label", { key: lv, className: "rubricaOpt" + (niveles[i] === lv ? " picked" : "") }, /* @__PURE__ */ React.createElement(
+      "input",
+      {
+        type: "radio",
+        name: `rub-${sec.skill}-${i}`,
+        checked: niveles[i] === lv,
+        onChange: () => setNiveles((n) => {
+          const x = [...n];
+          x[i] = lv;
+          return x;
+        })
+      }
+    ), /* @__PURE__ */ React.createElement("strong", null, SIM.NOMBRE_NIVEL[lv]), " ", txt)))));
+  }), /* @__PURE__ */ React.createElement("div", { className: "row" }, /* @__PURE__ */ React.createElement("button", { className: "btn", disabled: faltan, onClick: () => onGuardar(niveles) }, "Guardar autoevaluación"), /* @__PURE__ */ React.createElement("button", { className: "btn ghost", onClick: onCancelar }, "Volver")));
+}
+const FUENTE_TXT = {
+  auto: "corrección automática",
+  modelo: "corregido por el modelo",
+  autoevaluacion: "autoevaluación con la rúbrica",
+  sin: "sin puntuar",
+  pendiente: "pendiente de puntuar"
+};
+function SimResultado({ sim, setSim, onCerrar }) {
+  const [auto, setAuto] = useState(null);
+  const [corrigiendo, setCorrigiendo] = useState({});
+  const lanzadas = useRef({});
+  const { destrezas, total } = SIM.resultadoDe(sim);
+  const setCalif = (si, c) => setSim((e) => {
+    const calif = [...e.calif];
+    calif[si] = c;
+    return { ...e, calif };
+  });
+  const corrige = async (si) => {
+    const sec = sim.secciones[si];
+    const resps = sim.resp[si] || [];
+    setCorrigiendo((c) => ({ ...c, [si]: true }));
+    const niveles = [];
+    const detalle = [];
+    let fallo = null;
+    for (let i = 0; i < sec.partes.length; i++) {
+      const p = sec.partes[i];
+      if (SIM.parteVacia(resps[i])) {
+        niveles.push(null);
+        detalle.push(null);
+        continue;
+      }
+      try {
+        const fb = sec.skill === "writing" ? await corrigeWriting(BY_ID[p.id], p.data.fields || [], resps[i] || {}) : await corrigeSpeaking(BY_ID[p.id], p.data, resps[i] || []);
+        const lv = SIM.puntosDeNivel(sec.skill, fb?.level) != null ? fb.level : null;
+        if (!lv) fallo = fallo || "El modelo no ha devuelto un nivel reconocible.";
+        niveles.push(lv);
+        detalle.push({ level: fb?.level || "?", summary: fb?.summary || "" });
+      } catch (e) {
+        fallo = fallo || e.message || "No he podido corregirlo.";
+        niveles.push(null);
+        detalle.push(null);
+      }
+    }
+    setCalif(si, { fuente: "modelo", niveles, detalle, error: fallo });
+    setCorrigiendo((c) => ({ ...c, [si]: false }));
+  };
+  useEffect(() => {
+    if (!hayModelo()) return;
+    sim.secciones.forEach((s, si) => {
+      if (SIM.esProductiva(s.skill) && !sim.calif[si] && !lanzadas.current[si]) {
+        lanzadas.current[si] = true;
+        corrige(si);
+      }
+    });
+  }, []);
+  if (auto != null) {
+    const sec = sim.secciones[auto];
+    return /* @__PURE__ */ React.createElement("div", { className: "stage" }, /* @__PURE__ */ React.createElement("h2", null, "Autoevaluación · ", SIM.ESTRUCTURA[sec.skill].nombre), /* @__PURE__ */ React.createElement(
+      Autoevaluacion,
+      {
+        sec,
+        resps: sim.resp[auto] || [],
+        onCancelar: () => setAuto(null),
+        onGuardar: (niveles) => {
+          setCalif(auto, { fuente: "autoevaluacion", niveles });
+          setAuto(null);
+        }
+      }
+    ));
+  }
+  return /* @__PURE__ */ React.createElement("div", { className: "stage" }, /* @__PURE__ */ React.createElement("h2", null, "Resultado del simulacro"), /* @__PURE__ */ React.createElement("p", { className: "simAviso", role: "note" }, /* @__PURE__ */ React.createElement("strong", null, "Es una estimación, no la nota oficial."), " Las fronteras entre niveles son una aproximación de esta app: el British Council no publica una tabla fija y la ajusta en cada versión del examen."), /* @__PURE__ */ React.createElement("div", { className: "simTotal" }, /* @__PURE__ */ React.createElement("span", { className: "simTotalLabel" }, "Total", destrezas.core && sim.secciones.length > 1 ? " (sin el Core)" : ""), /* @__PURE__ */ React.createElement("strong", null, total.puntos == null ? "—" : `${total.puntos} / ${total.max}`), /* @__PURE__ */ React.createElement("span", null, "nivel estimado: ", /* @__PURE__ */ React.createElement("strong", null, nivelTxt(total.nivel)), total.incompleto ? " · faltan destrezas por puntuar" : "")), /* @__PURE__ */ React.createElement("div", { className: "bars" }, sim.secciones.map((s, si) => {
+    const r = destrezas[s.skill];
+    const c = sim.calif[si];
+    return /* @__PURE__ */ React.createElement("div", { key: s.skill, className: "simRes", style: skStyle(s.skill) }, /* @__PURE__ */ React.createElement("div", { className: "barRow" }, /* @__PURE__ */ React.createElement("span", { className: "barLabel" }, /* @__PURE__ */ React.createElement("span", { className: "barDot" }), SIM.ESTRUCTURA[s.skill].nombre), /* @__PURE__ */ React.createElement("div", { className: "bar" }, /* @__PURE__ */ React.createElement("span", { className: "fill", style: { width: `${(r.puntos || 0) / 50 * 100}%` } })), /* @__PURE__ */ React.createElement("span", { className: "barVal" }, r.puntos == null ? "—" : /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement("strong", null, r.puntos), "/50 · ", nivelTxt(r.nivel)))), /* @__PURE__ */ React.createElement("p", { className: "simResNote" }, r.total != null ? `${r.aciertos} de ${r.total} aciertos · ` : "", FUENTE_TXT[r.fuente], s.motivo === "tiempo" ? " · se acabó el tiempo" : "", s.skill === "core" ? " · en el examen real no da nivel por sí solo" : ""), SIM.esProductiva(s.skill) && (corrigiendo[si] ? /* @__PURE__ */ React.createElement(Loading, { text: "Corrigiendo con el modelo…" }) : (!c || c.error || c.fuente === "sin") && /* @__PURE__ */ React.createElement("div", { className: "simProd" }, c?.error && /* @__PURE__ */ React.createElement("p", { className: "hint" }, c.error), !hayModelo() && !c && /* @__PURE__ */ React.createElement("p", { className: "hint" }, "Sin clave no hay quien corrija esta destreza. Puedes autoevaluarte con la respuesta modelo y una rúbrica, o dejarla sin puntuar: no se inventa ninguna nota."), /* @__PURE__ */ React.createElement("div", { className: "row" }, hayModelo() ? /* @__PURE__ */ React.createElement("button", { className: "btn small", onClick: () => corrige(si) }, "Corregir con el modelo") : /* @__PURE__ */ React.createElement("button", { className: "btn small", onClick: () => setAuto(si) }, "Autoevaluarme con la rúbrica"), c?.fuente !== "sin" && /* @__PURE__ */ React.createElement("button", { className: "btn ghost small", onClick: () => setCalif(si, { fuente: "sin" }) }, "Dejar sin puntuar")))), c?.detalle?.some(Boolean) && /* @__PURE__ */ React.createElement("details", { className: "details" }, /* @__PURE__ */ React.createElement("summary", null, "Qué ha dicho el corrector"), c.detalle.map((x, i) => x && /* @__PURE__ */ React.createElement("p", { key: i, className: "hint" }, /* @__PURE__ */ React.createElement("strong", null, BY_ID[s.partes[i].id].name, ": ", x.level, "."), " ", x.summary))));
+  })), /* @__PURE__ */ React.createElement("p", { className: "hint", style: { marginTop: 18 } }, "Las destrezas objetivas se puntúan como proporción de aciertos sobre 50. Writing y Speaking pasan el nivel de cada parte al centro de su franja (la parte 4 del Writing pesa el doble). Queda guardado en tu historial."), /* @__PURE__ */ React.createElement("button", { className: "btn", onClick: onCerrar }, "Cerrar el simulacro"));
+}
+function Simulacro({ historial, onGuarda }) {
+  const [sim, setSimRaw] = useState(loadSim);
+  const [aviso, setAviso] = useState("");
+  const [ahora, setAhora] = useState(Date.now());
+  const [confirmar, setConfirmar] = useState(null);
+  const [error, setError] = useState(null);
+  const restAnterior = useRef(null);
+  const cabecera = useRef(null);
+  const simRef = useRef(sim);
+  simRef.current = sim;
+  const setSim = useCallback((fn) => setSimRaw((prev) => {
+    const next = typeof fn === "function" ? fn(prev) : fn;
+    saveSim(next);
+    return next;
+  }), []);
+  const enMarcha = sim && sim.fase === "examen" && sim.secciones[sim.actual]?.fin;
+  useEffect(() => {
+    if (!enMarcha) {
+      restAnterior.current = null;
+      return;
+    }
+    const tic = () => {
+      const t = Date.now();
+      const e = simRef.current;
+      setAhora(t);
+      if (!e || e.fase !== "examen") return;
+      const rest2 = SIM.segundosRestantes(e, t);
+      const msg = SIM.avisoTiempo(restAnterior.current, rest2);
+      if (msg) setAviso(msg);
+      restAnterior.current = rest2;
+      if (SIM.compruebaTiempo(e, t) !== e) {
+        setAviso(`Se acabó el tiempo de ${SIM.ESTRUCTURA[e.secciones[e.actual].skill].nombre}. La sección se ha cerrado.`);
+        setSim((x) => x ? SIM.compruebaTiempo(x, t) : x);
+      }
+    };
+    tic();
+    const id = setInterval(tic, 1e3);
+    return () => clearInterval(id);
+  }, [enMarcha]);
+  const califJSON = sim ? JSON.stringify(sim.calif) : "";
+  useEffect(() => {
+    if (sim && sim.fase === "resultado") onGuarda(SIM.entradaHistorial(sim, key()));
+  }, [sim?.fase, califJSON]);
+  useEffect(() => {
+    cabecera.current?.focus();
+  }, [sim?.actual, sim?.fase, !!sim?.secciones[sim?.actual]?.fin]);
+  const empezar = (modo) => {
+    try {
+      setError(null);
+      setSim(SIM.preparaSimulacro(window.BANK || {}, modo));
+    } catch (e) {
+      setError(e.message);
+    }
+  };
+  const abandonar = () => {
+    setSim(null);
+    setConfirmar(null);
+    setAviso("");
+  };
+  const setResp = (si2, pi) => (v) => setSim((e) => {
+    const resp = e.resp.map((r) => [...r]);
+    resp[si2][pi] = typeof v === "function" ? v(resp[si2][pi]) : v;
+    return { ...e, resp };
+  });
+  if (!sim) return /* @__PURE__ */ React.createElement("section", null, /* @__PURE__ */ React.createElement("p", { className: "hint" }, "Un examen de prueba con los tiempos del Aptis General. El reloj de cada sección corre aunque cierres la pestaña; al agotarse, la sección se cierra y pasas a la siguiente. Al final ves tu puntuación de 0 a 50 por destreza y un nivel MCER estimado."), error && /* @__PURE__ */ React.createElement("p", { className: "hint", role: "alert", style: { color: "var(--bad)" } }, error), /* @__PURE__ */ React.createElement("div", { className: "blocks" }, /* @__PURE__ */ React.createElement("button", { className: "blockRow isNext simCompleto", onClick: () => empezar("completo") }, /* @__PURE__ */ React.createElement("span", { className: "mark" }), /* @__PURE__ */ React.createElement("span", { className: "blockName" }, /* @__PURE__ */ React.createElement("span", { className: "nextTag" }, "Examen completo"), /* @__PURE__ */ React.createElement("strong", null, "Core, Reading, Listening, Writing y Speaking"), /* @__PURE__ */ React.createElement("em", null, "Las cinco secciones seguidas, con una pausa entre una y otra.")), /* @__PURE__ */ React.createElement("span", { className: "blockMins" }, durTxt(totalMins(SIM.ORDEN))))), /* @__PURE__ */ React.createElement("h3", { className: "areaTitle" }, "O una sola destreza"), /* @__PURE__ */ React.createElement("div", { className: "blocks" }, SIM.ORDEN.map((k) => /* @__PURE__ */ React.createElement("button", { key: k, className: "blockRow", style: skStyle(k), onClick: () => empezar(k) }, /* @__PURE__ */ React.createElement("span", { className: "mark" }), /* @__PURE__ */ React.createElement("span", { className: "blockName" }, "Simulacro de ", SIM.ESTRUCTURA[k].nombre, /* @__PURE__ */ React.createElement("em", null, SIM.ESTRUCTURA[k].partes.map((p) => BY_ID[p.id].name.split(" · ")[0]).filter((x, i, a) => a.indexOf(x) === i).join(", "))), /* @__PURE__ */ React.createElement("span", { className: "blockMins" }, SIM.ESTRUCTURA[k].mins, " min")))), !hayModelo() && /* @__PURE__ */ React.createElement("p", { className: "rotaNote" }, "Sin clave, Core, Reading y Listening se corrigen solos. Writing y Speaking los puedes autoevaluar con la respuesta modelo y una rúbrica, o dejarlos sin puntuar."), historial.length > 0 && /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement("h3", { className: "areaTitle" }, "Tus simulacros"), /* @__PURE__ */ React.createElement("div", { className: "tags" }, historial.map((h) => /* @__PURE__ */ React.createElement("div", { key: h.id, className: "tagRow" }, /* @__PURE__ */ React.createElement("span", { className: "tagName" }, h.fecha, " · ", h.modo === "completo" ? "Completo" : SIM.ESTRUCTURA[h.modo]?.nombre || h.modo, /* @__PURE__ */ React.createElement("span", { className: "simHistSk" }, Object.entries(h.destrezas).map(([k, d]) => `${SIM.ESTRUCTURA[k]?.nombre || k} ${d.puntos == null ? "—" : d.puntos}`).join(" · "))), /* @__PURE__ */ React.createElement("span", { className: "tagN" }, h.total?.puntos == null ? "sin total" : `${h.total.puntos}/${h.total.max} · ${nivelTxt(h.total.nivel)}`)))), /* @__PURE__ */ React.createElement("p", { className: "hint", style: { marginTop: 12 } }, "Niveles estimados, no oficiales.")));
+  if (sim.fase === "resultado") return /* @__PURE__ */ React.createElement(SimResultado, { sim, setSim, onCerrar: abandonar });
+  const si = sim.actual;
+  const sec = sim.secciones[si];
+  const info = SIM.ESTRUCTURA[sec.skill];
+  const previa = si > 0 ? sim.secciones[si - 1] : null;
+  const rest = SIM.segundosRestantes(sim, ahora);
+  const botonAbandonar = confirmar === "abandonar" ? /* @__PURE__ */ React.createElement("div", { className: "simConfirm", role: "group", "aria-label": "Confirmar abandono" }, /* @__PURE__ */ React.createElement("p", null, "¿Abandonar el simulacro? No se guardará ningún resultado."), /* @__PURE__ */ React.createElement("div", { className: "row" }, /* @__PURE__ */ React.createElement("button", { className: "btn small", onClick: abandonar }, "Sí, abandonar"), /* @__PURE__ */ React.createElement("button", { className: "btn ghost small", onClick: () => setConfirmar(null) }, "Seguir con el simulacro"))) : /* @__PURE__ */ React.createElement("button", { className: "linkBtn", onClick: () => setConfirmar("abandonar") }, "Abandonar el simulacro");
+  return /* @__PURE__ */ React.createElement("div", { className: "stage", style: skStyle(sec.skill) }, /* @__PURE__ */ React.createElement("p", { className: "srOnly", "aria-live": "polite", role: "status" }, aviso), !sec.fin ? /* @__PURE__ */ React.createElement("div", null, previa && /* @__PURE__ */ React.createElement("p", { className: "doneMsg" }, previa.motivo === "tiempo" ? `Se acabó el tiempo de ${SIM.ESTRUCTURA[previa.skill].nombre}.` : `${SIM.ESTRUCTURA[previa.skill].nombre} terminado.`, " ", "Lo que respondiste queda guardado."), /* @__PURE__ */ React.createElement("p", { className: "simPaso" }, "Sección ", si + 1, " de ", sim.secciones.length), /* @__PURE__ */ React.createElement("h2", { ref: cabecera, tabIndex: -1 }, info.nombre), /* @__PURE__ */ React.createElement("p", { className: "realNote" }, durTxt(sec.mins), " · ", sec.partes.length, " ", sec.partes.length === 1 ? "parte" : "partes", ". ", COMPONENT_INFO[sec.skill]?.facts && `En el examen real: ${COMPONENT_INFO[sec.skill].facts}.`), /* @__PURE__ */ React.createElement("p", { className: "hint" }, "El reloj empieza al pulsar el botón y no se para aunque salgas. Si se acaba, la sección se cierra con lo que tengas respondido.", SIM.esProductiva(sec.skill) && sec.skill === "speaking" ? " Cada pregunta tiene además su propio tiempo, como en el examen." : ""), /* @__PURE__ */ React.createElement("button", { className: "btn", onClick: () => setSim((e) => SIM.iniciaSeccion(e)) }, "Empezar ", info.nombre), /* @__PURE__ */ React.createElement("div", { style: { marginTop: 22 } }, botonAbandonar)) : /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("div", { className: "simBar" }, /* @__PURE__ */ React.createElement("span", { className: "simBarName" }, info.nombre, " · sección ", si + 1, " de ", sim.secciones.length), /* @__PURE__ */ React.createElement(
+    "span",
+    {
+      className: "simReloj" + (rest != null && rest <= 60 ? " urge" : ""),
+      role: "timer",
+      "aria-label": `Tiempo restante: ${SIM.reloj(rest ?? 0)}`
+    },
+    SIM.reloj(rest ?? 0)
+  )), /* @__PURE__ */ React.createElement("h2", { ref: cabecera, tabIndex: -1, className: "srOnly" }, info.nombre), sec.partes.map((p, pi) => /* @__PURE__ */ React.createElement(SimParte, { key: `${si}-${pi}`, parte: p, resp: sim.resp[si][pi], onResp: setResp(si, pi) })), confirmar === "terminar" ? /* @__PURE__ */ React.createElement("div", { className: "simConfirm", role: "group", "aria-label": "Confirmar fin de sección" }, /* @__PURE__ */ React.createElement("p", null, "¿Terminar ", info.nombre, "? Ya no podrás volver a esta sección; lo que no hayas respondido cuenta como fallo."), /* @__PURE__ */ React.createElement("div", { className: "row" }, /* @__PURE__ */ React.createElement("button", { className: "btn small", onClick: () => {
+    setConfirmar(null);
+    setSim((e) => SIM.cierraSeccion(e, "usuario"));
+  } }, "Sí, terminar la sección"), /* @__PURE__ */ React.createElement("button", { className: "btn ghost small", onClick: () => setConfirmar(null) }, "Seguir respondiendo"))) : /* @__PURE__ */ React.createElement("button", { className: "btn", onClick: () => setConfirmar("terminar") }, "Terminar la sección"), /* @__PURE__ */ React.createElement("div", { style: { marginTop: 22 } }, botonAbandonar)));
 }
 function Lesson({ item, seen, onLearn, onBack }) {
   const [data, setData] = useState(null);
@@ -1170,6 +1484,7 @@ function App() {
     }
   ));
   const streak = streakOf(st.days);
+  const simEnCurso = view === "hoy" && !running && !!loadSim();
   const weakFirst = (list) => {
     const weak = (s) => errorTags.some(([t]) => t.toLowerCase().includes(s.t.split(" ")[0].toLowerCase())) ? 0 : 1;
     return [...list].sort((a, b) => weak(a) - weak(b));
@@ -1181,7 +1496,7 @@ function App() {
       className: "dotDay " + (st.days[back(n)]?.done ? "on" : ""),
       title: st.days[back(n)]?.done ? "sesión completa" : "sin completar"
     }
-  ))))), /* @__PURE__ */ React.createElement("nav", { className: "nav" }, [["hoy", "Hoy"], ["teoria", "Teoría"], ["aprender", "Temario"], ["libre", "Por partes"], ["fallos", "Mis fallos"], ["progreso", "Progreso"]].map(([k, l]) => /* @__PURE__ */ React.createElement(
+  ))))), /* @__PURE__ */ React.createElement("nav", { className: "nav" }, [["hoy", "Hoy"], ["simulacro", "Simulacro"], ["teoria", "Teoría"], ["aprender", "Temario"], ["libre", "Por partes"], ["fallos", "Mis fallos"], ["progreso", "Progreso"]].map(([k, l]) => /* @__PURE__ */ React.createElement(
     "button",
     {
       key: k,
@@ -1215,7 +1530,19 @@ function App() {
       /* @__PURE__ */ React.createElement("span", { className: "blockName" }, esSiguiente && /* @__PURE__ */ React.createElement("span", { className: "nextTag" }, "Empieza por aquí"), /* @__PURE__ */ React.createElement("strong", null, t.name), /* @__PURE__ */ React.createElement("em", null, t.real)),
       /* @__PURE__ */ React.createElement("span", { className: "blockMins" }, t.mins, " min")
     );
-  })), /* @__PURE__ */ React.createElement("p", { className: "rotaNote" }, "El plan rota: en cuatro días habrás tocado las cuatro partes de cada destreza. Si hoy no tienes tiempo para todo, haz la gramática y una destreza más."))), view === "teoria" && (running ? runTask(running) : /* @__PURE__ */ React.createElement("section", null, /* @__PURE__ */ React.createElement("p", { className: "hint" }, "Cómo funciona cada parte del examen y cómo se ataca. Léelo una vez con calma y vuelve a la parte concreta el día antes de practicarla."), Object.entries(COMPONENT_INFO).map(([sk, info]) => /* @__PURE__ */ React.createElement("div", { key: sk, className: "compBlock" }, /* @__PURE__ */ React.createElement("h3", { className: "compTitle" }, info.title), /* @__PURE__ */ React.createElement("p", { className: "compFacts" }, info.facts), /* @__PURE__ */ React.createElement("p", { className: "compHow" }, info.how), TASKS.filter((t) => t.skill === sk).map((t) => /* @__PURE__ */ React.createElement("div", { key: t.id, className: "theoryCard" }, /* @__PURE__ */ React.createElement("h4", { className: "theoryCardTitle" }, t.name), /* @__PURE__ */ React.createElement(Theory, { id: t.id, open: true }), /* @__PURE__ */ React.createElement("button", { className: "btn ghost small", onClick: () => setRunning(t) }, "Practicarla ahora"))))))), view === "aprender" && (lesson ? /* @__PURE__ */ React.createElement("div", { className: "stage" }, /* @__PURE__ */ React.createElement("button", { className: "back", onClick: () => setLesson(null) }, "← Volver al temario"), /* @__PURE__ */ React.createElement("h2", null, lesson.t), /* @__PURE__ */ React.createElement("p", { className: "realNote" }, lesson.a), /* @__PURE__ */ React.createElement(
+  })), /* @__PURE__ */ React.createElement("p", { className: "rotaNote" }, "El plan rota: en cuatro días habrás tocado las cuatro partes de cada destreza. Si hoy no tienes tiempo para todo, haz la gramática y una destreza más."), /* @__PURE__ */ React.createElement("button", { className: "simCta", onClick: () => {
+    setView("simulacro");
+    setRunning(null);
+  } }, /* @__PURE__ */ React.createElement("strong", null, simEnCurso ? "Tienes un simulacro a medias" : "Simulacro de examen"), /* @__PURE__ */ React.createElement("span", null, simEnCurso ? "Continúa donde lo dejaste: el reloj de la sección sigue corriendo." : "Cronometrado como el Aptis real, completo o por destrezas, con puntuación de 0 a 50 y nivel estimado.")))), view === "simulacro" && /* @__PURE__ */ React.createElement(
+    Simulacro,
+    {
+      historial: st.simulacros,
+      onGuarda: (entrada) => update((s) => {
+        s.simulacros = SIM.anadeAlHistorial(s.simulacros, entrada);
+        return s;
+      })
+    }
+  ), view === "teoria" && (running ? runTask(running) : /* @__PURE__ */ React.createElement("section", null, /* @__PURE__ */ React.createElement("p", { className: "hint" }, "Cómo funciona cada parte del examen y cómo se ataca. Léelo una vez con calma y vuelve a la parte concreta el día antes de practicarla."), Object.entries(COMPONENT_INFO).map(([sk, info]) => /* @__PURE__ */ React.createElement("div", { key: sk, className: "compBlock" }, /* @__PURE__ */ React.createElement("h3", { className: "compTitle" }, info.title), /* @__PURE__ */ React.createElement("p", { className: "compFacts" }, info.facts), /* @__PURE__ */ React.createElement("p", { className: "compHow" }, info.how), TASKS.filter((t) => t.skill === sk).map((t) => /* @__PURE__ */ React.createElement("div", { key: t.id, className: "theoryCard" }, /* @__PURE__ */ React.createElement("h4", { className: "theoryCardTitle" }, t.name), /* @__PURE__ */ React.createElement(Theory, { id: t.id, open: true }), /* @__PURE__ */ React.createElement("button", { className: "btn ghost small", onClick: () => setRunning(t) }, "Practicarla ahora"))))))), view === "aprender" && (lesson ? /* @__PURE__ */ React.createElement("div", { className: "stage" }, /* @__PURE__ */ React.createElement("button", { className: "back", onClick: () => setLesson(null) }, "← Volver al temario"), /* @__PURE__ */ React.createElement("h2", null, lesson.t), /* @__PURE__ */ React.createElement("p", { className: "realNote" }, lesson.a), /* @__PURE__ */ React.createElement(
     Lesson,
     {
       item: lesson,
@@ -1516,6 +1843,49 @@ const css = `
 .theoryCard{margin-bottom:20px;}
 .theoryCardTitle{font-size:14.5px; font-weight:600; margin:0 0 8px;}
 .theoryCard .btn.small{margin-top:0;}
+
+/* ---------- simulacro ---------- */
+.srOnly{position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0;}
+.simCta{display:block; width:100%; text-align:left; cursor:pointer; margin-top:20px; font-family:var(--sans); color:var(--paper);
+  background:var(--accent); border:none; border-radius:11px; padding:16px 18px;}
+.simCta strong{display:block; font-size:16px; font-weight:800; letter-spacing:-.01em;}
+.simCta span{display:block; font-size:13px; line-height:1.5; margin-top:4px; opacity:.88;}
+.simCta:hover{filter:brightness(1.08);}
+.simCta:focus-visible{outline:2px solid var(--ink); outline-offset:2px;}
+.simPaso{font-size:12px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:var(--sk, var(--muted)); margin:0;}
+.stage h2:focus{outline:none;}
+.simBar{position:sticky; top:0; z-index:5; display:flex; justify-content:space-between; align-items:center; gap:12px;
+  background:var(--paper); border-bottom:2px solid var(--sk, var(--line)); padding:10px 0; margin-bottom:8px;}
+.simBarName{font-size:13.5px; font-weight:600; color:var(--ink2);}
+.simReloj{font-size:26px; font-weight:800; letter-spacing:-.02em; font-variant-numeric:tabular-nums;}
+.simReloj.urge{color:var(--bad);}
+.simParte{padding:18px 0 6px; border-top:1px solid var(--line); margin-top:10px;}
+.simParte:first-of-type{border-top:none;}
+.simParteTitle{font-size:16px; font-weight:800; letter-spacing:-.01em; margin:0 0 12px;}
+.simParte label.prompt{display:block;}
+.simConfirm{background:var(--card); border:1px solid var(--line); border-radius:9px; padding:14px 16px; margin-top:18px;}
+.simConfirm p{margin:0 0 10px; font-size:14px; line-height:1.55;}
+.simAviso{font-size:13.5px; line-height:1.6; background:rgba(169,121,17,.1); border-left:3px solid var(--ochre);
+  border-radius:0 8px 8px 0; padding:11px 14px; margin:0 0 18px;}
+.simTotal{display:flex; flex-wrap:wrap; align-items:baseline; gap:6px 14px; background:var(--card); border:1px solid var(--line);
+  border-radius:11px; padding:16px 18px; margin-bottom:14px;}
+.simTotalLabel{font-size:13px; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:.05em;}
+.simTotal > strong{font-size:28px; font-weight:800; letter-spacing:-.03em;}
+.simTotal span{font-size:13.5px; color:var(--muted);}
+.simTotal span strong{color:var(--ink);}
+.simRes{padding:4px 0 10px; border-bottom:1px solid var(--line);}
+.simRes:last-child{border-bottom:none;}
+.simResNote{font-size:12.5px; color:var(--muted); margin:0 0 4px;}
+.simProd{margin-top:8px;}
+.simProd .hint{margin-bottom:10px;}
+.simHistSk{display:block; font-weight:400; font-size:12.5px; color:var(--muted); margin-top:3px;}
+.simParte .checklist{background:var(--card); border:1px solid var(--line); border-radius:8px; padding:14px 17px; margin:0 0 16px;}
+.simParte .checklist p{margin:8px 0 0; font-size:14px; line-height:1.6;}
+.rubrica{border:1px solid var(--line); border-radius:9px; padding:12px 14px; margin:0 0 10px;}
+.rubrica legend{font-size:13.5px; font-weight:600; padding:0 6px;}
+.rubricaOpt{display:block; font-size:14px; line-height:1.55; padding:8px 10px; border-radius:7px; cursor:pointer;}
+.rubricaOpt input{margin-right:8px;}
+.rubricaOpt.picked{background:var(--accentSoft);}
 
 .loading{display:flex; align-items:center; gap:11px; font-size:14px; color:var(--muted); padding:26px 0;}
 .pulse{width:8px; height:8px; border-radius:50%; background:var(--accent); animation:p 1.2s ease-in-out infinite;}
