@@ -1,5 +1,5 @@
 // GENERADO con `npm run build` desde src/app.jsx: no editar a mano.
-// sha256 de src/app.jsx: 9e33da82f66e881961d5d97d6b02e70ea4fbc962704cb39476318ea7306af05f
+// sha256 de src/app.jsx: cdf03d48ce51005306d5e03b6ba91c640d9f32477915e6f2396832a06fa68e88
 const { useState, useEffect, useRef, useCallback } = React;
 const MODEL = "claude-sonnet-5";
 const STORE = "aptis-general-b2";
@@ -1864,7 +1864,7 @@ const css = `
 .simParte{padding:18px 0 6px; border-top:1px solid var(--line); margin-top:10px;}
 .simParte:first-of-type{border-top:none;}
 .simParteTitle{font-size:16px; font-weight:800; letter-spacing:-.01em; margin:0 0 12px;}
-.simParte label.prompt{display:block;}
+label.prompt{display:block;}
 .simConfirm{background:var(--card); border:1px solid var(--line); border-radius:9px; padding:14px 16px; margin-top:18px;}
 .simConfirm p{margin:0 0 10px; font-size:14px; line-height:1.55;}
 .simAviso{font-size:13.5px; line-height:1.6; background:rgba(169,121,17,.1); border-left:3px solid var(--ochre);
