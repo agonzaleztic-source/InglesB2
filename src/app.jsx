@@ -963,8 +963,8 @@ function WriteTask({ data, def, onDone }) {
         const w = (vals[i] || "").trim().split(/\s+/).filter(Boolean).length;
         return (
           <div key={i} className="field">
-            <p className="prompt">{f.prompt}</p>
-            <textarea className={"ta " + (def.id === "w1" ? "tiny" : def.id === "w4" && i === 1 ? "" : "small")}
+            <label className="prompt" htmlFor={`write-${def.id}-${i}`}>{f.prompt}</label>
+            <textarea id={`write-${def.id}-${i}`} className={"ta " + (def.id === "w1" ? "tiny" : def.id === "w4" && i === 1 ? "" : "small")}
               value={vals[i] || ""} disabled={busy} placeholder="Write in English…"
               onChange={(e) => setVals({ ...vals, [i]: e.target.value })} />
             <div className="wc">{w} palabras · piden {f.words}</div>
@@ -1097,8 +1097,8 @@ function SpeakTask({ data, def, onDone, onRespuesta }) {
           {!mic && <p className="hint">No he podido transcribir tu voz: o has denegado el micrófono, o este navegador no lo soporta (va bien en Chrome y Edge; en Safari e iOS no). Escribe abajo, más o menos, lo que has dicho y lo corrijo igual.</p>}
           {rounds.map((r, i) => (
             <div key={i} className="field">
-              <p className="prompt dim">{r.prompt}</p>
-              <textarea className="ta tiny" value={texts[i] || ""} placeholder="Lo que has dicho…"
+              <label className="prompt dim" htmlFor={`speak-${def.id}-${i}`}>{r.prompt}</label>
+              <textarea id={`speak-${def.id}-${i}`} className="ta tiny" value={texts[i] || ""} placeholder="Lo que has dicho…"
                 onChange={(e) => setTexts((t) => { const n = [...t]; n[i] = e.target.value; return n; })} />
             </div>
           ))}
