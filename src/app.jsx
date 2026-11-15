@@ -1,7 +1,7 @@
 const { useState, useEffect, useRef, useCallback } = React;
 
 /* ================================================================
-   APTIS GENERAL · B2 — Entrenamiento diario
+   RUTA B2 — preparación para el Aptis General B2 (no oficial; no afiliada al British Council)
    · Cada tarea reproduce una parte real del examen
    · Registro de todo lo visto: no repite ejercicios
    · Cada fallo se convierte en explicación y en lección
@@ -1927,7 +1927,7 @@ function App() {
     <Shell>
       <header className="head">
         <div>
-          <h1>Aptis General · B2</h1>
+          <h1>Ruta B2</h1>
           <p className="sub">{sinClave()
             ? "Modo gratuito: ejercicios que vienen dentro de la app, con la explicación de cada fallo."
             : "Cada ejercicio se genera de cero. No repite nada de lo que ya has hecho."}</p>
