@@ -1,6 +1,7 @@
-# Aptis General · B2 — Entrenamiento diario
+# Ruta B2 — preparación para el Aptis General B2 (no oficial; no afiliada al British Council)
 
-App de práctica diaria para el examen Aptis General, nivel B2, publicada en
+Ruta B2 es una app de práctica diaria de preparación para el Aptis General B2
+(no oficial; no afiliada al British Council), publicada en
 <https://agonzaleztic-source.github.io/InglesB2/>.
 
 Para ponerla en marcha (con o sin clave de la API), ver [DESPLIEGUE.md](DESPLIEGUE.md).
@@ -22,7 +23,7 @@ Más detalle en [DESPLIEGUE.md](DESPLIEGUE.md#cambiar-el-código-de-la-app).
 
 ## Aviso de marca
 
-Este proyecto es un entrenador independiente y no oficial. **"Aptis" es una
+Ruta B2 es un entrenador independiente y no oficial. **"Aptis" es una
 marca del British Council**, que no ha creado, revisado ni respalda esta
 aplicación. No existe relación alguna entre este proyecto y el British
 Council ni con el examen oficial.

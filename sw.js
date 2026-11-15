@@ -1,5 +1,5 @@
 /**
- * Service worker de la app Aptis B2.
+ * Service worker de la app Ruta B2.
  *
  * Guarda en caché la página, el banco de ejercicios y las librerías de
  * vendor/, para que el modo sin clave funcione sin conexión. Las llamadas a la

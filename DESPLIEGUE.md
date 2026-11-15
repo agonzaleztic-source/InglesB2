@@ -130,51 +130,97 @@ Si una petición falla por un error del modelo (5xx), no se descuenta del cupo.
 
 ---
 
-## Cobrar con Stripe (altas automáticas)
+## Cobrar con Lemon Squeezy (altas automáticas)
 
-El Worker recibe los avisos de Stripe en `/webhooks/stripe` y hace solo lo que
-antes hacías con `curl`: al pagar crea la cuenta y envía el código por email;
-al renovarse la mantiene activa; al cancelar o no pagar la da de baja. Si el
-cliente se vuelve a suscribir recibe un código nuevo y conserva su cupo.
+Lemon Squeezy cobra como vendedor de registro: emite la factura y declara el
+IVA de la UE por ti. El Worker recibe sus avisos en `/webhooks/lemonsqueezy` y
+hace solo lo que antes hacías con `curl`: al pagar crea la cuenta y envía el
+código por email; al renovarse la mantiene activa; al cancelar la deja vigente
+hasta el final del periodo pagado y al caducar la da de baja. Si el cliente se
+vuelve a suscribir recibe un código nuevo y conserva su cupo.
 
-1. En Stripe crea un producto con precio recurrente (mensual) y un *Payment Link*
-   o Checkout para él. Es el enlace que pondrás en la web para pagar.
-2. *Developers* → *Webhooks* → *Add endpoint*, con la dirección
-   `https://TU-WORKER/webhooks/stripe` y estos eventos:
-   `checkout.session.completed`, `customer.subscription.updated`,
-   `customer.subscription.deleted` e `invoice.paid`. Copia el *Signing secret*
-   (`whsec_...`).
-3. Crea una cuenta en <https://resend.com>, verifica tu dominio de envío y saca
+1. En Lemon Squeezy crea la tienda y un producto de **suscripción** (mensual).
+   Prueba primero con el interruptor *Test mode* activado.
+2. Copia el enlace de compra del producto (*Share* → enlace de checkout,
+   `https://TU-TIENDA.lemonsqueezy.com/buy/...`). Es el enlace que pondrás en
+   la web para pagar. Hoy la app no tiene botón de compra: cuando se añada,
+   el enlace irá en una constante `URL_COMPRA`, en un solo sitio.
+3. *Settings* → *Webhooks* → **+**, con:
+   - *Callback URL*: `https://TU-WORKER/webhooks/lemonsqueezy`
+   - *Signing secret*: una cadena aleatoria de 6 a 40 caracteres que inventas
+     tú (por ejemplo, la salida de `openssl rand -hex 20`). Guárdala para el
+     paso 5.
+   - Eventos: `order_created`, `subscription_created`, `subscription_updated`,
+     `subscription_cancelled`, `subscription_resumed`, `subscription_expired`
+     y `subscription_payment_success`.
+
+   El webhook de *Test mode* y el de modo real se configuran por separado:
+   repite este paso al pasar a real.
+4. Crea una cuenta en <https://resend.com>, verifica tu dominio de envío y saca
    una clave de API.
-4. En el Worker, añade los secretos y variables:
+5. En el Worker, añade los secretos y variables:
 
-   | Nombre                  | Valor                                                  |
-   | ----------------------- | ------------------------------------------------------ |
-   | `STRIPE_WEBHOOK_SECRET` | el `whsec_...` del paso 2                              |
-   | `RESEND_API_KEY`        | la clave del paso 3                                    |
-   | `EMAIL_FROM`            | remitente verificado, p. ej. `Aptis B2 <hola@tudominio.com>` |
-   | `APP_URL`               | opcional: dirección de la app que sale en el email     |
+   ```sh
+   npx wrangler secret put LEMONSQUEEZY_SIGNING_SECRET   # el del paso 3
+   npx wrangler secret put RESEND_API_KEY                # la clave del paso 4
+   npx wrangler secret put EMAIL_FROM                    # p. ej. Aptis B2 <hola@tudominio.com>
+   ```
 
-5. Prueba con las tarjetas de test de Stripe en modo prueba antes de pasar a real.
+   | Nombre                        | Valor                                              |
+   | ----------------------------- | -------------------------------------------------- |
+   | `LEMONSQUEEZY_SIGNING_SECRET` | el *Signing secret* del paso 3                     |
+   | `RESEND_API_KEY`              | la clave del paso 4                                |
+   | `EMAIL_FROM`                  | remitente verificado                               |
+   | `APP_URL`                     | opcional: dirección de la app que sale en el email (ya está en `wrangler.toml`) |
+
+6. Haz una compra en *Test mode* con la tarjeta de prueba de Lemon Squeezy y
+   comprueba que llega el email con el código. Los usuarios creados en modo
+   prueba quedan con el plan `prueba`; bórralos o dalos de baja con
+   `/admin/users/update` antes de pasar a real.
 
 Detalles que conviene saber:
 
-- La firma del webhook se comprueba antes de mirar el contenido, con un margen
-  de 5 minutos: sin ella no se da de alta a nadie.
-- Si falla el envío del email, el Worker deshace el alta y responde 500 para que
-  Stripe lo reintente durante días. Un código que nadie ha recibido no sirve.
-- Cada evento se procesa una sola vez aunque Stripe lo reenvíe, y un evento más
+- La firma (`X-Signature`, HMAC-SHA256 del cuerpo con el *Signing secret*) se
+  comprueba antes de mirar el contenido: sin ella, o con una firma errónea, el
+  Worker responde 401 y no hace nada.
+- Si falla el envío del email, el Worker deshace el alta y responde 500 para
+  que Lemon Squeezy lo reintente. **Ojo:** Lemon Squeezy solo reintenta tres
+  veces, en unos dos o tres minutos. Si Resend estuvo caído más tiempo, el
+  cliente ha pagado y no tiene código: dale de alta con `/admin/users/create`
+  (o reenvía el aviso desde el historial del webhook en Lemon Squeezy, si tu
+  panel ofrece esa opción).
+- Cada pedido da de alta una sola vez aunque el aviso se repita, y un aviso más
   antiguo que el último aplicado no puede reactivar a quien ya se dio de baja.
+- Al cancelar, la cuenta caduca sola en la fecha de fin del periodo pagado
+  (`ends_at`), aunque el aviso `subscription_expired` no llegue nunca.
+- Un impago (`past_due`) no corta mientras Lemon Squeezy reintenta el cobro;
+  `unpaid`, `paused` o `expired` sí dan de baja.
 - El cupo es el de `DEFAULT_MONTHLY_QUOTA`; cámbialo por usuario con
   `/admin/users/update` si hace falta.
 - La cuenta se identifica por el email que se escribe al pagar.
 - Los códigos perdidos se reemiten con `/admin/users/reset`; ese endpoint
   devuelve el código y tienes que enviárselo tú.
 - Las condiciones de contratación (borrador) están en `condiciones.html`: rellena
-  sus marcadores `[...]` y, en el Payment Link, exige aceptar las condiciones y
-  la casilla de acceso inmediato antes de cobrar.
-- No hay portal de cliente: para que se den de baja solos, activa el *Customer
-  portal* de Stripe y enlázalo desde la web.
+  sus marcadores `[...]` y, en el checkout de Lemon Squeezy, exige aceptar las
+  condiciones y la casilla de acceso inmediato antes de cobrar.
+- El cliente gestiona su suscripción (cancelar, cambiar tarjeta) desde el
+  *Customer portal* de Lemon Squeezy: comprueba en la tienda que esté activo y,
+  si quieres, enlázalo desde la web.
+
+### Stripe (obsoleto)
+
+La ruta `/webhooks/stripe` sigue en el Worker, marcada como obsoleta, por si
+queda alguna suscripción de Stripe viva. Para quitarla cuando confirmes que no:
+
+1. En Stripe, borra el endpoint del webhook (*Developers* → *Webhooks*).
+2. En `worker.js`, borra la línea `if (path === "/webhooks/stripe") ...`, el
+   bloque «pagos: webhook de Stripe (OBSOLETO)» (`stripeWebhook`,
+   `handleStripeEvent` y `stripeSignatureOk`) y la línea de
+   `STRIPE_WEBHOOK_SECRET` del comentario inicial. `provision` y
+   `sendCodeEmail` se quedan: las usa Lemon Squeezy.
+3. Borra `tests/worker-stripe.test.mjs` y el último test de
+   `tests/worker-lemonsqueezy.test.mjs` (el de la ruta de Stripe).
+4. `npx wrangler secret delete STRIPE_WEBHOOK_SECRET` y despliega.
 
 ---
 
