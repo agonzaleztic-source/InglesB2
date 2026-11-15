@@ -11,7 +11,7 @@
  * para vaciar la caché vieja.
  */
 
-const VERSION = "2026-10-16-7";
+const VERSION = "2026-11-15-2";
 const CACHE = `aptis-b2-${VERSION}`;
 const SHELL = [
   "./",
