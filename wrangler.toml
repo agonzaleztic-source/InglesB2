@@ -1,6 +1,7 @@
 # Despliegue del proxy: `npx wrangler deploy` desde la raíz del repo.
 # Secretos (no van aquí): ANTHROPIC_API_KEY, ADMIN_SECRET y, para cobrar,
-# STRIPE_WEBHOOK_SECRET, RESEND_API_KEY y EMAIL_FROM -> `npx wrangler secret put <NOMBRE>`.
+# LEMONSQUEEZY_SIGNING_SECRET, RESEND_API_KEY y EMAIL_FROM -> `npx wrangler secret put <NOMBRE>`.
+# (STRIPE_WEBHOOK_SECRET es de la ruta obsoleta /webhooks/stripe; ver DESPLIEGUE.md.)
 
 name = "ingles-b2-proxy"
 main = "worker.js"
