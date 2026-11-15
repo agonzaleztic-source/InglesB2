@@ -1,5 +1,5 @@
 // GENERADO con `npm run build` desde src/app.jsx: no editar a mano.
-// sha256 de src/app.jsx: cdf03d48ce51005306d5e03b6ba91c640d9f32477915e6f2396832a06fa68e88
+// sha256 de src/app.jsx: 390afcdfcb12c016cc4d05566967ccc3a6e06c486add0ae587e60c9ee5175977
 const { useState, useEffect, useRef, useCallback } = React;
 const MODEL = "claude-sonnet-5";
 const STORE = "aptis-general-b2";
@@ -1491,7 +1491,7 @@ function App() {
     const weak = (s) => errorTags.some(([t]) => t.toLowerCase().includes(s.t.split(" ")[0].toLowerCase())) ? 0 : 1;
     return [...list].sort((a, b) => weak(a) - weak(b));
   };
-  return /* @__PURE__ */ React.createElement(Shell, null, /* @__PURE__ */ React.createElement("header", { className: "head" }, /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("h1", null, "Aptis General · B2"), /* @__PURE__ */ React.createElement("p", { className: "sub" }, sinClave() ? "Modo gratuito: ejercicios que vienen dentro de la app, con la explicación de cada fallo." : "Cada ejercicio se genera de cero. No repite nada de lo que ya has hecho.")), /* @__PURE__ */ React.createElement("div", { className: "streak" }, streak === 0 ? /* @__PURE__ */ React.createElement("span", { className: "streakStart" }, "Hoy empieza tu racha") : /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement("span", { className: "streakN" }, streak), /* @__PURE__ */ React.createElement("span", { className: "streakL" }, streak === 1 ? "día seguido" : "días seguidos")), /* @__PURE__ */ React.createElement("div", { className: "dots" }, Array.from({ length: 14 }, (_, i) => 13 - i).map((n) => /* @__PURE__ */ React.createElement(
+  return /* @__PURE__ */ React.createElement(Shell, null, /* @__PURE__ */ React.createElement("header", { className: "head" }, /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("h1", null, "Ruta B2"), /* @__PURE__ */ React.createElement("p", { className: "sub" }, sinClave() ? "Modo gratuito: ejercicios que vienen dentro de la app, con la explicación de cada fallo." : "Cada ejercicio se genera de cero. No repite nada de lo que ya has hecho.")), /* @__PURE__ */ React.createElement("div", { className: "streak" }, streak === 0 ? /* @__PURE__ */ React.createElement("span", { className: "streakStart" }, "Hoy empieza tu racha") : /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement("span", { className: "streakN" }, streak), /* @__PURE__ */ React.createElement("span", { className: "streakL" }, streak === 1 ? "día seguido" : "días seguidos")), /* @__PURE__ */ React.createElement("div", { className: "dots" }, Array.from({ length: 14 }, (_, i) => 13 - i).map((n) => /* @__PURE__ */ React.createElement(
     "span",
     {
       key: n,

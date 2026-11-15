@@ -1,7 +1,7 @@
 {
-  "name": "Aptis General · B2",
-  "short_name": "Aptis B2",
-  "description": "Entrenamiento diario para el examen Aptis General, nivel B2.",
+  "name": "Ruta B2",
+  "short_name": "Ruta B2",
+  "description": "Ruta B2: preparación para el Aptis General B2 (no oficial; no afiliada al British Council).",
   "lang": "es",
   "start_url": "./",
   "scope": "./",

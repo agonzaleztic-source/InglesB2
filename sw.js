@@ -1,5 +1,5 @@
 /**
- * Service worker de la app Aptis B2.
+ * Service worker de la app Ruta B2.
  *
  * Guarda en caché la página, el banco de ejercicios y las librerías de
  * vendor/, para que el modo sin clave funcione sin conexión. Las llamadas a la
@@ -11,7 +11,7 @@
  * para vaciar la caché vieja.
  */
 
-const VERSION = "2026-10-16-8";
+const VERSION = "2026-11-15-1";
 const CACHE = `aptis-b2-${VERSION}`;
 const SHELL = [
   "./",

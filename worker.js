@@ -1,5 +1,5 @@
 /**
- * Proxy para la app Aptis B2, con cuentas de usuario y cupo mensual.
+ * Proxy para la app Ruta B2, con cuentas de usuario y cupo mensual.
  *
  * Guarda la clave de la API fuera del navegador: la página habla con este
  * Worker, y el Worker habla con Anthropic.
@@ -453,11 +453,11 @@ async function sendCodeEmail(env, to, token, workerUrl, returning) {
   const link = `${appUrl}#worker=${encodeURIComponent(workerUrl)}`;
   const intro = returning ? "Tu suscripción está activa de nuevo. Este es tu nuevo código de acceso (el anterior ya no funciona):"
     : "Gracias por suscribirte. Este es tu código de acceso personal:";
-  const body = `${intro}\n\n${token}\n\nCómo usarlo:\n1. Abre este enlace: ${link}\n2. Pega tu código de acceso donde te lo pida.\n\nGuárdalo: no se puede volver a mostrar. Si lo pierdes, responde a este correo y te emitiremos uno nuevo.\n\nEntrenador independiente y no oficial; «Aptis» es una marca del British Council.`;
+  const body = `${intro}\n\n${token}\n\nCómo usarlo:\n1. Abre este enlace: ${link}\n2. Pega tu código de acceso donde te lo pida.\n\nGuárdalo: no se puede volver a mostrar. Si lo pierdes, responde a este correo y te emitiremos uno nuevo.\n\nRuta B2: preparación para el Aptis General B2 (no oficial; no afiliada al British Council). «Aptis» es una marca del British Council.`;
   const res = await fetch("https://api.resend.com/emails", {
     method: "POST",
     headers: { authorization: `Bearer ${env.RESEND_API_KEY}`, "content-type": "application/json" },
-    body: JSON.stringify({ from: env.EMAIL_FROM, to: [to], subject: "Tu código de acceso a Aptis B2", text: body }),
+    body: JSON.stringify({ from: env.EMAIL_FROM, to: [to], subject: "Tu código de acceso a Ruta B2", text: body }),
   });
   if (!res.ok) throw new Error(`Resend respondió ${res.status}`);
 }
