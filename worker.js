@@ -7,8 +7,9 @@
  * Cada usuario tiene un código de acceso personal (apt_...). Se genera con el
  * endpoint de administración, se entrega una sola vez y en el KV solo queda su
  * hash SHA-256: si el KV se filtrara, los códigos no se pueden recuperar.
- * Cada usuario tiene un cupo de peticiones al mes. Más adelante, el webhook de
- * Stripe puede llamar a esos mismos endpoints para dar de alta o de baja.
+ * Cada usuario tiene un cupo de peticiones al mes. El webhook de Lemon Squeezy
+ * (/webhooks/lemonsqueezy) da de alta y de baja automáticamente al pagar,
+ * renovar, cancelar o caducar la suscripción.
  *
  * Variables de entorno que hay que configurar en Cloudflare:
  *   ANTHROPIC_API_KEY  (secreto, obligatorio)
@@ -21,7 +22,9 @@
  *   GLOBAL_DAILY_LIMIT (opcional, por defecto 1500 peticiones al día entre todos:
  *                       tope de gasto total, pase lo que pase con los usuarios)
  *   DEFAULT_MONTHLY_QUOTA (opcional, por defecto 300 peticiones al mes por usuario)
- *   STRIPE_WEBHOOK_SECRET (secreto: firma del webhook /webhooks/stripe, whsec_...)
+ *   LEMONSQUEEZY_SIGNING_SECRET (secreto: el "Signing secret" del webhook
+ *                       /webhooks/lemonsqueezy, el mismo que se escribe en Lemon Squeezy)
+ *   STRIPE_WEBHOOK_SECRET (OBSOLETO, secreto: firma del webhook /webhooks/stripe, whsec_...)
  *   RESEND_API_KEY, EMAIL_FROM (secreto y remitente para enviar el código por email)
  *   APP_URL            (opcional: dirección de la app que se pone en el email)
  *
@@ -68,7 +71,10 @@ export default {
     const path = new URL(request.url).pathname;
 
     // Los webhooks y la administración no los llama un navegador: no llevan
-    // Origin y se protegen con la firma de Stripe o con el secreto de admin.
+    // Origin y se protegen con la firma de la pasarela o con el secreto de admin.
+    if (path === "/webhooks/lemonsqueezy") return lemonWebhook(request, env);
+    // OBSOLETO: la pasarela es Lemon Squeezy desde el 15 nov 2026. Se quita
+    // cuando se confirme que no queda ninguna suscripción viva en Stripe.
     if (path === "/webhooks/stripe") return stripeWebhook(request, env);
     if (path.startsWith("/admin/")) return admin(path, request, env, cors);
 
@@ -191,7 +197,147 @@ export default {
   },
 };
 
-/* ---------------- pagos: webhook de Stripe ---------------- */
+/* ---------------- pagos: webhook de Lemon Squeezy ---------------- */
+
+// Lemon Squeezy es el vendedor de registro (cobra y gestiona el IVA) y avisa
+// aquí de cada pedido y de cada cambio de la suscripción. Documentación:
+// https://docs.lemonsqueezy.com/help/webhooks/signing-requests
+// https://docs.lemonsqueezy.com/help/webhooks/event-types
+//
+// La firma X-Signature es el HMAC-SHA256 en hexadecimal del cuerpo en bruto con
+// el "Signing secret" del webhook. Es lo único que impide darse de alta gratis,
+// así que se comprueba antes de leer nada. No lleva marca de tiempo: la
+// protección contra reenvíos es la clave de idempotencia del KV.
+//
+// Qué hace cada evento:
+//   order_created (pedido pagado)  -> alta: usuario, cupo y código por email.
+//   subscription_created           -> asocia la suscripción al email.
+//   subscription_cancelled         -> no corta en el acto: el usuario caduca
+//                                     en ends_at (fin del periodo pagado).
+//   subscription_expired           -> baja.
+//   subscription_updated           -> aplica el estado: active/on_trial
+//                                     reactiva; expired/unpaid/paused da de baja;
+//                                     cancelled pone la caducidad; past_due no
+//                                     toca nada mientras se reintenta el cobro.
+//   subscription_payment_success   -> reactiva (renovación pagada).
+async function lemonWebhook(request, env) {
+  if (!env.LEMONSQUEEZY_SIGNING_SECRET) return text("Falta LEMONSQUEEZY_SIGNING_SECRET", 500);
+  const raw = await request.text();
+  if (!(await lemonSignatureOk(raw, request.headers.get("x-signature"), env.LEMONSQUEEZY_SIGNING_SECRET))) {
+    return text("Firma no válida", 401);
+  }
+  let ev;
+  try { ev = JSON.parse(raw); } catch { return text("Cuerpo no válido", 400); }
+  if (!ev || typeof ev !== "object") return text("Cuerpo no válido", 400);
+
+  const meta = ev.meta || {};
+  const data = ev.data || {};
+  const name = String(meta.event_name || request.headers.get("x-event-name") || "");
+  if (!name || data.id == null) return text("Evento sin nombre o sin id", 400);
+
+  // Lemon Squeezy no manda un id de evento: la clave es evento + recurso +
+  // fecha de modificación del recurso. Un reintento trae el mismo cuerpo y
+  // cae en la misma clave; el alta va además por id de pedido, así que un
+  // pedido nunca crea dos usuarios.
+  const attrs = data.attributes || {};
+  const seenKey = name === "order_created"
+    ? `ls:order:${data.id}`
+    : `ls:evt:${name}:${data.id}:${attrs.updated_at || attrs.created_at || ""}`;
+  if (await env.RATE_LIMIT.get(seenKey)) return text("ya procesado", 200);
+
+  try {
+    await handleLemonEvent(name, data, meta, env, new URL(request.url).origin);
+  } catch (e) {
+    // Un código distinto de 200 hace que Lemon Squeezy lo reintente (solo
+    // tres veces más, en unos minutos).
+    console.error("webhook Lemon Squeezy:", name, e && e.message);
+    return text("Error al procesar el evento", 500);
+  }
+  await env.RATE_LIMIT.put(seenKey, "1", { expirationTtl: 604800 });
+  return text("ok", 200);
+}
+
+async function handleLemonEvent(name, data, meta, env, workerUrl) {
+  const a = data.attributes || {};
+  // Los pedidos de prueba (test_mode) se procesan igual, para poder probar el
+  // circuito completo, pero el usuario queda con plan "prueba" para
+  // distinguirlo. La documentación pone test_mode en data.attributes; se mira
+  // también meta.test_mode por si acaso.
+  const testMode = a.test_mode === true || meta.test_mode === true;
+
+  if (name === "order_created") {
+    if (a.status !== "paid") return;
+    const email = cleanEmail(a.user_email);
+    if (!email) throw new Error("pedido sin email válido");
+    await provision(env, email, workerUrl, testMode ? "prueba" : undefined);
+    return;
+  }
+
+  // El resto de eventos se refieren a una suscripción: la propia (data) o, en
+  // subscription_payment_success, la de la factura.
+  const subId = name === "subscription_payment_success" ? a.subscription_id : data.id;
+  if (subId == null) return;
+  const subKey = `ls:sub:${subId}`;
+  let email = await env.RATE_LIMIT.get(subKey);
+  if (!email) {
+    email = cleanEmail(a.user_email);
+    if (!email) return;
+    await env.RATE_LIMIT.put(subKey, email);
+  }
+  if (name === "subscription_created") return;
+
+  let change;
+  if (name === "subscription_expired") change = { disabled: true };
+  else if (name === "subscription_cancelled") change = { expires: a.ends_at || null };
+  else if (name === "subscription_payment_success") {
+    if (a.status === "paid") change = { disabled: false, expires: null };
+  } else if (name === "subscription_updated" || name === "subscription_resumed" || name === "subscription_unpaused") {
+    if (["active", "on_trial"].includes(a.status)) change = { disabled: false, expires: null };
+    else if (["expired", "unpaid", "paused"].includes(a.status)) change = { disabled: true };
+    else if (a.status === "cancelled") change = { expires: a.ends_at || null };
+  }
+  if (!change) return;
+
+  // Los avisos pueden llegar desordenados: solo se aplica un estado de la
+  // suscripción igual o más reciente que el último aplicado. Las facturas
+  // (payment_success) no llevan la fecha de la suscripción y no se ordenan.
+  const orderKey = `ls:upd:${subId}`;
+  const stamp = name === "subscription_payment_success" ? 0 : Date.parse(a.updated_at) || 0;
+  const last = Number(await env.RATE_LIMIT.get(orderKey)) || 0;
+  if (stamp && stamp < last) return;
+
+  const hash = await env.RATE_LIMIT.get(`email:${email}`);
+  const rec = hash && await env.RATE_LIMIT.get(`user:${hash}`, "json");
+  if (!rec) return;
+  const next = { ...rec };
+  if (change.disabled !== undefined) next.disabled = change.disabled;
+  if (change.expires === null) delete next.expires;
+  else if (change.expires !== undefined) next.expires = change.expires;
+  // Cancelada sin fecha de fin conocida: se da de baja ya, por prudencia.
+  if (change.expires === null && change.disabled === undefined) next.disabled = true;
+  await env.RATE_LIMIT.put(`user:${hash}`, JSON.stringify(next));
+  if (stamp) await env.RATE_LIMIT.put(orderKey, String(stamp));
+}
+
+function cleanEmail(v) {
+  const email = String(v || "").trim().toLowerCase();
+  return /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email) ? email : "";
+}
+
+async function lemonSignatureOk(raw, header, secret) {
+  if (!header) return false;
+  const key = await crypto.subtle.importKey("raw", new TextEncoder().encode(secret), { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
+  const mac = await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(raw));
+  const expected = [...new Uint8Array(mac)].map((x) => x.toString(16).padStart(2, "0")).join("");
+  // safeEqual compara en tiempo constante.
+  return safeEqual(header.trim().toLowerCase(), expected);
+}
+
+/* ---------------- pagos: webhook de Stripe (OBSOLETO) ---------------- */
+
+// OBSOLETO desde el 15 nov 2026: la pasarela única es Lemon Squeezy. Se deja
+// mientras pueda quedar alguna suscripción de Stripe; para quitarlo, ver
+// DESPLIEGUE.md ("Quitar Stripe").
 
 // Stripe llama aquí al pagar, renovar o cancelar. La firma (HMAC-SHA256 del
 // cuerpo con STRIPE_WEBHOOK_SECRET) es lo único que impide que cualquiera se
@@ -260,7 +406,7 @@ async function handleStripeEvent(ev, env, workerUrl) {
 // Alta tras el pago (o reactivación si ya tenía cuenta): código nuevo por
 // email. Si el email falla se deshace todo y se devuelve error, para que el
 // reintento de Stripe lo repita: un código que nadie ha recibido no sirve.
-async function provision(env, email, workerUrl) {
+async function provision(env, email, workerUrl, plan) {
   const indexKey = `email:${email}`;
   const oldHash = await env.RATE_LIMIT.get(indexKey);
   const prev = oldHash ? (await env.RATE_LIMIT.get(`user:${oldHash}`, "json")) || {} : {};
@@ -268,7 +414,7 @@ async function provision(env, email, workerUrl) {
   const token = newToken();
   const hash = await sha256(token);
   if (oldHash) await env.RATE_LIMIT.delete(`user:${oldHash}`);
-  await putUser(env, hash, email, {}, { ...prev, disabled: false });
+  await putUser(env, hash, email, plan ? { plan } : {}, { ...prev, disabled: false, expires: undefined });
   await env.RATE_LIMIT.put(indexKey, hash);
 
   try {
@@ -350,7 +496,11 @@ async function admin(path, request, env, cors) {
     const next = { ...rec };
     if (b.plan) next.plan = String(b.plan).slice(0, 20);
     if (cupoEnviado(b)) next.quota = quotaOf(b, env);
-    if (b.disabled !== undefined) next.disabled = !!b.disabled;
+    if (b.disabled !== undefined) {
+      next.disabled = !!b.disabled;
+      // Reactivar a mano también quita una caducidad pendiente.
+      if (!next.disabled) delete next.expires;
+    }
     await env.RATE_LIMIT.put(`user:${existing}`, JSON.stringify(next));
     return json({ email, plan: next.plan, quota: next.quota, disabled: !!next.disabled }, 200, cors);
   }
@@ -375,6 +525,7 @@ async function putUser(env, hash, email, b, prev) {
     quota: cupoEnviado(b) ? quotaOf(b, env) : (prev.quota ?? quotaOf({}, env)),
     disabled: !!prev.disabled,
     created: prev.created || new Date().toISOString(),
+    ...(prev.expires ? { expires: prev.expires } : {}),
   }));
 }
 
@@ -394,7 +545,11 @@ async function findUser(env, pass) {
   if (!pass || !pass.startsWith("apt_") || pass.length > 80) return null;
   const hash = await sha256(pass);
   const rec = await env.RATE_LIMIT.get(`user:${hash}`, "json");
-  return rec && !rec.disabled ? { hash, ...rec } : null;
+  if (!rec || rec.disabled) return null;
+  // Suscripción cancelada: sigue valiendo hasta el fin del periodo pagado y
+  // caduca sola aunque no llegue el aviso de expiración.
+  if (rec.expires && Date.parse(rec.expires) <= Date.now()) return null;
+  return { hash, ...rec };
 }
 
 async function count(env, key) {
