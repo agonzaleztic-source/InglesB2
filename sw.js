@@ -11,7 +11,7 @@
  * para vaciar la caché vieja.
  */
 
-const VERSION = "2026-11-15-1";
+const VERSION = "2026-11-15-4";
 const CACHE = `aptis-b2-${VERSION}`;
 const SHELL = [
   "./",
@@ -68,6 +68,15 @@ self.addEventListener("fetch", (event) => {
       }
       const res = await fresh;
       if (res) return res;
+      // Sin red y sin copia exacta de esta URL (por ejemplo, se abrió con un
+      // hash o una ruta que no coincide con ninguna del SHELL): si es una
+      // navegación, mejor abrir el cascarón ya cacheado que un error en
+      // blanco. Importa sobre todo en Safari/iOS, donde la coincidencia de
+      // caché al reabrir la app puede no ser exacta.
+      if (request.mode === "navigate") {
+        const shell = await cache.match("index.html");
+        if (shell) return shell;
+      }
       return new Response("Sin conexión y sin copia guardada de esta página.", {
         status: 503, headers: { "content-type": "text/plain; charset=utf-8" },
       });
