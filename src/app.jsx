@@ -66,6 +66,14 @@ async function callClaude(prompt) {
   // intento en ellos; solo los de red o de parseo del JSON merecen reintento.
   const noReintentar = (msg) => { const e = new Error(msg); e.reintentable = false; return e; };
 
+  // navigator.onLine es fiable para detectar "seguro que no hay red" (modo
+  // avión, sin wifi): evita esperar el timeout de 60s para decir lo mismo.
+  // No detecta una red que está ahí pero no llega a internet; de eso se
+  // encarga el catch de más abajo.
+  if (typeof navigator !== "undefined" && navigator.onLine === false) {
+    throw new Error("No hay conexión con el modelo. Revisa tu conexión a internet.");
+  }
+
   let res;
   const ctrl = new AbortController();
   const aviso = setTimeout(() => ctrl.abort(), 60000);
@@ -1816,6 +1824,7 @@ function App() {
   const [lesson, setLesson] = useState(null);
   const [importMsg, setImportMsg] = useState(null);
   const [cupo, setCupo] = useState(window.APTIS_CUPO);
+  const [online, setOnline] = useState(() => (typeof navigator === "undefined" ? true : navigator.onLine));
   const importRef = useRef(null);
 
   useEffect(() => { load().then(setSt); }, []);
@@ -1823,6 +1832,13 @@ function App() {
     const h = () => setCupo(window.APTIS_CUPO);
     cupoEvento.addEventListener("cambio", h);
     return () => cupoEvento.removeEventListener("cambio", h);
+  }, []);
+  useEffect(() => {
+    const on = () => setOnline(true);
+    const off = () => setOnline(false);
+    window.addEventListener("online", on);
+    window.addEventListener("offline", off);
+    return () => { window.removeEventListener("online", on); window.removeEventListener("offline", off); };
   }, []);
   const update = (fn) => setSt((p) => { const n = fn(structuredClone(p)); save(n); return n; });
 
@@ -1923,8 +1939,11 @@ function App() {
     return [...list].sort((a, b) => weak(a) - weak(b));
   };
 
+  const avisoOffline = avisoSinConexion((window.APTIS_CONFIG || {}).mode, online);
+
   return (
     <Shell>
+      {avisoOffline && <p className="offlineBar" role="status">{avisoOffline}</p>}
       <header className="head">
         <div>
           <h1>Ruta B2</h1>
@@ -2278,6 +2297,7 @@ const css = `
 .back{background:none; border:none; padding:0; font-family:var(--sans); font-size:13.5px; color:var(--muted); cursor:pointer;}
 .back:hover{color:var(--ink);}
 .hint{font-size:14px; color:var(--muted); line-height:1.6; margin:0 0 18px;}
+.offlineBar{font-size:14px; color:#5E2412; background:#F6E9E1; border:1px solid var(--bad); border-radius:10px; padding:10px 14px; margin:0 0 16px; line-height:1.5;}
 .row{display:flex; gap:10px; flex-wrap:wrap;}
 
 .passage,.prompt,.qtext,.opt,.ta,.sel,.selInline,.seqText,.corrBad,.corrGood,.upgrade p,
