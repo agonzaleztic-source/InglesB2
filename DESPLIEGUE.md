@@ -200,6 +200,9 @@ Detalles que conviene saber:
 - La cuenta se identifica por el email que se escribe al pagar.
 - Los códigos perdidos se reemiten con `/admin/users/reset`; ese endpoint
   devuelve el código y tienes que enviárselo tú.
+- Las condiciones de contratación (borrador) están en `condiciones.html`: rellena
+  sus marcadores `[...]` y, en el checkout de Lemon Squeezy, exige aceptar las
+  condiciones y la casilla de acceso inmediato antes de cobrar.
 - El cliente gestiona su suscripción (cancelar, cambiar tarjeta) desde el
   *Customer portal* de Lemon Squeezy: comprueba en la tienda que esté activo y,
   si quieres, enlázalo desde la web.
