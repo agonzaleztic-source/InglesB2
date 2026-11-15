@@ -143,6 +143,46 @@ test("el email de alta incluye el enlace con #worker= y el código solo aparece 
   } finally { restoreFetch(); }
 });
 
+test("el email de alta dice el cupo mensual (el por defecto, si no hay DEFAULT_MONTHLY_QUOTA)", async () => {
+  const env = makeEnv();
+  const calls = stubResend();
+  try {
+    await send(env, checkoutEvent());
+    const texto = JSON.parse(calls[0].init.body).text;
+    assert.match(texto, /300 correcciones con IA al mes/);
+  } finally { restoreFetch(); }
+});
+
+test("el email de alta dice el DEFAULT_MONTHLY_QUOTA configurado, si lo hay", async () => {
+  const env = makeEnv({ DEFAULT_MONTHLY_QUOTA: "50" });
+  const calls = stubResend();
+  try {
+    await send(env, checkoutEvent());
+    const texto = JSON.parse(calls[0].init.body).text;
+    assert.match(texto, /50 correcciones con IA al mes/);
+  } finally { restoreFetch(); }
+});
+
+test("una reactivación dice el cupo que ya tenía el usuario, no el por defecto", async () => {
+  const env = makeEnv();
+  try {
+    stubResend();
+    await send(env, checkoutEvent());
+    restoreFetch();
+
+    // Un administrador le había puesto un cupo distinto del por defecto.
+    const hash = await env.RATE_LIMIT.get("email:cliente@example.com");
+    const rec = await env.RATE_LIMIT.get(`user:${hash}`, "json");
+    await env.RATE_LIMIT.put(`user:${hash}`, JSON.stringify({ ...rec, quota: 75 }));
+
+    const calls = stubResend();
+    await send(env, checkoutEvent());
+    const texto = JSON.parse(calls[0].init.body).text;
+    assert.match(texto, /Tu suscripción está activa de nuevo/);
+    assert.match(texto, /75 correcciones con IA al mes/);
+  } finally { restoreFetch(); }
+});
+
 test("checkout.session.completed sin email válido no da de alta y responde 500", async () => {
   const env = makeEnv();
   const calls = stubResend();

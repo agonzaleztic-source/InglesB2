@@ -410,6 +410,9 @@ async function provision(env, email, workerUrl, plan) {
   const indexKey = `email:${email}`;
   const oldHash = await env.RATE_LIMIT.get(indexKey);
   const prev = oldHash ? (await env.RATE_LIMIT.get(`user:${oldHash}`, "json")) || {} : {};
+  // Mismo cálculo que hace putUser() para el campo quota: así el email dice el
+  // cupo que de verdad va a quedar en el registro (el que ya tenía, si vuelve).
+  const quota = prev.quota ?? quotaOf({}, env);
 
   const token = newToken();
   const hash = await sha256(token);
@@ -418,7 +421,7 @@ async function provision(env, email, workerUrl, plan) {
   await env.RATE_LIMIT.put(indexKey, hash);
 
   try {
-    await sendCodeEmail(env, email, token, workerUrl, !!oldHash);
+    await sendCodeEmail(env, email, token, workerUrl, !!oldHash, quota);
   } catch (e) {
     await env.RATE_LIMIT.delete(`user:${hash}`);
     if (oldHash) {
@@ -447,13 +450,18 @@ async function stripeSignatureOk(raw, header, secret) {
 }
 
 // Envío con Resend (https://resend.com). Cambiar de proveedor es cambiar solo esta función.
-async function sendCodeEmail(env, to, token, workerUrl, returning) {
+async function sendCodeEmail(env, to, token, workerUrl, returning, quota) {
   if (!env.RESEND_API_KEY || !env.EMAIL_FROM) throw new Error("Faltan RESEND_API_KEY o EMAIL_FROM");
   const appUrl = env.APP_URL || `${(env.ALLOWED_ORIGIN || DEFAULT_ORIGIN).split(",")[0].trim()}/`;
   const link = `${appUrl}#worker=${encodeURIComponent(workerUrl)}`;
   const intro = returning ? "Tu suscripción está activa de nuevo. Este es tu nuevo código de acceso (el anterior ya no funciona):"
     : "Gracias por suscribirte. Este es tu código de acceso personal:";
-  const body = `${intro}\n\n${token}\n\nCómo usarlo:\n1. Abre este enlace: ${link}\n2. Pega tu código de acceso donde te lo pida.\n\nGuárdalo: no se puede volver a mostrar. Si lo pierdes, responde a este correo y te emitiremos uno nuevo.\n\nRuta B2: preparación para el Aptis General B2 (no oficial; no afiliada al British Council). «Aptis» es una marca del British Council.`;
+  // Decirlo ya en el email evita la duda más típica al empezar («¿cuánto me
+  // dura esto?») y la pregunta de soporte que llega por ella.
+  const cupoLinea = Number.isFinite(quota)
+    ? `Tu plan incluye ${quota} correcciones con IA al mes; se renuevan el día 1 de cada mes.\n\n`
+    : "";
+  const body = `${intro}\n\n${token}\n\n${cupoLinea}Cómo usarlo:\n1. Abre este enlace: ${link}\n2. Pega tu código de acceso donde te lo pida.\n\nGuárdalo: no se puede volver a mostrar. Si lo pierdes, responde a este correo y te emitiremos uno nuevo.\n\nRuta B2: preparación para el Aptis General B2 (no oficial; no afiliada al British Council). «Aptis» es una marca del British Council.`;
   const res = await fetch("https://api.resend.com/emails", {
     method: "POST",
     headers: { authorization: `Bearer ${env.RESEND_API_KEY}`, "content-type": "application/json" },
