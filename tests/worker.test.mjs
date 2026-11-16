@@ -243,6 +243,50 @@ test("con el tope global agotado responde 429 sin llamar al modelo", async () =>
   }
 });
 
+// Number(env.GLOBAL_DAILY_LIMIT) || DEFAULT_GLOBAL_LIMIT trataba un "0" puesto
+// a mano en Cloudflare (cortar el servicio del todo) igual que no haberlo
+// configurado, porque 0 también es falsy: el tope real se quedaba en el valor
+// de fábrica (1500) sin avisar de que el corte no se había aplicado.
+test("GLOBAL_DAILY_LIMIT: \"0\" corta el servicio entero, no cae al valor de fábrica", async () => {
+  const { env } = makeEnv({ GLOBAL_DAILY_LIMIT: "0" });
+
+  const calls = stubFetch(() => anthropicOk());
+  try {
+    const res = await worker.fetch(
+      req("/", {
+        headers: { Origin: ORIGIN, "x-app-pass": "clave-personal" },
+        body: { messages: [{ role: "user", content: "Hola" }] },
+      }),
+      env
+    );
+    assert.equal(res.status, 429);
+    assert.equal(calls.length, 0);
+  } finally {
+    restoreFetch();
+  }
+});
+
+// Mismo caso que arriba, para DAILY_LIMIT (el tope diario por IP del modo
+// APP_PASS).
+test("DAILY_LIMIT: \"0\" corta el modo de contraseña personal, no cae al valor de fábrica", async () => {
+  const { env } = makeEnv({ DAILY_LIMIT: "0" });
+
+  const calls = stubFetch(() => anthropicOk());
+  try {
+    const res = await worker.fetch(
+      req("/", {
+        headers: { Origin: ORIGIN, "x-app-pass": "clave-personal" },
+        body: { messages: [{ role: "user", content: "Hola" }] },
+      }),
+      env
+    );
+    assert.equal(res.status, 429);
+    assert.equal(calls.length, 0);
+  } finally {
+    restoreFetch();
+  }
+});
+
 test("un 5xx del modelo responde 502 y no descuenta cupo del usuario", async () => {
   const { env, kv } = makeEnv();
   const token = await createUser(env, "fallo-modelo@example.com", 5);

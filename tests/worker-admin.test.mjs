@@ -283,6 +283,17 @@ test("/admin/users/update con monthly_quota: 0 deja el cupo en cero, distinto de
   assert.equal(data.quota, 0);
 });
 
+// Number(env.DEFAULT_MONTHLY_QUOTA) || DEFAULT_MONTHLY_QUOTA trataba un "0"
+// puesto a mano en Cloudflare (querer que los usuarios nuevos sin cupo
+// explícito empiecen a cero) igual que no haberlo configurado, porque 0
+// también es falsy: el alta se iba en silencio al cupo de fábrica (300).
+test("/admin/users/create sin monthly_quota usa DEFAULT_MONTHLY_QUOTA: \"0\" como cero, no como no configurado", async () => {
+  const env = makeEnv({ DEFAULT_MONTHLY_QUOTA: "0" });
+  const res = await admin("/admin/users/create", env, { body: { email: "noa@example.com" } });
+  const data = await res.json();
+  assert.equal(data.quota, 0);
+});
+
 test("/admin/users/reset conserva el estado disabled de la cuenta", async () => {
   const env = makeEnv();
   const alta = await (await admin("/admin/users/create", env, { body: { email: "lia@example.com" } })).json();
