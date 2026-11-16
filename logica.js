@@ -114,9 +114,21 @@ function debeAvisarNuevaVersion(habiaControlador, estado) {
   return !!habiaControlador && estado === "installed";
 }
 
+/*
+ * Los modos "key" y "worker" necesitan red para pedir cada corrección; el
+ * modo "banco" (gratuito, sin cuenta) trae los ejercicios dentro de la app y
+ * funciona entero sin conexión. App escucha los eventos online/offline del
+ * navegador y usa esta función pura para decidir si avisar, sin repetir el
+ * aviso mientras sigas sin conexión.
+ */
+function avisoSinConexion(mode, online) {
+  if (online || mode === "banco") return null;
+  return "Estás sin conexión. Puedes seguir practicando, pero la corrección con IA no funcionará hasta que vuelvas a tener internet.";
+}
+
 if (typeof module !== "undefined" && module.exports) {
   module.exports = {
     key, back, fp, level, pctOf, noVistos, streakOf, normalizaProgreso, simulacroValido, reintentable, mensajeDeComprobacion,
-    cupoDeCabeceras, debeAvisarNuevaVersion,
+    cupoDeCabeceras, debeAvisarNuevaVersion, avisoSinConexion,
   };
 }
