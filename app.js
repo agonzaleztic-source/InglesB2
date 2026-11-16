@@ -1,5 +1,5 @@
 // GENERADO con `npm run build` desde src/app.jsx: no editar a mano.
-// sha256 de src/app.jsx: 667c9fcb5636d98794c68cec2dad2e90867b6f6c109c27b77de739a43643faa7
+// sha256 de src/app.jsx: 7ddd6c56300ee7590afbffe5c55cfdc3f29c009b988089a390299b7b739510c7
 const { useState, useEffect, useRef, useCallback } = React;
 const MODEL = "claude-sonnet-5";
 const STORE = "aptis-general-b2";
@@ -1931,5 +1931,47 @@ label.prompt{display:block;}
   .blockRow{padding:14px 14px 14px 18px;}
 }
 `;
+class ErrorBoundary extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = { error: null };
+    this.headingRef = React.createRef();
+    this.enfocado = false;
+  }
+  static getDerivedStateFromError(error) {
+    return { error };
+  }
+  componentDidCatch(error, info) {
+    console.error("Error no controlado en la app:", error, info);
+  }
+  componentDidUpdate() {
+    if (this.state.error && !this.enfocado && this.headingRef.current) {
+      this.enfocado = true;
+      this.headingRef.current.focus();
+    }
+  }
+  render() {
+    if (this.state.error) {
+      return /* @__PURE__ */ React.createElement("div", { role: "alert", style: {
+        maxWidth: 480,
+        margin: "60px auto",
+        padding: "0 20px",
+        fontFamily: "system-ui,sans-serif",
+        color: "#15302A",
+        textAlign: "center"
+      } }, /* @__PURE__ */ React.createElement("h1", { ref: this.headingRef, tabIndex: -1, style: { fontSize: 20, margin: "0 0 10px" } }, "Algo ha ido mal"), /* @__PURE__ */ React.createElement("p", { style: { fontSize: 14.5, lineHeight: 1.6, color: "#63756D", margin: "0 0 20px" } }, "Esta pantalla ha fallado de forma inesperada. Tu progreso guardado hasta ahora no se pierde. Prueba a recargar; si vuelve a pasar, usa «cambiar conexión» para empezar de nuevo sin perder lo guardado."), /* @__PURE__ */ React.createElement("button", { onClick: () => location.reload(), style: {
+        padding: "12px 22px",
+        fontSize: 14.5,
+        fontWeight: 600,
+        background: "#15302A",
+        color: "#E7ECE4",
+        border: "none",
+        borderRadius: 8,
+        cursor: "pointer"
+      } }, "Recargar la página"));
+    }
+    return this.props.children;
+  }
+}
 const root = ReactDOM.createRoot(document.getElementById("app"));
-root.render(React.createElement(App));
+root.render(/* @__PURE__ */ React.createElement(ErrorBoundary, null, /* @__PURE__ */ React.createElement(App, null)));

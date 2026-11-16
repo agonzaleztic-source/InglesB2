@@ -2552,6 +2552,59 @@ label.prompt{display:block;}
 `;
 
 
+// Un fallo al renderizar cualquier pantalla (un ejercicio con datos raros, un
+// bug) dejaba la app en blanco sin ninguna explicación, y la única salida era
+// adivinar que el botón «cambiar conexión» (fuera de este árbol de React)
+// seguía funcionando. Ahora se avisa con un mensaje claro y un botón para
+// recargar; el progreso ya guardado no se pierde porque save() ya corrió en
+// cada acción anterior, antes del fallo.
+class ErrorBoundary extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = { error: null };
+    this.headingRef = React.createRef();
+    this.enfocado = false;
+  }
+  static getDerivedStateFromError(error) {
+    return { error };
+  }
+  componentDidCatch(error, info) {
+    console.error("Error no controlado en la app:", error, info);
+  }
+  componentDidUpdate() {
+    // Sin esto, quien navega con teclado o lector de pantalla no se entera de
+    // que la pantalla cambió: el foco se queda en un botón que ya no existe.
+    if (this.state.error && !this.enfocado && this.headingRef.current) {
+      this.enfocado = true;
+      this.headingRef.current.focus();
+    }
+  }
+  render() {
+    if (this.state.error) {
+      return (
+        <div role="alert" style={{
+          maxWidth: 480, margin: "60px auto", padding: "0 20px",
+          fontFamily: "system-ui,sans-serif", color: "#15302A", textAlign: "center",
+        }}>
+          <h1 ref={this.headingRef} tabIndex={-1} style={{ fontSize: 20, margin: "0 0 10px" }}>
+            Algo ha ido mal
+          </h1>
+          <p style={{ fontSize: 14.5, lineHeight: 1.6, color: "#63756D", margin: "0 0 20px" }}>
+            Esta pantalla ha fallado de forma inesperada. Tu progreso guardado hasta ahora no se
+            pierde. Prueba a recargar; si vuelve a pasar, usa «cambiar conexión» para empezar de
+            nuevo sin perder lo guardado.
+          </p>
+          <button onClick={() => location.reload()} style={{
+            padding: "12px 22px", fontSize: 14.5, fontWeight: 600,
+            background: "#15302A", color: "#E7ECE4", border: "none", borderRadius: 8, cursor: "pointer",
+          }}>Recargar la página</button>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
 const root = ReactDOM.createRoot(document.getElementById("app"));
-root.render(React.createElement(App));
+root.render(<ErrorBoundary><App /></ErrorBoundary>);
 
