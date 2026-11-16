@@ -1,5 +1,5 @@
 // GENERADO con `npm run build` desde src/app.jsx: no editar a mano.
-// sha256 de src/app.jsx: 390afcdfcb12c016cc4d05566967ccc3a6e06c486add0ae587e60c9ee5175977
+// sha256 de src/app.jsx: 667c9fcb5636d98794c68cec2dad2e90867b6f6c109c27b77de739a43643faa7
 const { useState, useEffect, useRef, useCallback } = React;
 const MODEL = "claude-sonnet-5";
 const STORE = "aptis-general-b2";
@@ -80,6 +80,9 @@ async function callClaude(prompt) {
     e.reintentable = false;
     return e;
   };
+  if (typeof navigator !== "undefined" && navigator.onLine === false) {
+    throw new Error("No hay conexión con el modelo. Revisa tu conexión a internet.");
+  }
   let res;
   const ctrl = new AbortController();
   const aviso = setTimeout(() => ctrl.abort(), 6e4);
@@ -1389,6 +1392,7 @@ function App() {
   const [lesson, setLesson] = useState(null);
   const [importMsg, setImportMsg] = useState(null);
   const [cupo, setCupo] = useState(window.APTIS_CUPO);
+  const [online, setOnline] = useState(() => typeof navigator === "undefined" ? true : navigator.onLine);
   const importRef = useRef(null);
   useEffect(() => {
     load().then(setSt);
@@ -1397,6 +1401,16 @@ function App() {
     const h = () => setCupo(window.APTIS_CUPO);
     cupoEvento.addEventListener("cambio", h);
     return () => cupoEvento.removeEventListener("cambio", h);
+  }, []);
+  useEffect(() => {
+    const on = () => setOnline(true);
+    const off = () => setOnline(false);
+    window.addEventListener("online", on);
+    window.addEventListener("offline", off);
+    return () => {
+      window.removeEventListener("online", on);
+      window.removeEventListener("offline", off);
+    };
   }, []);
   const update = (fn) => setSt((p) => {
     const n = fn(structuredClone(p));
@@ -1491,7 +1505,8 @@ function App() {
     const weak = (s) => errorTags.some(([t]) => t.toLowerCase().includes(s.t.split(" ")[0].toLowerCase())) ? 0 : 1;
     return [...list].sort((a, b) => weak(a) - weak(b));
   };
-  return /* @__PURE__ */ React.createElement(Shell, null, /* @__PURE__ */ React.createElement("header", { className: "head" }, /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("h1", null, "Ruta B2"), /* @__PURE__ */ React.createElement("p", { className: "sub" }, sinClave() ? "Modo gratuito: ejercicios que vienen dentro de la app, con la explicación de cada fallo." : "Cada ejercicio se genera de cero. No repite nada de lo que ya has hecho.")), /* @__PURE__ */ React.createElement("div", { className: "streak" }, streak === 0 ? /* @__PURE__ */ React.createElement("span", { className: "streakStart" }, "Hoy empieza tu racha") : /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement("span", { className: "streakN" }, streak), /* @__PURE__ */ React.createElement("span", { className: "streakL" }, streak === 1 ? "día seguido" : "días seguidos")), /* @__PURE__ */ React.createElement("div", { className: "dots" }, Array.from({ length: 14 }, (_, i) => 13 - i).map((n) => /* @__PURE__ */ React.createElement(
+  const avisoOffline = avisoSinConexion((window.APTIS_CONFIG || {}).mode, online);
+  return /* @__PURE__ */ React.createElement(Shell, null, avisoOffline && /* @__PURE__ */ React.createElement("p", { className: "offlineBar", role: "status" }, avisoOffline), /* @__PURE__ */ React.createElement("header", { className: "head" }, /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("h1", null, "Ruta B2"), /* @__PURE__ */ React.createElement("p", { className: "sub" }, sinClave() ? "Modo gratuito: ejercicios que vienen dentro de la app, con la explicación de cada fallo." : "Cada ejercicio se genera de cero. No repite nada de lo que ya has hecho.")), /* @__PURE__ */ React.createElement("div", { className: "streak" }, streak === 0 ? /* @__PURE__ */ React.createElement("span", { className: "streakStart" }, "Hoy empieza tu racha") : /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement("span", { className: "streakN" }, streak), /* @__PURE__ */ React.createElement("span", { className: "streakL" }, streak === 1 ? "día seguido" : "días seguidos")), /* @__PURE__ */ React.createElement("div", { className: "dots" }, Array.from({ length: 14 }, (_, i) => 13 - i).map((n) => /* @__PURE__ */ React.createElement(
     "span",
     {
       key: n,
@@ -1663,6 +1678,7 @@ const css = `
 .back{background:none; border:none; padding:0; font-family:var(--sans); font-size:13.5px; color:var(--muted); cursor:pointer;}
 .back:hover{color:var(--ink);}
 .hint{font-size:14px; color:var(--muted); line-height:1.6; margin:0 0 18px;}
+.offlineBar{font-size:14px; color:#5E2412; background:#F6E9E1; border:1px solid var(--bad); border-radius:10px; padding:10px 14px; margin:0 0 16px; line-height:1.5;}
 .row{display:flex; gap:10px; flex-wrap:wrap;}
 
 .passage,.prompt,.qtext,.opt,.ta,.sel,.selInline,.seqText,.corrBad,.corrGood,.upgrade p,

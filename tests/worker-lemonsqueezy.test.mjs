@@ -193,6 +193,29 @@ test("order_created pagado con firma válida da de alta y envía el código por 
     const code = codeFrom(calls[0]);
     assert.ok(code, "el email lleva un código apt_");
     assert.equal((await me(env, code)).status, 200, "el código recibido funciona");
+
+    assert.match(sent.text, /300 correcciones con IA al mes/, "debe decir el cupo mensual");
+  } finally { restoreFetch(); }
+});
+
+test("un nuevo pedido del mismo cliente dice en el email el cupo que ya tenía, no el por defecto", async () => {
+  const env = makeEnv();
+  try {
+    const calls1 = stubResend();
+    assert.equal((await send(env, orderEvent())).status, 200);
+    restoreFetch();
+
+    // Un administrador le había puesto un cupo distinto del por defecto.
+    const hash = await env.RATE_LIMIT.get("email:cliente@example.com");
+    const rec = await env.RATE_LIMIT.get(`user:${hash}`, "json");
+    await env.RATE_LIMIT.put(`user:${hash}`, JSON.stringify({ ...rec, quota: 150 }));
+
+    const calls2 = stubResend();
+    assert.equal((await send(env, orderEvent())).status, 200);
+    const texto = JSON.parse(calls2[0].init.body).text;
+    assert.match(texto, /Tu suscripción está activa de nuevo/);
+    assert.match(texto, /150 correcciones con IA al mes/);
+    assert.equal(calls1.length, 1);
   } finally { restoreFetch(); }
 });
 
