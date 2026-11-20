@@ -115,3 +115,33 @@ test("valor que no parece clave ni Worker: el foco va al campo, no al aviso de e
   assert.equal(elementos.ep.vecesEnfocado, 1, "el foco debe ir al campo de clave/Worker");
   assert.equal(elementos.epErr.vecesEnfocado, 0);
 });
+
+test("mientras comprueba la conexión, avisa en el aviso (role=\"alert\") y desactiva el botón", async () => {
+  let resolverFetch;
+  const { elementos, click } = cargarClick({
+    ep: "https://ejemplo.workers.dev",
+    eppass: "buena",
+    fetchImpl: () => new Promise((resolve) => { resolverFetch = resolve; }),
+  });
+  const pendiente = click();
+  assert.equal(elementos.epErr.textContent, "Comprobando la conexión…");
+  assert.equal(elementos.go.disabled, true);
+  resolverFetch({ status: 200, json: async () => ({ plan: "personal" }) });
+  await pendiente;
+  assert.equal(elementos.epErr.textContent, "", "el aviso de «comprobando» no debe quedarse tras una conexión aceptada");
+  assert.equal(elementos.go.disabled, false);
+});
+
+test("si la comprobación acaba en error, el aviso de «comprobando» se sustituye por el motivo, no se suma", async () => {
+  let resolverFetch;
+  const { elementos, click } = cargarClick({
+    ep: "https://ejemplo.workers.dev",
+    eppass: "mala",
+    fetchImpl: () => new Promise((resolve) => { resolverFetch = resolve; }),
+  });
+  const pendiente = click();
+  assert.equal(elementos.epErr.textContent, "Comprobando la conexión…");
+  resolverFetch({ status: 401, json: async () => ({ error: "Código de acceso incorrecto o dado de baja" }) });
+  await pendiente;
+  assert.equal(elementos.epErr.textContent, "Código de acceso incorrecto o dado de baja");
+});

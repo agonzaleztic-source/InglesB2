@@ -190,6 +190,10 @@
     // entrar en la app.
     if (cfg.mode === "worker" && !saltarComprobacion) {
       goBtn.disabled = true;
+      // Sin esto, quien usa un lector de pantalla no se entera de nada durante
+      // los hasta 10s que puede tardar la comprobación: el botón pierde el
+      // foco al desactivarse y no vuelve a sonar nada hasta el resultado.
+      errBox.textContent = "Comprobando la conexión…";
       const base = cfg.endpoint.replace(/\/+$/, "");
       const ctrl = new AbortController();
       const aviso = setTimeout(() => ctrl.abort(), 10000);
@@ -222,6 +226,7 @@
         clearTimeout(aviso);
       }
       goBtn.disabled = false;
+      errBox.textContent = "";
     }
     saltarComprobacion = false;
 
