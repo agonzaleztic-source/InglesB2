@@ -653,7 +653,8 @@ function Loading({ text }) {
 }
 function Failed({ onRetry, msg }) {
   const aBanco = () => {
-    localStorage.setItem("aptis-conexion", JSON.stringify({ mode: "banco" }));
+    try { localStorage.setItem("aptis-conexion", JSON.stringify({ mode: "banco" })); }
+    catch (e) { console.warn(e); avisoAlmacenamiento(); }
     location.reload();
   };
   return (
