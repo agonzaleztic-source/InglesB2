@@ -277,7 +277,13 @@
 
   // El arranque espera al DOM: app.js pinta en #app y el resto de la página
   // tiene que estar ya parseado.
-  if (guardada) document.addEventListener("DOMContentLoaded", () => start(guardada));
+  //
+  // Un enlace de activación (#worker=...) debe imponerse aunque ya haya una
+  // conexión guardada: quien lo recibe puede venir del modo gratis sin clave
+  // o de una suscripción anterior con otro código, y si se respetara
+  // `guardada` el enlace de un clic no haría nada (el hash ya se ha borrado
+  // de la URL en workerDeHash(), así que no hay una segunda oportunidad).
+  if (guardada && !workerPrecargado) document.addEventListener("DOMContentLoaded", () => start(guardada));
   else {
     setup.style.display = "block";
     if (workerPrecargado) {
