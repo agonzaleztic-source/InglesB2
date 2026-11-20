@@ -44,6 +44,16 @@ const DEFAULT_MONTHLY_QUOTA = 300;
 const TWO_DAYS = 172800;
 const FORTY_DAYS = 3456000;
 
+// Number(env.X) || valorPorDefecto trataba un "0" explícito en Cloudflare
+// (querer cortar del todo DAILY_LIMIT, GLOBAL_DAILY_LIMIT o
+// DEFAULT_MONTHLY_QUOTA) igual que no haberlo puesto, porque 0 también es
+// falsy: el límite real se quedaba en el valor de fábrica sin avisar.
+function envNum(v, porDefecto) {
+  if (v == null || String(v).trim() === "") return porDefecto;
+  const n = Number(v);
+  return Number.isFinite(n) && n >= 0 ? n : porDefecto;
+}
+
 export default {
   async fetch(request, env) {
     // ALLOWED_ORIGIN admite varios orígenes separados por comas (sin barra
@@ -105,7 +115,7 @@ export default {
 
     // Tope global: acota el gasto máximo diario aunque haya muchos usuarios.
     const globalKey = `rl:${day}:global`;
-    const globalLimit = Number(env.GLOBAL_DAILY_LIMIT) || DEFAULT_GLOBAL_LIMIT;
+    const globalLimit = envNum(env.GLOBAL_DAILY_LIMIT, DEFAULT_GLOBAL_LIMIT);
     const globalUsed = await count(env, globalKey);
     if (globalUsed >= globalLimit) {
       return json({ error: "El servicio ha llegado a su límite diario. Vuelve mañana." }, 429, cors);
@@ -123,7 +133,7 @@ export default {
       // Contraseña única de uso personal: corte diario por IP.
       const ip = request.headers.get("CF-Connecting-IP") || "sin-ip";
       usedKey = `rl:${day}:${ip}`;
-      limit = Number(env.DAILY_LIMIT) || DEFAULT_DAILY_LIMIT;
+      limit = envNum(env.DAILY_LIMIT, DEFAULT_DAILY_LIMIT);
       used = await count(env, usedKey);
       if (used >= limit) {
         return json({ error: "Se ha llegado al límite diario de peticiones desde tu conexión. Vuelve mañana." }, 429, cors);
@@ -544,7 +554,7 @@ const cupoEnviado = (b) => b.monthly_quota != null && String(b.monthly_quota).tr
 const quotaOf = (b, env) => {
   const n = Math.floor(Number(b.monthly_quota));
   return cupoEnviado(b) && Number.isFinite(n) && n >= 0
-    ? n : (Number(env.DEFAULT_MONTHLY_QUOTA) || DEFAULT_MONTHLY_QUOTA);
+    ? n : envNum(env.DEFAULT_MONTHLY_QUOTA, DEFAULT_MONTHLY_QUOTA);
 };
 
 /* ---------------- utilidades ---------------- */
