@@ -24,6 +24,11 @@
  *   DEFAULT_MONTHLY_QUOTA (opcional, por defecto 300 peticiones al mes por usuario)
  *   LEMONSQUEEZY_SIGNING_SECRET (secreto: el "Signing secret" del webhook
  *                       /webhooks/lemonsqueezy, el mismo que se escribe en Lemon Squeezy)
+ *   LEMONSQUEEZY_PRODUCT_IDS (opcional: id(s) del producto de Ruta B2 en Lemon
+ *                       Squeezy, separados por comas; si está vacía o no se
+ *                       define, el webhook atiende cualquier producto de la
+ *                       tienda. Con la tienda compartida con otros productos,
+ *                       hay que definirla.)
  *   STRIPE_WEBHOOK_SECRET (OBSOLETO, secreto: firma del webhook /webhooks/stripe, whsec_...)
  *   RESEND_API_KEY, EMAIL_FROM (secreto y remitente para enviar el código por email)
  *   APP_URL            (opcional: dirección de la app que se pone en el email)
@@ -255,8 +260,9 @@ async function lemonWebhook(request, env) {
     : `ls:evt:${name}:${data.id}:${attrs.updated_at || attrs.created_at || ""}`;
   if (await env.RATE_LIMIT.get(seenKey)) return text("ya procesado", 200);
 
+  let resultado;
   try {
-    await handleLemonEvent(name, data, meta, env, new URL(request.url).origin);
+    resultado = await handleLemonEvent(name, data, meta, env, new URL(request.url).origin);
   } catch (e) {
     // Un código distinto de 200 hace que Lemon Squeezy lo reintente (solo
     // tres veces más, en unos minutos).
@@ -264,7 +270,14 @@ async function lemonWebhook(request, env) {
     return text("Error al procesar el evento", 500);
   }
   await env.RATE_LIMIT.put(seenKey, "1", { expirationTtl: 604800 });
-  return text("ok", 200);
+  return text(resultado || "ok", 200);
+}
+
+// LEMONSQUEEZY_PRODUCT_IDS: lista de ids separados por comas, o null si no
+// está configurada (entonces no se filtra por producto).
+function productIds(env) {
+  const ids = String(env.LEMONSQUEEZY_PRODUCT_IDS || "").split(",").map((s) => s.trim()).filter(Boolean);
+  return ids.length ? new Set(ids) : null;
 }
 
 async function handleLemonEvent(name, data, meta, env, workerUrl) {
@@ -274,13 +287,23 @@ async function handleLemonEvent(name, data, meta, env, workerUrl) {
   // distinguirlo. La documentación pone test_mode en data.attributes; se mira
   // también meta.test_mode por si acaso.
   const testMode = a.test_mode === true || meta.test_mode === true;
+  // Con la tienda compartida con otros productos, un pedido o una suscripción
+  // de otro producto no debe tocar las cuentas de Ruta B2.
+  const products = productIds(env);
 
   if (name === "order_created") {
+    if (products && !products.has(String(a.first_order_item?.product_id))) return "otro producto";
     if (a.status !== "paid") return;
     const email = cleanEmail(a.user_email);
     if (!email) throw new Error("pedido sin email válido");
     await provision(env, email, workerUrl, testMode ? "prueba" : undefined);
     return;
+  }
+
+  // subscription_payment_success no lleva product_id (es un aviso de la
+  // factura, no de la suscripción): se filtra por la suscripción ya asociada.
+  if (name !== "subscription_payment_success" && products && !products.has(String(a.product_id))) {
+    return "otro producto";
   }
 
   // El resto de eventos se refieren a una suscripción: la propia (data) o, en
@@ -290,6 +313,9 @@ async function handleLemonEvent(name, data, meta, env, workerUrl) {
   const subKey = `ls:sub:${subId}`;
   let email = await env.RATE_LIMIT.get(subKey);
   if (!email) {
+    // subscription_payment_success nunca crea la asociación por su cuenta:
+    // solo actúa sobre una suscripción que ya se vio en otro evento suyo.
+    if (name === "subscription_payment_success") return;
     email = cleanEmail(a.user_email);
     if (!email) return;
     await env.RATE_LIMIT.put(subKey, email);
