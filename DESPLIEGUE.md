@@ -172,6 +172,7 @@ vuelve a suscribir recibe un código nuevo y conserva su cupo.
    | `RESEND_API_KEY`              | la clave del paso 4                                |
    | `EMAIL_FROM`                  | remitente verificado                               |
    | `APP_URL`                     | opcional: dirección de la app que sale en el email (ya está en `wrangler.toml`) |
+   | `LEMONSQUEEZY_PRODUCT_IDS`    | opcional, en `wrangler.toml` (no es secreto): el id del producto, separado por comas si hay más de uno. Se ve en *Products* al abrir el producto: el id sale en la URL del panel (`.../products/<ID>`) y en *Share* → *API* junto al enlace de checkout. |
 
 6. Haz una compra en *Test mode* con la tarjeta de prueba de Lemon Squeezy y
    comprueba que llega el email con el código. Los usuarios creados en modo
@@ -203,6 +204,9 @@ Detalles que conviene saber:
 - El cliente gestiona su suscripción (cancelar, cambiar tarjeta) desde el
   *Customer portal* de Lemon Squeezy: comprueba en la tienda que esté activo y,
   si quieres, enlázalo desde la web.
+- Si la tienda vende más de un producto con la misma pasarela, define
+  `LEMONSQUEEZY_PRODUCT_IDS` (paso 5): sin ella, el webhook atendería
+  cualquier pedido o suscripción de la tienda, no solo los de Ruta B2.
 
 ### Stripe (obsoleto)
 
