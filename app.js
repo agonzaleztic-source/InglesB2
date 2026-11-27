@@ -1,5 +1,5 @@
 // GENERADO con `npm run build` desde src/app.jsx: no editar a mano.
-// sha256 de src/app.jsx: 7ddd6c56300ee7590afbffe5c55cfdc3f29c009b988089a390299b7b739510c7
+// sha256 de src/app.jsx: 04bbe54f772f86042b92ed4175fe79e2be01727f6b487e2d38a14802f9b98db4
 const { useState, useEffect, useRef, useCallback } = React;
 const MODEL = "claude-sonnet-5";
 const STORE = "aptis-general-b2";
@@ -693,7 +693,12 @@ function Loading({ text }) {
 }
 function Failed({ onRetry, msg }) {
   const aBanco = () => {
-    localStorage.setItem("aptis-conexion", JSON.stringify({ mode: "banco" }));
+    try {
+      localStorage.setItem("aptis-conexion", JSON.stringify({ mode: "banco" }));
+    } catch (e) {
+      console.warn(e);
+      avisoAlmacenamiento();
+    }
     location.reload();
   };
   return /* @__PURE__ */ React.createElement("div", { className: "failed" }, /* @__PURE__ */ React.createElement("p", null, msg || "No he podido preparar el ejercicio. Suele ser un corte momentáneo."), /* @__PURE__ */ React.createElement("div", { className: "row" }, /* @__PURE__ */ React.createElement("button", { className: "btn", onClick: onRetry }, "Volver a intentarlo"), !sinClave() && /* @__PURE__ */ React.createElement("button", { className: "btn ghost", onClick: aBanco }, "Seguir gratis, sin clave")));

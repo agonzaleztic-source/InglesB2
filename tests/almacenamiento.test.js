@@ -175,3 +175,41 @@ test("save(): si setItem lanza, no propaga el error y avisa", async () => {
   await assert.doesNotReject(save({ days: {} }));
   assert.equal(avisos, 1);
 });
+
+// El botón "Seguir gratis, sin clave" de <Failed/> es la salida de emergencia
+// cuando falla el modelo. Si localStorage lanza (Safari en privado, cuota
+// llena) y el setItem no está protegido, el click no vuelve a llamar a
+// location.reload() y la persona se queda clavada en la pantalla de error sin
+// ninguna salida.
+const aBancoSrc = extraer(/const aBanco = \(\) => \{\r?\n[\s\S]*?\r?\n  \};/, "aBanco", app, "src/app.jsx");
+
+function cargarABanco({ localStorageImpl, avisoSpy = () => {} }) {
+  let recargas = 0;
+  const sandbox = {
+    localStorage: localStorageImpl,
+    console,
+    avisoAlmacenamiento: avisoSpy,
+    location: { reload() { recargas++; } },
+  };
+  vm.runInNewContext(`${aBancoSrc}\nthis.aBanco = aBanco;`, sandbox);
+  return { aBanco: sandbox.aBanco, recargas: () => recargas };
+}
+
+test("Failed → aBanco: con localStorage normal, guarda la conexión y recarga sin avisar", () => {
+  const ls = crearLocalStorage();
+  let avisos = 0;
+  const { aBanco, recargas } = cargarABanco({ localStorageImpl: ls, avisoSpy: () => { avisos++; } });
+  aBanco();
+  assert.equal(recargas(), 1);
+  assert.equal(avisos, 0);
+  assert.deepEqual(JSON.parse(ls.datos["aptis-conexion"]), { mode: "banco" });
+});
+
+test("Failed → aBanco: si setItem lanza, recarga igual (no se queda sin salida) y avisa", () => {
+  const ls = crearLocalStorage({ setItemLanza: true });
+  let avisos = 0;
+  const { aBanco, recargas } = cargarABanco({ localStorageImpl: ls, avisoSpy: () => { avisos++; } });
+  aBanco();
+  assert.equal(recargas(), 1, "debe recargar aunque no se pudiera guardar la conexión");
+  assert.equal(avisos, 1);
+});
