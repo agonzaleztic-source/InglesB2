@@ -11,7 +11,7 @@
  * para vaciar la caché vieja.
  */
 
-const VERSION = "2026-11-20-2";
+const VERSION = "2026-11-25-1";
 const CACHE = `aptis-b2-${VERSION}`;
 const SHELL = [
   "./",
@@ -33,7 +33,14 @@ const SHELL = [
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
-    caches.open(CACHE).then((cache) => cache.addAll(SHELL)).then(() => self.skipWaiting())
+    caches.open(CACHE)
+      // cache.addAll() es todo o nada: si una sola URL de SHELL falla al
+      // pedirse (una red intermitente, lo normal en móvil), no se cachea
+      // ninguna y el modo sin clave se queda sin funcionar sin conexión,
+      // aunque casi todo lo demás se pudiera haber descargado bien. Con
+      // allSettled, lo que se puede cachear se cachea aunque algo falle.
+      .then((cache) => Promise.allSettled(SHELL.map((url) => cache.add(url))))
+      .then(() => self.skipWaiting())
   );
 });
 
