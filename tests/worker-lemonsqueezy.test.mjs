@@ -391,6 +391,64 @@ test("test_mode: el pedido de prueba da de alta igual, con plan «prueba», y no
   assert.equal((await userOf(env)).disabled, true);
 });
 
+test("LEMONSQUEEZY_PRODUCT_IDS: un pedido de un producto distinto no crea usuario ni llama a Resend", async () => {
+  const env = makeEnv({ LEMONSQUEEZY_PRODUCT_IDS: "111" });
+  const calls = stubResend();
+  try {
+    const res = await send(env, orderEvent({ first_order_item: { product_id: 222 } }));
+    assert.equal(res.status, 200);
+    assert.equal(await res.text(), "otro producto");
+    assert.equal(calls.length, 0);
+    assert.equal(await userOf(env), null);
+  } finally { restoreFetch(); }
+});
+
+test("LEMONSQUEEZY_PRODUCT_IDS: un pedido del producto de Ruta B2 sí da de alta", async () => {
+  const env = makeEnv({ LEMONSQUEEZY_PRODUCT_IDS: "111" });
+  const calls = stubResend();
+  try {
+    const res = await send(env, orderEvent({ first_order_item: { product_id: 111 } }));
+    assert.equal(res.status, 200);
+    assert.equal(calls.length, 1);
+    assert.ok(await userOf(env));
+  } finally { restoreFetch(); }
+});
+
+test("LEMONSQUEEZY_PRODUCT_IDS: un subscription_expired de otro producto no da de baja a un usuario existente con el mismo email", async () => {
+  const env = makeEnv({ LEMONSQUEEZY_PRODUCT_IDS: "111" });
+  const calls = stubResend();
+  let code;
+  try {
+    assert.equal((await send(env, orderEvent({ first_order_item: { product_id: 111 } }))).status, 200);
+    assert.equal((await send(env, subEvent("subscription_created", 77, { product_id: 111 }))).status, 200);
+    code = codeFrom(calls[0]);
+  } finally { restoreFetch(); }
+  const res = await send(env, subEvent("subscription_expired", 77, {
+    status: "expired", product_id: 222, updated_at: "2026-12-15T10:00:00.000000Z",
+  }));
+  assert.equal(res.status, 200);
+  assert.equal(await res.text(), "otro producto");
+  assert.equal((await userOf(env)).disabled, false);
+  assert.equal((await me(env, code)).status, 200);
+});
+
+test("subscription_payment_success con un subscription_id desconocido no reactiva a un usuario dado de baja", async () => {
+  const env = makeEnv();
+  await alta(env);
+  await send(env, subEvent("subscription_expired", 77, { status: "expired", updated_at: "2026-12-15T10:00:00.000000Z" }));
+  assert.equal((await userOf(env)).disabled, true);
+  const res = await send(env, {
+    meta: { event_name: "subscription_payment_success" },
+    data: {
+      type: "subscription-invoices", id: "556",
+      attributes: { subscription_id: 9999, user_email: "cliente@example.com", status: "paid", test_mode: false },
+    },
+  });
+  assert.equal(res.status, 200);
+  assert.equal((await userOf(env)).disabled, true, "no reactiva: esa suscripción no se conoce");
+  assert.equal(await env.RATE_LIMIT.get("ls:sub:9999"), null, "no crea la asociación desde user_email");
+});
+
 test("un cuerpo firmado que no es JSON responde 400", async () => {
   const env = makeEnv();
   const raw = "esto no es json";

@@ -2,6 +2,10 @@
 # Secretos (no van aquí): ANTHROPIC_API_KEY, ADMIN_SECRET y, para cobrar,
 # LEMONSQUEEZY_SIGNING_SECRET, RESEND_API_KEY y EMAIL_FROM -> `npx wrangler secret put <NOMBRE>`.
 # (STRIPE_WEBHOOK_SECRET es de la ruta obsoleta /webhooks/stripe; ver DESPLIEGUE.md.)
+# LEMONSQUEEZY_PRODUCT_IDS (opcional, en [vars]: no es un secreto): id(s) del
+# producto de Ruta B2 en Lemon Squeezy, separados por comas, para que el
+# webhook ignore pedidos y suscripciones de otros productos de la misma
+# tienda. Ver «Cobrar con Lemon Squeezy» en DESPLIEGUE.md.
 
 name = "ingles-b2-proxy"
 main = "worker.js"
