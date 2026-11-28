@@ -68,6 +68,24 @@ function orderEvent(attrs = {}, meta = {}) {
   };
 }
 
+function refundEvent(orderId, attrs = {}) {
+  return {
+    meta: { event_name: "order_refunded" },
+    data: {
+      type: "orders",
+      id: String(orderId),
+      attributes: {
+        user_email: "cliente@example.com",
+        status: "refunded",
+        test_mode: false,
+        created_at: "2026-11-15T10:00:00.000000Z",
+        updated_at: "2026-11-16T10:00:00.000000Z",
+        ...attrs,
+      },
+    },
+  };
+}
+
 function subEvent(name, id, attrs = {}) {
   return {
     meta: { event_name: name },
@@ -447,6 +465,103 @@ test("subscription_payment_success con un subscription_id desconocido no reactiv
   assert.equal(res.status, 200);
   assert.equal((await userOf(env)).disabled, true, "no reactiva: esa suscripción no se conoce");
   assert.equal(await env.RATE_LIMIT.get("ls:sub:9999"), null, "no crea la asociación desde user_email");
+});
+
+test("order_refunded (reembolso total) de un pedido que dio de alta da de baja la cuenta", async () => {
+  const env = makeEnv();
+  const calls = stubResend();
+  let ev;
+  try {
+    ev = orderEvent();
+    assert.equal((await send(env, ev)).status, 200);
+  } finally { restoreFetch(); }
+  const code = codeFrom(calls[0]);
+  assert.equal((await me(env, code)).status, 200);
+
+  const res = await send(env, refundEvent(ev.data.id));
+  assert.equal(res.status, 200);
+  assert.equal((await userOf(env)).disabled, true);
+  assert.equal((await me(env, code)).status, 401, "el código deja de valer");
+});
+
+test("order_refunded con reembolso parcial no quita el acceso", async () => {
+  const env = makeEnv();
+  const calls = stubResend();
+  let ev;
+  try {
+    ev = orderEvent();
+    assert.equal((await send(env, ev)).status, 200);
+  } finally { restoreFetch(); }
+  const code = codeFrom(calls[0]);
+
+  const res = await send(env, refundEvent(ev.data.id, { status: "partial_refund" }));
+  assert.equal(res.status, 200);
+  assert.equal((await userOf(env)).disabled, false);
+  assert.equal((await me(env, code)).status, 200);
+});
+
+test("reembolsar un pedido antiguo tras un pedido nuevo del mismo cliente no da de baja la cuenta vigente", async () => {
+  const env = makeEnv();
+  let ev1;
+  let calls = stubResend();
+  try {
+    ev1 = orderEvent();
+    assert.equal((await send(env, ev1)).status, 200);
+  } finally { restoreFetch(); }
+
+  calls = stubResend();
+  try {
+    assert.equal((await send(env, orderEvent())).status, 200, "el cliente se vuelve a suscribir: pedido nuevo");
+  } finally { restoreFetch(); }
+  const code = codeFrom(calls[0]);
+
+  const res = await send(env, refundEvent(ev1.data.id));
+  assert.equal(res.status, 200);
+  assert.equal((await userOf(env)).disabled, false, "el pedido reembolsado ya no es el que dio el acceso actual");
+  assert.equal((await me(env, code)).status, 200);
+});
+
+test("order_refunded de un pedido no registrado (otro producto o anterior) responde 200 sin tocar nada", async () => {
+  const env = makeEnv();
+  const res = await send(env, refundEvent("9999999"));
+  assert.equal(res.status, 200);
+  assert.equal(await userOf(env), null);
+});
+
+test("un reintento del mismo order_refunded es idempotente", async () => {
+  const env = makeEnv();
+  const calls = stubResend();
+  let ev;
+  try {
+    ev = orderEvent();
+    assert.equal((await send(env, ev)).status, 200);
+  } finally { restoreFetch(); }
+
+  const refund = refundEvent(ev.data.id);
+  assert.equal((await send(env, refund)).status, 200);
+  assert.equal((await userOf(env)).disabled, true);
+
+  const segunda = await send(env, refund);
+  assert.equal(segunda.status, 200);
+  assert.equal(await segunda.text(), "ya procesado");
+  assert.equal((await userOf(env)).disabled, true);
+});
+
+test("LEMONSQUEEZY_PRODUCT_IDS: order_refunded de un pedido de otro producto no toca la cuenta", async () => {
+  const env = makeEnv({ LEMONSQUEEZY_PRODUCT_IDS: "111" });
+  const calls = stubResend();
+  let ev;
+  try {
+    ev = orderEvent({ first_order_item: { product_id: 111 } });
+    assert.equal((await send(env, ev)).status, 200);
+  } finally { restoreFetch(); }
+  const code = codeFrom(calls[0]);
+
+  const res = await send(env, refundEvent(ev.data.id, { first_order_item: { product_id: 222 } }));
+  assert.equal(res.status, 200);
+  assert.equal(await res.text(), "otro producto");
+  assert.equal((await userOf(env)).disabled, false);
+  assert.equal((await me(env, code)).status, 200);
 });
 
 test("un cuerpo firmado que no es JSON responde 400", async () => {

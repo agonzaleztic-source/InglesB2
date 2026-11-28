@@ -296,7 +296,24 @@ async function handleLemonEvent(name, data, meta, env, workerUrl) {
     if (a.status !== "paid") return;
     const email = cleanEmail(a.user_email);
     if (!email) throw new Error("pedido sin email válido");
-    await provision(env, email, workerUrl, testMode ? "prueba" : undefined);
+    await provision(env, email, workerUrl, testMode ? "prueba" : undefined, String(data.id));
+    return;
+  }
+
+  if (name === "order_refunded") {
+    if (products && !products.has(String(a.first_order_item?.product_id))) return "otro producto";
+    // Un reembolso parcial no quita el acceso: solo uno total.
+    if (a.status !== "refunded") return;
+    const email = await env.RATE_LIMIT.get(`ls:pedido:${data.id}`);
+    if (!email) return; // pedido de otro producto, o de antes de guardar esta relación
+    const hash = await env.RATE_LIMIT.get(`email:${email}`);
+    const rec = hash && await env.RATE_LIMIT.get(`user:${hash}`, "json");
+    // Si el cliente ya se ha vuelto a suscribir con un pedido nuevo, el que se
+    // reembolsa ya no es el que le dio acceso: no se le da de baja.
+    if (!rec || rec.pedido !== String(data.id)) return;
+    const next = { ...rec, disabled: true };
+    delete next.expires;
+    await env.RATE_LIMIT.put(`user:${hash}`, JSON.stringify(next));
     return;
   }
 
@@ -441,8 +458,10 @@ async function handleStripeEvent(ev, env, workerUrl) {
 
 // Alta tras el pago (o reactivación si ya tenía cuenta): código nuevo por
 // email. Si el email falla se deshace todo y se devuelve error, para que el
-// reintento de Stripe lo repita: un código que nadie ha recibido no sirve.
-async function provision(env, email, workerUrl, plan) {
+// reintento de la pasarela lo repita: un código que nadie ha recibido no sirve.
+// orderId (opcional, solo Lemon Squeezy) queda en el registro para que un
+// order_refunded sepa si el pedido que se reembolsa es el que dio el acceso.
+async function provision(env, email, workerUrl, plan, orderId) {
   const indexKey = `email:${email}`;
   const oldHash = await env.RATE_LIMIT.get(indexKey);
   const prev = oldHash ? (await env.RATE_LIMIT.get(`user:${oldHash}`, "json")) || {} : {};
@@ -453,8 +472,9 @@ async function provision(env, email, workerUrl, plan) {
   const token = newToken();
   const hash = await sha256(token);
   if (oldHash) await env.RATE_LIMIT.delete(`user:${oldHash}`);
-  await putUser(env, hash, email, plan ? { plan } : {}, { ...prev, disabled: false, expires: undefined });
+  await putUser(env, hash, email, { ...(plan ? { plan } : {}), ...(orderId ? { pedido: orderId } : {}) }, { ...prev, disabled: false, expires: undefined });
   await env.RATE_LIMIT.put(indexKey, hash);
+  if (orderId) await env.RATE_LIMIT.put(`ls:pedido:${orderId}`, email);
 
   try {
     await sendCodeEmail(env, email, token, workerUrl, !!oldHash, quota);
@@ -563,6 +583,9 @@ async function admin(path, request, env, cors) {
 }
 
 async function putUser(env, hash, email, b, prev) {
+  // pedido: id del último pedido de Lemon Squeezy que dio o renovó el acceso;
+  // se conserva (p. ej. en /admin/users/reset) salvo que llegue uno nuevo.
+  const pedido = b.pedido || prev.pedido;
   await env.RATE_LIMIT.put(`user:${hash}`, JSON.stringify({
     email,
     plan: String(b.plan || prev.plan || "pro").slice(0, 20),
@@ -570,6 +593,7 @@ async function putUser(env, hash, email, b, prev) {
     disabled: !!prev.disabled,
     created: prev.created || new Date().toISOString(),
     ...(prev.expires ? { expires: prev.expires } : {}),
+    ...(pedido ? { pedido } : {}),
   }));
 }
 

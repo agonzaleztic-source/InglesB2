@@ -150,9 +150,9 @@ vuelve a suscribir recibe un código nuevo y conserva su cupo.
    - *Signing secret*: una cadena aleatoria de 6 a 40 caracteres que inventas
      tú (por ejemplo, la salida de `openssl rand -hex 20`). Guárdala para el
      paso 5.
-   - Eventos: `order_created`, `subscription_created`, `subscription_updated`,
-     `subscription_cancelled`, `subscription_resumed`, `subscription_expired`
-     y `subscription_payment_success`.
+   - Eventos: `order_created`, `order_refunded`, `subscription_created`,
+     `subscription_updated`, `subscription_cancelled`, `subscription_resumed`,
+     `subscription_expired` y `subscription_payment_success`.
 
    El webhook de *Test mode* y el de modo real se configuran por separado:
    repite este paso al pasar a real.
@@ -192,6 +192,11 @@ Detalles que conviene saber:
   panel ofrece esa opción).
 - Cada pedido da de alta una sola vez aunque el aviso se repita, y un aviso más
   antiguo que el último aplicado no puede reactivar a quien ya se dio de baja.
+- Un reembolso total (`order_refunded` con `status: "refunded"`) da de baja la
+  cuenta que creó ese pedido, igual que si se cancelara sin plazo de preaviso.
+  Un reembolso parcial (`status: "partial_refund"`) no toca la cuenta. Si el
+  cliente ya se había vuelto a suscribir con un pedido nuevo, reembolsar el
+  pedido antiguo no le quita el acceso vigente.
 - Al cancelar, la cuenta caduca sola en la fecha de fin del periodo pagado
   (`ends_at`), aunque el aviso `subscription_expired` no llegue nunca.
 - Un impago (`past_due`) no corta mientras Lemon Squeezy reintenta el cobro;
