@@ -315,3 +315,16 @@ test("/admin/users/reset conserva el estado disabled de la cuenta", async () => 
   );
   assert.equal(conViejo.status, 401, "el código anterior sigue invalidado aunque la cuenta estuviera deshabilitada");
 });
+
+test("/admin/users/reset conserva el campo pedido (lo usa un order_refunded de Lemon Squeezy para encontrar la cuenta)", async () => {
+  const env = makeEnv();
+  await admin("/admin/users/create", env, { body: { email: "mara@example.com" } });
+  const hash1 = await env.RATE_LIMIT.get("email:mara@example.com");
+  const rec1 = await env.RATE_LIMIT.get(`user:${hash1}`, "json");
+  await env.RATE_LIMIT.put(`user:${hash1}`, JSON.stringify({ ...rec1, pedido: "4242" }));
+
+  await admin("/admin/users/reset", env, { body: { email: "mara@example.com" } });
+  const hash2 = await env.RATE_LIMIT.get("email:mara@example.com");
+  const rec2 = await env.RATE_LIMIT.get(`user:${hash2}`, "json");
+  assert.equal(rec2.pedido, "4242");
+});
