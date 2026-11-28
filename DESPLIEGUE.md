@@ -151,8 +151,8 @@ vuelve a suscribir recibe un código nuevo y conserva su cupo.
      tú (por ejemplo, la salida de `openssl rand -hex 20`). Guárdala para el
      paso 5.
    - Eventos: `order_created`, `subscription_created`, `subscription_updated`,
-     `subscription_cancelled`, `subscription_resumed`, `subscription_expired`
-     y `subscription_payment_success`.
+     `subscription_cancelled`, `subscription_resumed`, `subscription_unpaused`,
+     `subscription_expired` y `subscription_payment_success`.
 
    El webhook de *Test mode* y el de modo real se configuran por separado:
    repite este paso al pasar a real.
@@ -178,6 +178,12 @@ vuelve a suscribir recibe un código nuevo y conserva su cupo.
    comprueba que llega el email con el código. Los usuarios creados en modo
    prueba quedan con el plan `prueba`; bórralos o dalos de baja con
    `/admin/users/update` antes de pasar a real.
+
+Antes de pasar a real, ejecuta `node scripts/prelanzamiento.mjs`: sin red ni
+claves, comprueba que `wrangler.toml`, `worker.js`, este fichero e
+`index.html` no se han desincronizado (un secreto colado en `[vars]`, una
+variable o un evento de Lemon Squeezy sin documentar, el enlace `#worker=`
+del email roto, etc.). Sale con código 0 si todo es coherente.
 
 Detalles que conviene saber:
 
